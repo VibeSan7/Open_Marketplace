@@ -21,6 +21,11 @@ def canonicalize_email(value: str) -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class NeutralAccepted:
+    accepted: Literal[True]
+
+
+@dataclass(frozen=True, slots=True)
 class AccountSnapshot:
     id: AccountId
     email: str
