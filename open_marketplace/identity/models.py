@@ -134,3 +134,93 @@ class OneTimeToken(models.Model):
                 name="identity_token_expiry_idx",
             ),
         )
+
+
+class AccountSession(models.Model):
+    class RevocationReason(models.TextChoices):
+        LOGOUT = "logout", "Logout"
+        USER_REVOKED = "user_revoked", "User revoked"
+        OTHER_SESSIONS_REVOKED = "other_sessions_revoked", "Other sessions revoked"
+        PASSWORD_CHANGED = "password_changed", "Password changed"
+        PASSWORD_RESET = "password_reset", "Password reset"
+        OPTIONAL_TOTP_DISABLED = "optional_totp_disabled", "Optional TOTP disabled"
+        MANDATORY_TOTP_RECOVERED = (
+            "mandatory_totp_recovered",
+            "Mandatory TOTP recovered",
+        )
+        ACCOUNT_BLOCKED = "account_blocked", "Account blocked"
+        ROLE_CHANGED = "role_changed", "Role changed"
+        COMPROMISED = "compromised", "Compromised"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="account_sessions",
+    )
+    django_session_key = models.CharField(
+        max_length=40,
+        unique=True,
+        editable=False,
+    )
+    created_at = models.DateTimeField()
+    last_activity_at = models.DateTimeField()
+    absolute_expires_at = models.DateTimeField()
+    reauthenticated_at = models.DateTimeField(null=True)
+    device_label = models.CharField(max_length=200)
+    revoked_at = models.DateTimeField(null=True)
+    revoked_reason = models.CharField(
+        max_length=64,
+        choices=RevocationReason.choices,
+        null=True,
+    )
+
+    class Meta:
+        db_table = "identity_account_session"
+        constraints = (
+            models.CheckConstraint(
+                condition=Q(absolute_expires_at__gt=F("created_at")),
+                name="identity_session_expiry_after_create",
+            ),
+            models.CheckConstraint(
+                condition=Q(last_activity_at__gte=F("created_at")),
+                name="identity_session_activity_after_create",
+            ),
+            models.CheckConstraint(
+                condition=Q(last_activity_at__lt=F("absolute_expires_at")),
+                name="identity_session_activity_before_expiry",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(revoked_at__isnull=True, revoked_reason__isnull=True)
+                    | Q(revoked_at__isnull=False, revoked_reason__isnull=False)
+                ),
+                name="identity_session_revocation_pair",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(revoked_reason__isnull=True)
+                    | Q(
+                        revoked_reason__in=(
+                            "logout",
+                            "user_revoked",
+                            "other_sessions_revoked",
+                            "password_changed",
+                            "password_reset",
+                            "optional_totp_disabled",
+                            "mandatory_totp_recovered",
+                            "account_blocked",
+                            "role_changed",
+                            "compromised",
+                        )
+                    )
+                ),
+                name="identity_session_revocation_reason",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("account", "revoked_at", "absolute_expires_at"),
+                name="identity_session_owner_idx",
+            ),
+        )

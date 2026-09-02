@@ -1,8 +1,22 @@
-from open_marketplace.identity.application import register_account, verify_email
+from open_marketplace.identity.application import (
+    authenticate_account,
+    get_session_security_snapshot,
+    list_sessions,
+    log_out_session,
+    register_account,
+    revoke_other_sessions,
+    revoke_session,
+    revoke_sessions_for_security_event,
+    verify_email,
+)
 from open_marketplace.identity.domain import (
     AccountId,
     AccountSnapshot,
+    AuthenticationResult,
     NeutralAccepted,
+    SessionRevocationReason,
+    SessionSecuritySnapshot,
+    SessionView,
 )
 from open_marketplace.identity.models import Account
 
@@ -21,8 +35,19 @@ def get_account_snapshot(account_id: AccountId) -> AccountSnapshot:
 
 __all__ = (
     "AccountSnapshot",
+    "AuthenticationResult",
     "NeutralAccepted",
+    "SessionRevocationReason",
+    "SessionSecuritySnapshot",
+    "SessionView",
+    "authenticate_account",
     "get_account_snapshot",
+    "get_session_security_snapshot",
+    "list_sessions",
+    "log_out_session",
     "register_account",
+    "revoke_other_sessions",
+    "revoke_session",
+    "revoke_sessions_for_security_event",
     "verify_email",
 )
