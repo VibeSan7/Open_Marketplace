@@ -5,8 +5,10 @@ from base64 import urlsafe_b64decode
 from datetime import datetime, timedelta
 from hashlib import sha256
 from secrets import token_urlsafe
-from uuid import UUID
+from uuid import UUID, uuid4
 
+import pyotp
+from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
@@ -19,7 +21,11 @@ from open_marketplace.common.crypto import (
     generate_one_time_token,
     hash_one_time_token,
 )
-from open_marketplace.common.errors import AuthenticationDenied, InputRejected
+from open_marketplace.common.errors import (
+    AuthenticationDenied,
+    InputRejected,
+    InvalidState,
+)
 from open_marketplace.common.types import OperationContext
 from open_marketplace.identity.domain import (
     AuthenticationResult,
@@ -27,12 +33,23 @@ from open_marketplace.identity.domain import (
     SessionRevocationReason,
     SessionSecuritySnapshot,
     SessionView,
+    TotpSetupView,
     canonicalize_email,
 )
-from open_marketplace.identity.models import Account, AccountSession, OneTimeToken
+from open_marketplace.identity.models import (
+    Account,
+    AccountSession,
+    OneTimeToken,
+    RecoveryCode,
+    TotpCredential,
+    TotpRequirement,
+    TotpSetup,
+)
 from open_marketplace.outbox.public import enqueue_outbox_message
 
 _TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]{43}$")
+_TOTP_CODE_PATTERN = re.compile(r"^[0-9]{6}$")
+_RECOVERY_CODE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{22}$")
 _OPERATION_SOURCES = frozenset({"html", "admin", "command", "worker"})
 _TOKEN_REJECTED_MESSAGE = "Email verification token is invalid."
 _PASSWORD_RESET_REJECTED_MESSAGE = "Password reset token is invalid."
@@ -41,6 +58,7 @@ _AUTHENTICATION_DENIED_MESSAGE = "Authentication failed."
 _SESSION_UNAVAILABLE_MESSAGE = "Session is unavailable."
 _DEVICE_LABEL_MAX_LENGTH = 200
 _SESSION_KEY_MAX_LENGTH = 40
+_TOTP_ISSUER = "Open Marketplace"
 _DUMMY_PASSWORD_HASH = make_password(token_urlsafe(32))
 
 
@@ -410,6 +428,104 @@ def _authenticated_context(*, account, registry, context):
     )
 
 
+def _factor_audit_context(account, context):
+    return OperationContext(
+        actor_account_id=account.id,
+        session_id=context.session_id,
+        request_id=context.request_id,
+        source=context.source,
+        source_address=context.source_address,
+        now=context.now,
+    )
+
+
+def _active_totp_credential(account):
+    return (
+        TotpCredential.objects.select_for_update()
+        .filter(account=account, disabled_at__isnull=True)
+        .first()
+    )
+
+
+def _decrypt_totp_secret(credential):
+    try:
+        return Fernet(settings.TOTP_ENCRYPTION_KEY.encode("ascii")).decrypt(
+            bytes(credential.encrypted_secret)
+        ).decode("ascii")
+    except (InvalidToken, UnicodeDecodeError):
+        _authentication_denied()
+
+
+def _accepted_totp_counter(*, secret, code, now, last_accepted_counter):
+    if not isinstance(code, str) or not _TOTP_CODE_PATTERN.fullmatch(code):
+        return None
+    totp = pyotp.TOTP(secret, digits=6, interval=30)
+    if not totp.verify(code, for_time=now, valid_window=1):
+        return None
+    base_counter = totp.timecode(now)
+    matching = [
+        base_counter + offset
+        for offset in (-1, 0, 1)
+        if pyotp.utils.strings_equal(totp.at(now, counter_offset=offset), code)
+    ]
+    if not matching:
+        return None
+    counter = max(matching)
+    if last_accepted_counter is not None and counter <= last_accepted_counter:
+        return None
+    return counter
+
+
+def _consume_second_factor(*, account, second_factor, context):
+    credential = _active_totp_credential(account)
+    if credential is None:
+        if second_factor is not None:
+            _authentication_denied()
+        return None
+    if not isinstance(second_factor, str):
+        _authentication_denied()
+
+    if _RECOVERY_CODE_PATTERN.fullmatch(second_factor):
+        recovery = (
+            RecoveryCode.objects.select_for_update()
+            .filter(
+                account=account,
+                code_digest=hash_one_time_token(second_factor),
+                used_at__isnull=True,
+                revoked_at__isnull=True,
+            )
+            .first()
+        )
+        if recovery is None:
+            _authentication_denied()
+        recovery.used_at = context.now
+        recovery.save(update_fields={"used_at"})
+        append_audit_entry(
+            context=_factor_audit_context(account, context),
+            action="identity.recovery_code_used",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={},
+            after={"totp_enabled": True},
+            effective_role=None,
+        )
+        return credential
+
+    counter = _accepted_totp_counter(
+        secret=_decrypt_totp_secret(credential),
+        code=second_factor,
+        now=context.now,
+        last_accepted_counter=credential.last_accepted_counter,
+    )
+    if counter is None:
+        _authentication_denied()
+    credential.last_accepted_counter = counter
+    credential.save(update_fields={"last_accepted_counter"})
+    return credential
+
+
 def authenticate_account(
     *,
     email: str,
@@ -441,12 +557,25 @@ def authenticate_account(
         else:
             password_matches = account.check_password(password_candidate)
 
-        if (
-            account is None
-            or not password_matches
-            or account.state != Account.State.ACTIVE
-            or account.email_verified_at is None
-        ):
+        primary_matches = (
+            account is not None
+            and password_matches
+            and account.state == Account.State.ACTIVE
+            and account.email_verified_at is not None
+        )
+        factor_matches = False
+        if primary_matches:
+            try:
+                _consume_second_factor(
+                    account=account,
+                    second_factor=second_factor,
+                    context=context,
+                )
+                factor_matches = True
+            except AuthenticationDenied:
+                pass
+
+        if not primary_matches or not factor_matches:
             _failed_authentication_audit(
                 canonical_email=canonical_email,
                 context=context,
@@ -1006,3 +1135,369 @@ def change_password(
             change="password_changed",
             context=context,
         )
+
+
+def _verify_current_password(account, password):
+    candidate = password if isinstance(password, str) and len(password) <= 128 else ""
+    if not account.check_password(candidate):
+        _authentication_denied()
+
+
+def _encrypt_totp_secret(secret):
+    return Fernet(settings.TOTP_ENCRYPTION_KEY.encode("ascii")).encrypt(
+        secret.encode("ascii")
+    )
+
+
+def _generate_recovery_code_set(*, account, now):
+    set_id = uuid4()
+    codes = tuple(token_urlsafe(16) for _ in range(settings.RECOVERY_CODE_COUNT))
+    RecoveryCode.objects.bulk_create(
+        RecoveryCode(
+            account=account,
+            set_id=set_id,
+            code_digest=hash_one_time_token(code),
+            issued_at=now,
+        )
+        for code in codes
+    )
+    return codes
+
+
+def _revoke_unused_recovery_codes(*, account, now):
+    return RecoveryCode.objects.select_for_update().filter(
+        account=account,
+        used_at__isnull=True,
+        revoked_at__isnull=True,
+    ).update(revoked_at=now)
+
+
+def begin_totp_setup(
+    *,
+    current_password: str,
+    context: OperationContext,
+) -> TotpSetupView:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        account = current.account
+        _verify_current_password(account, current_password)
+        if _active_totp_credential(account) is not None:
+            raise InvalidState("TOTP is already enabled.")
+
+        TotpSetup.objects.select_for_update().filter(
+            account=account,
+            consumed_at__isnull=True,
+            invalidated_at__isnull=True,
+            expires_at__gt=context.now,
+        ).update(invalidated_at=context.now)
+        secret = pyotp.random_base32(length=32)
+        expires_at = context.now + settings.TOTP_SETUP_TTL
+        setup = TotpSetup.objects.create(
+            account=account,
+            session=current,
+            encrypted_secret=_encrypt_totp_secret(secret),
+            created_at=context.now,
+            expires_at=expires_at,
+        )
+        totp = pyotp.TOTP(secret, digits=6, interval=30)
+        return TotpSetupView(
+            setup_id=setup.id,
+            manual_secret=secret,
+            provisioning_uri=totp.provisioning_uri(
+                name=account.email,
+                issuer_name=_TOTP_ISSUER,
+            ),
+            expires_at=expires_at,
+        )
+
+
+def enable_totp(
+    *,
+    setup_id: UUID,
+    code: str,
+    context: OperationContext,
+) -> tuple[str, ...]:
+    if not isinstance(setup_id, UUID):
+        _reject("setup_id must be a UUID.")
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        account = current.account
+        if _active_totp_credential(account) is not None:
+            _authentication_denied()
+        setup = (
+            TotpSetup.objects.select_for_update()
+            .filter(
+                pk=setup_id,
+                account=account,
+                session=current,
+            )
+            .first()
+        )
+        if (
+            setup is None
+            or setup.consumed_at is not None
+            or setup.invalidated_at is not None
+            or context.now >= setup.expires_at
+        ):
+            _authentication_denied()
+        secret = _decrypt_totp_secret(setup)
+        counter = _accepted_totp_counter(
+            secret=secret,
+            code=code,
+            now=context.now,
+            last_accepted_counter=None,
+        )
+        if counter is None:
+            _authentication_denied()
+
+        credential = TotpCredential.objects.create(
+            account=account,
+            encrypted_secret=setup.encrypted_secret,
+            confirmed_at=context.now,
+            last_accepted_counter=counter,
+        )
+        setup.consumed_at = context.now
+        setup.save(update_fields={"consumed_at"})
+        codes = _generate_recovery_code_set(account=account, now=context.now)
+        current.reauthenticated_at = context.now
+        current.save(update_fields={"reauthenticated_at"})
+        append_audit_entry(
+            context=context,
+            action="identity.totp_enabled",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={"totp_enabled": False},
+            after={"totp_enabled": True},
+            effective_role=None,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.recovery_codes_issued",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={},
+            after={"totp_enabled": True},
+            effective_role=None,
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="totp_enabled",
+            context=context,
+        )
+        return codes
+
+
+def reauthenticate_session(
+    *,
+    password: str,
+    second_factor: str | None,
+    context: OperationContext,
+) -> datetime:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        account = current.account
+        _verify_current_password(account, password)
+        credential = _consume_second_factor(
+            account=account,
+            second_factor=second_factor,
+            context=context,
+        )
+        current.reauthenticated_at = context.now
+        current.save(update_fields={"reauthenticated_at"})
+        append_audit_entry(
+            context=context,
+            action="identity.session_reauthenticated",
+            object_type="session",
+            object_id=str(current.id),
+            result="succeeded",
+            reason=None,
+            before={},
+            after={"totp_enabled": credential is not None},
+            effective_role=None,
+        )
+        return context.now
+
+
+def replace_recovery_codes(
+    *,
+    password: str,
+    second_factor: str,
+    context: OperationContext,
+) -> tuple[str, ...]:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        account = current.account
+        _verify_current_password(account, password)
+        credential = _consume_second_factor(
+            account=account,
+            second_factor=second_factor,
+            context=context,
+        )
+        if credential is None:
+            raise InvalidState("TOTP is not enabled.")
+        _revoke_unused_recovery_codes(account=account, now=context.now)
+        codes = _generate_recovery_code_set(account=account, now=context.now)
+        current.reauthenticated_at = context.now
+        current.save(update_fields={"reauthenticated_at"})
+        append_audit_entry(
+            context=context,
+            action="identity.recovery_codes_replaced",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={"totp_enabled": True},
+            after={"totp_enabled": True},
+            effective_role=None,
+        )
+        return codes
+
+
+def _revoke_other_sessions_for_totp_disable(*, current, context):
+    queryset = _live_sessions_for_account(current.account, context.now).exclude(
+        pk=current.id
+    )
+    session_ids = _locked_live_session_ids(queryset, context.now)
+    count = AccountSession.objects.filter(pk__in=session_ids).update(
+        revoked_at=context.now,
+        revoked_reason=AccountSession.RevocationReason.OPTIONAL_TOTP_DISABLED,
+    )
+    append_audit_entry(
+        context=context,
+        action="identity.sessions_revoked_for_security_event",
+        object_type="account",
+        object_id=str(current.account_id),
+        result="succeeded",
+        reason=AccountSession.RevocationReason.OPTIONAL_TOTP_DISABLED,
+        before={},
+        after={"revoked_session_count": count},
+        effective_role=None,
+    )
+    return count
+
+
+def disable_optional_totp(
+    *,
+    password: str,
+    second_factor: str,
+    context: OperationContext,
+) -> None:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        account = current.account
+        _verify_current_password(account, password)
+        credential = _consume_second_factor(
+            account=account,
+            second_factor=second_factor,
+            context=context,
+        )
+        if credential is None:
+            raise InvalidState("TOTP is not enabled.")
+        if TotpRequirement.objects.select_for_update().filter(
+            account=account,
+            removed_at__isnull=True,
+        ).exists():
+            raise InvalidState("TOTP is required and cannot be disabled.")
+
+        credential.disabled_at = context.now
+        credential.save(update_fields={"disabled_at"})
+        _revoke_unused_recovery_codes(account=account, now=context.now)
+        revoked_session_count = _revoke_other_sessions_for_totp_disable(
+            current=current,
+            context=context,
+        )
+        current.reauthenticated_at = context.now
+        current.save(update_fields={"reauthenticated_at"})
+        append_audit_entry(
+            context=context,
+            action="identity.totp_disabled",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={"totp_enabled": True},
+            after={
+                "totp_enabled": False,
+                "revoked_session_count": revoked_session_count,
+            },
+            effective_role=None,
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="totp_disabled",
+            context=context,
+        )
+
+
+def _validate_totp_requirement_input(*, account_id, source_type, source_id, context):
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    if source_type not in TotpRequirement.SourceType.values:
+        _reject("source_type is invalid.")
+    if not isinstance(source_id, UUID):
+        _reject("source_id must be a UUID.")
+    if not isinstance(context, OperationContext):
+        _reject("context must be an OperationContext.")
+    if not isinstance(context.request_id, UUID) or context.source not in _OPERATION_SOURCES:
+        _reject("context is invalid.")
+    _validate_utc(context.now, name="context.now")
+
+
+def add_totp_requirement(
+    *,
+    account_id: UUID,
+    source_type: str,
+    source_id: UUID,
+    context: OperationContext,
+) -> None:
+    _validate_totp_requirement_input(
+        account_id=account_id,
+        source_type=source_type,
+        source_id=source_id,
+        context=context,
+    )
+    with transaction.atomic():
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if account is None:
+            raise InvalidState("Account is unavailable.")
+        TotpRequirement.objects.get_or_create(
+            account=account,
+            source_type=source_type,
+            source_id=source_id,
+            defaults={"created_at": context.now},
+        )
+
+
+def remove_totp_requirement(
+    *,
+    account_id: UUID,
+    source_type: str,
+    source_id: UUID,
+    context: OperationContext,
+) -> None:
+    _validate_totp_requirement_input(
+        account_id=account_id,
+        source_type=source_type,
+        source_id=source_id,
+        context=context,
+    )
+    with transaction.atomic():
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if account is None:
+            raise InvalidState("Account is unavailable.")
+        requirement = (
+            TotpRequirement.objects.select_for_update()
+            .filter(
+                account=account,
+                source_type=source_type,
+                source_id=source_id,
+            )
+            .first()
+        )
+        if requirement is not None and requirement.removed_at is None:
+            requirement.removed_at = context.now
+            requirement.save(update_fields={"removed_at"})

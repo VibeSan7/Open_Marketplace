@@ -176,6 +176,7 @@ PASSWORD_RESET_TTL = timedelta(minutes=30)
 STAFF_INVITATION_TTL = timedelta(hours=24)
 MANDATORY_TOTP_RECOVERY_TTL = timedelta(minutes=30)
 SENSITIVE_ACTION_REAUTH_TTL = timedelta(minutes=15)
+TOTP_SETUP_TTL = timedelta(minutes=10)
 RECOVERY_CODE_COUNT = 10
 ORDINARY_SESSION_ABSOLUTE_TTL = timedelta(days=30)
 SERVICE_SESSION_ABSOLUTE_TTL = timedelta(hours=12)

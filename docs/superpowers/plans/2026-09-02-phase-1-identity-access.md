@@ -57,6 +57,7 @@ The checked-in Django settings expose these exact named phase-1 values; later ta
 - `STAFF_INVITATION_TTL = 24 hours`;
 - `MANDATORY_TOTP_RECOVERY_TTL = 30 minutes`;
 - `SENSITIVE_ACTION_REAUTH_TTL = 15 minutes`;
+- `TOTP_SETUP_TTL = 10 minutes`;
 - `RECOVERY_CODE_COUNT = 10`;
 - `PASSWORD_MIN_LENGTH = 12` and `PASSWORD_MAX_LENGTH = 128`, with Django common-password validation;
 - `ORDINARY_SESSION_ABSOLUTE_TTL = 30 days`;
@@ -1000,6 +1001,7 @@ git commit -m "feat: add protected password recovery"
 
 **Files:**
 - Modify: `open_marketplace/identity/models.py`, `domain.py`, `application.py`, `public.py`
+- Modify: `open_marketplace/config/settings.py`, `open_marketplace/tests/test_architecture.py`
 - Create: identity migrations for `TotpSetup`, `TotpCredential`, `TotpRequirement`, `RecoveryCode`
 - Create: `open_marketplace/identity/tests/test_totp.py`, `test_recovery_codes.py`
 
@@ -1011,7 +1013,8 @@ enable_totp(*, setup_id: UUID, code: str, context: OperationContext) -> tuple[st
 authenticate_account(*, email: str, password: str, second_factor: str | None,
                      django_session_key: str, device_label: str,
                      context: OperationContext) -> AuthenticationResult
-reauthenticate_session(*, password: str, second_factor: str, context: OperationContext) -> datetime
+reauthenticate_session(*, password: str, second_factor: str | None,
+                       context: OperationContext) -> datetime
 replace_recovery_codes(*, password: str, second_factor: str, context: OperationContext) -> tuple[str, ...]
 disable_optional_totp(*, password: str, second_factor: str, context: OperationContext) -> None
 add_totp_requirement(*, account_id: UUID, source_type: TotpRequirementSource,
@@ -1021,6 +1024,20 @@ remove_totp_requirement(*, account_id: UUID, source_type: TotpRequirementSource,
 ```
 
 The requirement operations are cross-module consistency ports, not HTML/Admin routes. Staff-role acceptance/revocation and seller-profile creation/revocation call them inside the same outer transaction as the source transition. A unique `(account_id, source_type, source_id)` row preserves independent requirements; `disable_optional_totp` decides only from these identity-owned rows and therefore does not import `access` or `seller_onboarding`.
+
+**Fixed Task 8 contract:**
+
+- `TOTP_SETUP_TTL` is a checked-in 10-minute security setting. A normal setup is bound to the current Account and `AccountSession`, invalidates the prior unconsumed setup, and is rejected when an active credential already exists. `TotpSetupView` alone returns a 32-character/160-bit Base32 secret and an `otpauth://` URI labelled with the canonical email and issuer `Open Marketplace`; neither value is logged or stored in plaintext.
+- `TotpSetup` stores only Fernet ciphertext plus explicit created/expiry/consumed/invalidated times. Success is invalid at `now >= expires_at`, requires the same live account/session, and atomically consumes the setup, creates one active credential and one recovery-code set. A failed/replayed/wrong-account/wrong-session setup confirmation has one generic denial and leaves the setup usable when the code itself was merely wrong.
+- TOTP is exactly six digits with a 30-second interval and `valid_window=1`. The matching counter must be strictly greater than `TotpCredential.last_accepted_counter`; enabling stores its first accepted counter so the same code cannot immediately authenticate. Credential secrets remain Fernet-encrypted and only verification code may decrypt them.
+- Login with an active credential requires one valid TOTP or recovery code and keeps the same neutral authentication failure as wrong primary credentials. A requirement without an active credential permits a password-only setup-limited session to avoid lockout, but every requirement-protected permission remains denied server-side until TOTP is enabled. Enabling from that session updates `reauthenticated_at` after the first valid code.
+- Recovery codes use `secrets.token_urlsafe(16)` (128 random bits, exactly 22 URL-safe characters). Exactly `RECOVERY_CODE_COUNT = 10` are returned once; `RecoveryCode` stores only a unique SHA-256 digest, UUID set identifier, issue/use/revocation times and Account. Any accepted recovery code is marked used in the same transaction as login/reauthentication or the protected operation, and each use receives a secret-free audit entry.
+- `reauthenticate_session` accepts `second_factor=None` only when no active credential exists. Password plus required factor are bound to the actor and current live session; success sets `reauthenticated_at=context.now`. Freshness is valid only while `context.now < reauthenticated_at + SENSITIVE_ACTION_REAUTH_TTL`.
+- `replace_recovery_codes` verifies password plus current factor, consumes a recovery factor when supplied, revokes the complete prior active set, returns one new 10-code set once and audits replacement without an email notification.
+- `disable_optional_totp` verifies password plus current factor and fails while any active requirement exists. Success disables the credential, revokes all unused recovery codes, preserves the current session, revokes every other live session with reason `optional_totp_disabled`, updates current-session reauthentication, and atomically writes audit plus `identity.protected_account_change(change=totp_disabled)`.
+- `enable_totp` writes secret-free enable/recovery-set audit and `identity.protected_account_change(change=totp_enabled)`. `AccountSnapshot.totp_enabled` is derived from an active credential. Routine TOTP success is not audited; enable/disable/reauthentication/recovery-set replacement and every recovery-code use are.
+- `TotpRequirement` is a unique tombstone row `(account, source_type, source_id)` with `created_at` and nullable `removed_at`. Add-existing and remove-missing/removed are idempotent; a removed row is never resurrected by a delayed repeated add. A genuinely new source has a new UUID. These trusted consistency ports are not exposed as HTML/Admin routes and perform no cross-module import.
+- Account/session/setup/credential/recovery/requirement rows use `PROTECT` ownership and database constraints for valid time/state pairs and active uniqueness. Operations lock in the fixed Account → AccountSession → Setup/Credential → RecoveryCode/Requirement order. Any audit/outbox failure rolls back all state and one-time consumption.
 
 - [ ] **Step 1: Write RED TOTP/recovery tests**
 

@@ -224,3 +224,158 @@ class AccountSession(models.Model):
                 name="identity_session_owner_idx",
             ),
         )
+
+
+class TotpSetup(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="totp_setups",
+    )
+    session = models.ForeignKey(
+        AccountSession,
+        on_delete=models.PROTECT,
+        related_name="totp_setups",
+    )
+    encrypted_secret = models.BinaryField(editable=False)
+    created_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True)
+    invalidated_at = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "identity_totp_setup"
+        constraints = (
+            models.CheckConstraint(
+                condition=Q(expires_at__gt=F("created_at")),
+                name="identity_totp_setup_expiry_after_create",
+            ),
+            models.CheckConstraint(
+                condition=Q(consumed_at__isnull=True) | Q(invalidated_at__isnull=True),
+                name="identity_totp_setup_one_terminal_state",
+            ),
+            models.CheckConstraint(
+                condition=Q(consumed_at__isnull=True) | Q(consumed_at__gte=F("created_at")),
+                name="identity_totp_setup_consumed_after_create",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(invalidated_at__isnull=True)
+                    | Q(invalidated_at__gte=F("created_at"))
+                ),
+                name="identity_totp_setup_invalidated_after_create",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("account", "consumed_at", "invalidated_at", "expires_at"),
+                name="identity_totp_setup_owner_idx",
+            ),
+        )
+
+
+class TotpCredential(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="totp_credentials",
+    )
+    encrypted_secret = models.BinaryField(editable=False)
+    confirmed_at = models.DateTimeField()
+    last_accepted_counter = models.PositiveBigIntegerField()
+    disabled_at = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "identity_totp_credential"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("account",),
+                condition=Q(disabled_at__isnull=True),
+                name="identity_one_active_totp_credential",
+            ),
+            models.CheckConstraint(
+                condition=Q(disabled_at__isnull=True) | Q(disabled_at__gte=F("confirmed_at")),
+                name="identity_totp_disabled_after_confirmed",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("account", "disabled_at"),
+                name="identity_totp_cred_owner_idx",
+            ),
+        )
+
+
+class RecoveryCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="recovery_codes",
+    )
+    set_id = models.UUIDField(editable=False)
+    code_digest = models.CharField(max_length=64, unique=True, editable=False)
+    issued_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True)
+    revoked_at = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "identity_recovery_code"
+        constraints = (
+            models.CheckConstraint(
+                condition=Q(used_at__isnull=True) | Q(revoked_at__isnull=True),
+                name="identity_recovery_not_used_and_revoked",
+            ),
+            models.CheckConstraint(
+                condition=Q(used_at__isnull=True) | Q(used_at__gte=F("issued_at")),
+                name="identity_recovery_used_after_issue",
+            ),
+            models.CheckConstraint(
+                condition=Q(revoked_at__isnull=True) | Q(revoked_at__gte=F("issued_at")),
+                name="identity_recovery_revoked_after_issue",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("account", "set_id", "used_at", "revoked_at"),
+                name="identity_recovery_owner_idx",
+            ),
+        )
+
+
+class TotpRequirement(models.Model):
+    class SourceType(models.TextChoices):
+        STAFF_ROLE = "staff_role", "Staff role"
+        SELLER_PROFILE = "seller_profile", "Seller profile"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="totp_requirements",
+    )
+    source_type = models.CharField(max_length=32, choices=SourceType.choices)
+    source_id = models.UUIDField(editable=False)
+    created_at = models.DateTimeField()
+    removed_at = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "identity_totp_requirement"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("account", "source_type", "source_id"),
+                name="identity_unique_totp_requirement_source",
+            ),
+            models.CheckConstraint(
+                condition=Q(removed_at__isnull=True) | Q(removed_at__gte=F("created_at")),
+                name="identity_totp_requirement_removed_after_create",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("account", "removed_at"),
+                name="identity_totp_req_owner_idx",
+            ),
+        )
