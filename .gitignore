@@ -1,6 +1,7 @@
 .env
 .venv/
 .model-launcher-runtime/
+.worktrees/
 __pycache__/
 *.py[cod]
 .coverage
