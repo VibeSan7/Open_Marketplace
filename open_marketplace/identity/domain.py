@@ -73,3 +73,11 @@ class SessionSecuritySnapshot:
     revoked_at: datetime | None
     absolute_expires_at: datetime
     reauthenticated_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class TotpSetupView:
+    setup_id: UUID
+    manual_secret: str
+    provisioning_uri: str
+    expires_at: datetime
