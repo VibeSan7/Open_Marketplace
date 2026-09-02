@@ -890,6 +890,35 @@ def get_session_security_snapshot(
     )
 
 
+def require_live_session_security_snapshot(
+    *,
+    session_id: UUID,
+    account_id: UUID,
+    now: datetime,
+) -> SessionSecuritySnapshot:
+    if not isinstance(session_id, UUID) or not isinstance(account_id, UUID):
+        _reject("session identifiers must be UUID values.")
+    _validate_utc(now, name="now")
+    registry = (
+        AccountSession.objects.select_related("account")
+        .filter(pk=session_id, account_id=account_id)
+        .first()
+    )
+    if (
+        registry is None
+        or registry.account.state != Account.State.ACTIVE
+        or not _is_live_session(registry, now)
+    ):
+        _session_unavailable()
+    return SessionSecuritySnapshot(
+        id=registry.id,
+        account_id=registry.account_id,
+        revoked_at=registry.revoked_at,
+        absolute_expires_at=registry.absolute_expires_at,
+        reauthenticated_at=registry.reauthenticated_at,
+    )
+
+
 def _eligible_password_reset_account(account):
     return (
         account is not None

@@ -1070,9 +1070,11 @@ git commit -m "feat: add TOTP and recovery codes"
 **Objective:** Создать независимо отзываемые `seller_reviewer`/`security_admin` assignments and the single permission-checking implementation.
 
 **Files:**
-- Create: `open_marketplace/access/domain.py`, `models.py`, `application.py`, `public.py`
+- Create: `open_marketplace/access/apps.py`, `domain.py`, `models.py`, `application.py`, `public.py`
 - Create: `open_marketplace/access/migrations/0001_initial.py`
 - Create: `open_marketplace/access/tests/test_roles.py`, `test_permissions.py`
+- Modify: `open_marketplace/config/settings.py`
+- Modify: `open_marketplace/identity/application.py`, `public.py`, `tests/test_sessions.py`
 
 **Interfaces:**
 
@@ -1081,6 +1083,10 @@ check_permission(*, permission: PermissionCode, context: OperationContext) -> Au
 authorize(*, context: OperationContext, permission: PermissionCode) -> AuthorizationDecision
 list_active_roles(*, account_id: UUID, context: OperationContext) -> tuple[RoleAssignmentView, ...]
 revoke_staff_role(*, assignment_id: UUID, reason: str, context: OperationContext) -> None
+
+# narrow identity.public liveness port; the existing snapshot API remains unchanged
+require_live_session_security_snapshot(*, session_id: UUID, account_id: UUID,
+                                       now: datetime) -> SessionSecuritySnapshot
 ```
 
 Exact role matrix:
@@ -1088,6 +1094,14 @@ Exact role matrix:
 - `seller_reviewer`: `seller_application.read`, `seller_application.review`, and `audit.read` scoped to seller-application decisions visible to that reviewer.
 - `security_admin`: staff invitation/revocation/role-revocation; account read/block/unblock; mandatory-TOTP recovery; seller read/suspend/restore/revoke; `outbox.manual_retry`; and `audit.read` scoped to those security objects.
 - A dual-role account gets the union of two independently active assignments. No other mapping, wildcard permission or Django model permission grants domain access.
+
+Exact scope contract:
+
+- `list_active_roles` always authorizes `account.read`; only an active `security_admin` may list roles, including its own, and the target `account_id` never grants self-service access.
+- `seller_reviewer` receives these `audit.read` scopes: `audit:object_type:seller_application`, `audit:object_type:seller_application_version`, and `audit:object_type:seller_review_decision`.
+- `security_admin` receives these `audit.read` scopes: `audit:object_type:account`, `audit:object_type:session`, `audit:object_type:staff_invitation`, `audit:object_type:role_assignment`, `audit:object_type:seller_profile`, and `audit:object_type:outbox_message`.
+- A dual-role account receives the stable de-duplicated union of both audit scope sets.
+- `outbox.manual_retry` receives only `outbox:state:manual_review`. Every other phase-1 permission receives an empty scope tuple; no implicit or wildcard scope exists.
 
 - [ ] **Step 1: Write RED role/permission tests**
 
@@ -1102,7 +1116,7 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 - [ ] **Step 3: Implement role assignments and authorization**
 
-`authorize`/`check_permission` derive the account only from `context.actor_account_id`; they lock/read current assignments, account snapshot and `identity.public.get_session_security_snapshot` when a session is required. They return only exact roles/scopes/freshness and raise `PermissionDenied` otherwise. Permissions for review decisions, invitations/role changes, block/unblock, mandatory TOTP recovery, seller admission changes and outbox manual retry require `reauthenticated_at > context.now - settings.SENSITIVE_ACTION_REAUTH_TTL`; equality is expired. Role revocation removes its matching identity TOTP requirement and revokes affected sessions in the same outer transaction. Module-local tests may create assignments through an access-local builder; production `public.py` exposes no direct role grant.
+`authorize`/`check_permission` derive the account only from `context.actor_account_id`; they lock/read current assignments and account snapshot, then call `identity.public.require_live_session_security_snapshot` for every role-backed permission. The identity-owned liveness port validates the UUID inputs and UTC `now`, returns the existing immutable snapshot only when the registry row belongs to the account, is not revoked, is before absolute expiry, is within the service idle TTL and still has a live backing Django database session; otherwise it raises the existing neutral authentication denial. The older `get_session_security_snapshot` remains unchanged for non-authorizing inspection. Authorization returns only exact granting roles/scopes/freshness and raises `PermissionDenied` otherwise. Permissions for review decisions, invitations/role changes, block/unblock, mandatory TOTP recovery, seller admission changes and outbox manual retry require `reauthenticated_at > context.now - settings.SENSITIVE_ACTION_REAUTH_TTL`; equality is expired, and a future timestamp is denied. Role revocation removes its matching identity TOTP requirement and revokes affected sessions in the same outer transaction. Module-local tests may create assignments through an access-local builder; production `public.py` exposes no direct role grant.
 
 - [ ] **Step 4: Run GREEN and contracts**
 

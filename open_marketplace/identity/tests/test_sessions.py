@@ -31,6 +31,7 @@ class SessionTests(TestCase):
             "SessionSecuritySnapshot",
             "SessionView",
             "get_session_security_snapshot",
+            "require_live_session_security_snapshot",
             "list_sessions",
             "log_out_session",
             "revoke_other_sessions",
@@ -396,6 +397,80 @@ class SessionTests(TestCase):
                     session_id=session_id,
                     account_id=account_id,
                 )
+
+    def test_live_security_snapshot_enforces_complete_identity_session_liveness(self):
+        public = self.public_module()
+        service = self.create_account(kind=Account.Kind.SERVICE)
+        valid = self.create_registry(
+            account=service,
+            last_activity_at=self.now - timedelta(minutes=29, seconds=59),
+            absolute_expires_at=self.now + timedelta(hours=1),
+        )
+
+        snapshot = public.require_live_session_security_snapshot(
+            session_id=valid.id,
+            account_id=service.id,
+            now=self.now,
+        )
+
+        self.assertEqual(snapshot.id, valid.id)
+        self.assertIsInstance(snapshot, public.SessionSecuritySnapshot)
+
+        revoked = self.create_registry(
+            account=service,
+            revoked_at=self.now - timedelta(seconds=1),
+            revoked_reason="user_revoked",
+            absolute_expires_at=self.now + timedelta(hours=1),
+        )
+        absolute_expired = self.create_registry(
+            account=service,
+            last_activity_at=self.now - timedelta(minutes=1),
+            absolute_expires_at=self.now,
+        )
+        idle_expired = self.create_registry(
+            account=service,
+            last_activity_at=self.now - timedelta(minutes=30),
+            absolute_expires_at=self.now + timedelta(hours=1),
+        )
+        backing_expired = self.create_registry(
+            account=service,
+            django_key=self.create_django_session(expires_at=self.now),
+            last_activity_at=self.now - timedelta(minutes=1),
+            absolute_expires_at=self.now + timedelta(hours=1),
+        )
+        orphan = self.create_registry(
+            account=service,
+            last_activity_at=self.now - timedelta(minutes=1),
+            absolute_expires_at=self.now + timedelta(hours=1),
+        )
+        Session.objects.filter(session_key=orphan.django_session_key).delete()
+
+        for registry in (revoked, absolute_expired, idle_expired, backing_expired, orphan):
+            with self.subTest(session_id=registry.id), self.assertRaises(AuthenticationDenied):
+                public.require_live_session_security_snapshot(
+                    session_id=registry.id,
+                    account_id=service.id,
+                    now=self.now,
+                )
+
+        with self.assertRaises(AuthenticationDenied):
+            public.require_live_session_security_snapshot(
+                session_id=valid.id,
+                account_id=uuid4(),
+                now=self.now,
+            )
+
+    def test_live_security_snapshot_rejects_invalid_boundary_values(self):
+        public = self.public_module()
+        registry = self.create_registry(account=self.create_account(kind=Account.Kind.SERVICE))
+
+        for values in (
+            {"session_id": "not-a-uuid", "account_id": registry.account_id, "now": self.now},
+            {"session_id": registry.id, "account_id": "not-a-uuid", "now": self.now},
+            {"session_id": registry.id, "account_id": registry.account_id, "now": self.now.replace(tzinfo=None)},
+        ):
+            with self.subTest(values=values), self.assertRaises(InputRejected):
+                public.require_live_session_security_snapshot(**values)
 
     def test_middleware_loads_user_then_updates_activity_at_most_once_per_minute(self):
         account = self.create_account()
