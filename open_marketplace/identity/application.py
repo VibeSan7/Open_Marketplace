@@ -1,10 +1,16 @@
+import hmac
 import re
+import unicodedata
+from base64 import urlsafe_b64decode
 from datetime import datetime, timedelta
+from hashlib import sha256
+from secrets import token_urlsafe
 from uuid import UUID
 
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 
@@ -13,16 +19,28 @@ from open_marketplace.common.crypto import (
     generate_one_time_token,
     hash_one_time_token,
 )
-from open_marketplace.common.errors import InputRejected
+from open_marketplace.common.errors import AuthenticationDenied, InputRejected
 from open_marketplace.common.types import OperationContext
-from open_marketplace.identity.domain import NeutralAccepted, canonicalize_email
-from open_marketplace.identity.models import Account, OneTimeToken
+from open_marketplace.identity.domain import (
+    AuthenticationResult,
+    NeutralAccepted,
+    SessionRevocationReason,
+    SessionSecuritySnapshot,
+    SessionView,
+    canonicalize_email,
+)
+from open_marketplace.identity.models import Account, AccountSession, OneTimeToken
 from open_marketplace.outbox.public import enqueue_outbox_message
 
 _TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]{43}$")
 _OPERATION_SOURCES = frozenset({"html", "admin", "command", "worker"})
 _TOKEN_REJECTED_MESSAGE = "Email verification token is invalid."
 _NEUTRAL_ACCEPTED = NeutralAccepted(accepted=True)
+_AUTHENTICATION_DENIED_MESSAGE = "Authentication failed."
+_SESSION_UNAVAILABLE_MESSAGE = "Session is unavailable."
+_DEVICE_LABEL_MAX_LENGTH = 200
+_SESSION_KEY_MAX_LENGTH = 40
+_DUMMY_PASSWORD_HASH = make_password(token_urlsafe(32))
 
 
 def _reject(message):
@@ -289,3 +307,426 @@ def verify_email(
             effective_role=None,
         )
         return account.id
+
+
+def _authentication_denied():
+    raise AuthenticationDenied(_AUTHENTICATION_DENIED_MESSAGE)
+
+
+def _session_unavailable():
+    raise AuthenticationDenied(_SESSION_UNAVAILABLE_MESSAGE)
+
+
+def _canonical_login_email(email):
+    if not isinstance(email, str) or len(email) > 254:
+        return None
+    try:
+        return canonicalize_email(email)
+    except (AttributeError, DjangoValidationError):
+        return None
+
+
+def _fingerprint(scope, value):
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        value = "invalid"
+    key = urlsafe_b64decode(settings.THROTTLE_HASH_KEY.encode("ascii"))
+    return hmac.new(
+        key,
+        f"{scope}\0{value}".encode("utf-8"),
+        sha256,
+    ).hexdigest()
+
+
+def _normalized_device_label(device_label):
+    if not isinstance(device_label, str):
+        _reject("device_label must be a string.")
+    without_controls = "".join(
+        character
+        for character in device_label
+        if not unicodedata.category(character).startswith("C")
+    )
+    normalized = " ".join(without_controls.split()) or "Unknown device"
+    return normalized[:_DEVICE_LABEL_MAX_LENGTH]
+
+
+def _validate_second_factor(second_factor):
+    if second_factor is not None and (
+        not isinstance(second_factor, str) or len(second_factor) > 64
+    ):
+        _reject("second_factor is invalid.")
+
+
+def _lock_fresh_django_session(django_session_key, now):
+    if (
+        not isinstance(django_session_key, str)
+        or not 8 <= len(django_session_key) <= _SESSION_KEY_MAX_LENGTH
+    ):
+        _reject("Django session key is invalid.")
+    django_session = (
+        Session.objects.select_for_update()
+        .filter(session_key=django_session_key, expire_date__gt=now)
+        .first()
+    )
+    if django_session is None or AccountSession.objects.filter(
+        django_session_key=django_session_key
+    ).exists():
+        _reject("Django session key is invalid.")
+
+
+def _failed_authentication_audit(*, canonical_email, context):
+    append_audit_entry(
+        context=context,
+        action="identity.authentication_failed",
+        object_type="authentication_attempt",
+        object_id=str(context.request_id),
+        result="failed",
+        reason="authentication_failed",
+        before={},
+        after={
+            "subject_fingerprint": _fingerprint(
+                "login-subject",
+                canonical_email or "invalid",
+            ),
+            "source_fingerprint": _fingerprint(
+                "login-source",
+                context.source_address,
+            ),
+        },
+        effective_role=None,
+    )
+
+
+def _authenticated_context(*, account, registry, context):
+    return OperationContext(
+        actor_account_id=account.id,
+        session_id=registry.id,
+        request_id=context.request_id,
+        source=context.source,
+        source_address=context.source_address,
+        now=context.now,
+    )
+
+
+def authenticate_account(
+    *,
+    email: str,
+    password: str,
+    second_factor: str | None,
+    django_session_key: str,
+    device_label: str,
+    context: OperationContext,
+) -> AuthenticationResult:
+    _validate_anonymous_context(context)
+    _validate_second_factor(second_factor)
+    canonical_email = _canonical_login_email(email)
+    normalized_label = _normalized_device_label(device_label)
+    password_candidate = password if isinstance(password, str) and len(password) <= 128 else ""
+    result = None
+
+    with transaction.atomic():
+        _lock_fresh_django_session(django_session_key, context.now)
+        account = None
+        if canonical_email is not None:
+            account = (
+                Account.objects.select_for_update()
+                .filter(email=canonical_email)
+                .first()
+            )
+        if account is None:
+            check_password(password_candidate, _DUMMY_PASSWORD_HASH)
+            password_matches = False
+        else:
+            password_matches = account.check_password(password_candidate)
+
+        if (
+            account is None
+            or not password_matches
+            or account.state != Account.State.ACTIVE
+            or account.email_verified_at is None
+        ):
+            _failed_authentication_audit(
+                canonical_email=canonical_email,
+                context=context,
+            )
+        else:
+            ttl = (
+                settings.SERVICE_SESSION_ABSOLUTE_TTL
+                if account.kind == Account.Kind.SERVICE
+                else settings.ORDINARY_SESSION_ABSOLUTE_TTL
+            )
+            registry = AccountSession.objects.create(
+                account=account,
+                django_session_key=django_session_key,
+                created_at=context.now,
+                last_activity_at=context.now,
+                absolute_expires_at=context.now + ttl,
+                reauthenticated_at=context.now,
+                device_label=normalized_label,
+            )
+            audit_context = _authenticated_context(
+                account=account,
+                registry=registry,
+                context=context,
+            )
+            append_audit_entry(
+                context=audit_context,
+                action="identity.authentication_succeeded",
+                object_type="account",
+                object_id=str(account.id),
+                result="succeeded",
+                reason=None,
+                before={},
+                after={"kind": account.kind},
+                effective_role=None,
+            )
+            append_audit_entry(
+                context=audit_context,
+                action="identity.session_created",
+                object_type="session",
+                object_id=str(registry.id),
+                result="succeeded",
+                reason=None,
+                before={},
+                after={
+                    "kind": account.kind,
+                    "expires_at": registry.absolute_expires_at.isoformat(),
+                },
+                effective_role=None,
+            )
+            result = AuthenticationResult(
+                account_id=account.id,
+                kind=account.kind,
+                authenticated_at=context.now,
+                session_id=registry.id,
+            )
+
+    if result is None:
+        _authentication_denied()
+    return result
+
+
+def _validate_authenticated_context(context):
+    if not isinstance(context, OperationContext):
+        _reject("context must be an OperationContext.")
+    if not isinstance(context.actor_account_id, UUID):
+        _reject("context actor_account_id must be a UUID.")
+    if not isinstance(context.session_id, UUID):
+        _reject("context session_id must be a UUID.")
+    if not isinstance(context.request_id, UUID):
+        _reject("context request_id must be a UUID.")
+    if context.source not in _OPERATION_SOURCES:
+        _reject("context source is invalid.")
+    _validate_utc(context.now, name="context.now")
+
+
+def _is_live_session(registry, now):
+    if registry.revoked_at is not None or now >= registry.absolute_expires_at:
+        return False
+    if (
+        registry.account.kind == Account.Kind.SERVICE
+        and now >= registry.last_activity_at + settings.SERVICE_SESSION_IDLE_TTL
+    ):
+        return False
+    return Session.objects.filter(
+        session_key=registry.django_session_key,
+        expire_date__gt=now,
+    ).exists()
+
+
+def _current_session(context, *, for_update=False):
+    _validate_authenticated_context(context)
+    queryset = AccountSession.objects.select_related("account")
+    if for_update:
+        queryset = queryset.select_for_update()
+    registry = queryset.filter(
+        pk=context.session_id,
+        account_id=context.actor_account_id,
+    ).first()
+    if (
+        registry is None
+        or registry.account.state != Account.State.ACTIVE
+        or not _is_live_session(registry, context.now)
+    ):
+        _session_unavailable()
+    return registry
+
+
+def _live_sessions_for_account(account, now):
+    queryset = AccountSession.objects.filter(
+        account=account,
+        revoked_at__isnull=True,
+        absolute_expires_at__gt=now,
+    )
+    if account.kind == Account.Kind.SERVICE:
+        queryset = queryset.filter(
+            last_activity_at__gt=now - settings.SERVICE_SESSION_IDLE_TTL
+        )
+    return queryset
+
+
+def _locked_live_session_ids(queryset, now):
+    candidates = queryset.select_for_update().select_related("account")
+    return [
+        registry.id
+        for registry in candidates
+        if _is_live_session(registry, now)
+    ]
+
+
+def _to_session_view(registry, current_session_id):
+    return SessionView(
+        id=registry.id,
+        created_at=registry.created_at,
+        last_activity_at=registry.last_activity_at,
+        absolute_expires_at=registry.absolute_expires_at,
+        device_label=registry.device_label,
+        is_current=registry.id == current_session_id,
+        revoked_at=registry.revoked_at,
+    )
+
+
+def list_sessions(*, context: OperationContext) -> tuple[SessionView, ...]:
+    current = _current_session(context)
+    candidates = _live_sessions_for_account(current.account, context.now).order_by(
+        "-last_activity_at",
+        "-created_at",
+        "-id",
+    )
+    return tuple(
+        _to_session_view(registry, current.id)
+        for registry in candidates
+        if _is_live_session(registry, context.now)
+    )
+
+
+def _revoke_registry(*, registry, reason, context, action):
+    registry.revoked_at = context.now
+    registry.revoked_reason = reason
+    registry.save(update_fields={"revoked_at", "revoked_reason"})
+    append_audit_entry(
+        context=context,
+        action=action,
+        object_type="session",
+        object_id=str(registry.id),
+        result="succeeded",
+        reason=reason,
+        before={},
+        after={"revoked_session_count": 1},
+        effective_role=None,
+    )
+
+
+def revoke_session(*, session_id: UUID, context: OperationContext) -> None:
+    if not isinstance(session_id, UUID):
+        _reject("session_id must be a UUID.")
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        registry = (
+            AccountSession.objects.select_for_update()
+            .select_related("account")
+            .filter(pk=session_id, account_id=current.account_id)
+            .first()
+        )
+        if registry is None or not _is_live_session(registry, context.now):
+            _session_unavailable()
+        _revoke_registry(
+            registry=registry,
+            reason=AccountSession.RevocationReason.USER_REVOKED,
+            context=context,
+            action="identity.session_revoked",
+        )
+
+
+def log_out_session(*, context: OperationContext) -> None:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        _revoke_registry(
+            registry=current,
+            reason=AccountSession.RevocationReason.LOGOUT,
+            context=context,
+            action="identity.session_logged_out",
+        )
+
+
+def revoke_other_sessions(*, context: OperationContext) -> int:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        queryset = _live_sessions_for_account(current.account, context.now).exclude(
+            pk=current.id
+        )
+        session_ids = _locked_live_session_ids(queryset, context.now)
+        count = AccountSession.objects.filter(pk__in=session_ids).update(
+            revoked_at=context.now,
+            revoked_reason=AccountSession.RevocationReason.OTHER_SESSIONS_REVOKED,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.sessions_revoked",
+            object_type="account",
+            object_id=str(current.account_id),
+            result="succeeded",
+            reason=AccountSession.RevocationReason.OTHER_SESSIONS_REVOKED,
+            before={},
+            after={"revoked_session_count": count},
+            effective_role=None,
+        )
+        return count
+
+
+def revoke_sessions_for_security_event(
+    *,
+    account_id: UUID,
+    reason: SessionRevocationReason,
+    context: OperationContext,
+) -> int:
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    if reason not in AccountSession.RevocationReason.values:
+        _reject("reason is invalid.")
+    with transaction.atomic():
+        _current_session(context, for_update=True)
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if account is None:
+            _session_unavailable()
+        queryset = _live_sessions_for_account(account, context.now)
+        session_ids = _locked_live_session_ids(queryset, context.now)
+        count = AccountSession.objects.filter(pk__in=session_ids).update(
+            revoked_at=context.now,
+            revoked_reason=reason,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.sessions_revoked_for_security_event",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=reason,
+            before={},
+            after={"revoked_session_count": count},
+            effective_role=None,
+        )
+        return count
+
+
+def get_session_security_snapshot(
+    *,
+    session_id: UUID,
+    account_id: UUID,
+) -> SessionSecuritySnapshot:
+    if not isinstance(session_id, UUID) or not isinstance(account_id, UUID):
+        _reject("session identifiers must be UUID values.")
+    registry = AccountSession.objects.filter(
+        pk=session_id,
+        account_id=account_id,
+    ).first()
+    if registry is None:
+        _session_unavailable()
+    return SessionSecuritySnapshot(
+        id=registry.id,
+        account_id=registry.account_id,
+        revoked_at=registry.revoked_at,
+        absolute_expires_at=registry.absolute_expires_at,
+        reauthenticated_at=registry.reauthenticated_at,
+    )

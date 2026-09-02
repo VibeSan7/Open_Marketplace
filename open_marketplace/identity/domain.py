@@ -12,6 +12,18 @@ AccountState: TypeAlias = Literal[
     "active",
     "blocked",
 ]
+SessionRevocationReason: TypeAlias = Literal[
+    "logout",
+    "user_revoked",
+    "other_sessions_revoked",
+    "password_changed",
+    "password_reset",
+    "optional_totp_disabled",
+    "mandatory_totp_recovered",
+    "account_blocked",
+    "role_changed",
+    "compromised",
+]
 
 
 def canonicalize_email(value: str) -> str:
@@ -33,3 +45,31 @@ class AccountSnapshot:
     state: AccountState
     email_verified_at: datetime | None
     totp_enabled: bool
+
+
+@dataclass(frozen=True, slots=True)
+class AuthenticationResult:
+    account_id: AccountId
+    kind: AccountKind
+    authenticated_at: datetime
+    session_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class SessionView:
+    id: UUID
+    created_at: datetime
+    last_activity_at: datetime
+    absolute_expires_at: datetime
+    device_label: str
+    is_current: bool
+    revoked_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class SessionSecuritySnapshot:
+    id: UUID
+    account_id: AccountId
+    revoked_at: datetime | None
+    absolute_expires_at: datetime
+    reauthenticated_at: datetime | None

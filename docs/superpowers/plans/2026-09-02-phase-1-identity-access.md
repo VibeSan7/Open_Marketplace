@@ -73,6 +73,11 @@ All public view/result objects below are immutable dataclasses; enums use the ex
 ```python
 AccountKind = Literal["ordinary", "service"]
 AccountState = Literal["pending_email_verification", "active", "blocked"]
+SessionRevocationReason = Literal[
+    "logout", "user_revoked", "other_sessions_revoked", "password_changed",
+    "password_reset", "optional_totp_disabled", "mandatory_totp_recovered",
+    "account_blocked", "role_changed", "compromised",
+]
 StaffRole = Literal["seller_reviewer", "security_admin"]
 SellerApplicationState = Literal[
     "draft", "submitted", "under_review", "changes_requested",
@@ -888,11 +893,23 @@ log_out_session(*, context: OperationContext) -> None
 list_sessions(*, context: OperationContext) -> tuple[SessionView, ...]
 revoke_session(*, session_id: UUID, context: OperationContext) -> None
 revoke_other_sessions(*, context: OperationContext) -> int
-revoke_sessions_for_security_event(*, account_id: UUID, reason: str, context: OperationContext) -> int
+revoke_sessions_for_security_event(*, account_id: UUID,
+                                   reason: SessionRevocationReason,
+                                   context: OperationContext) -> int
 get_session_security_snapshot(*, session_id: UUID, account_id: UUID) -> SessionSecuritySnapshot
 ```
 
 `authenticate_account` is the only public login entry. In Task 6 it supports accounts without enabled/mandatory TOTP; Task 8 adds second-factor verification behind the same final signature. It derives the account from verified credentials and creates its registry row itself, so no adapter can pass a different account ID. The adapter rotates/creates the server-side Django session key before the call, passes it once, and writes browser login state only from the successful `AuthenticationResult`.
+
+**Fixed Task 6 contract:**
+
+- `AccountSession` owns a UUID public identifier and an internal unique `django_session_key` with Django's 40-character storage bound. Authentication accepts the key only when the corresponding Django database-session row exists, is not expired at `context.now`, and no registry row has ever claimed the key. The raw key never appears in public values, exceptions, audit payloads or logs.
+- `device_label` is plain text: remove Unicode control characters, collapse whitespace, strip, use `Unknown device` when empty, and keep at most 200 Unicode code points. HTML escaping remains the responsibility of the later template adapter.
+- Explicit revocation reasons are exactly `SessionRevocationReason`. A revoked row has both `revoked_at` and `revoked_reason`; a live row has neither. Session keys are never reused after revocation.
+- `list_sessions` returns only the actor's live, unexpired sessions. Unknown, foreign, revoked or expired `session_id` values are indistinguishable through one `AuthenticationDenied`. `revoke_other_sessions` preserves the valid current session.
+- Expiry is invalid when `now >= deadline`. Natural absolute/idle expiry is not rewritten as revocation and does not create revocation audit. Explicit revocation and logout update the registry and append audit in the same transaction.
+- Middleware first requires an exact Django-key/account/registry tuple and rejects blocked, revoked, absolute-expired or service-idle-expired state. Only then may it load `request.user`; it updates `last_activity_at` when at least one minute has elapsed, never more often.
+- Login throttling counters and delay remain owned by the later security-throttling task. Task 6 only creates HMAC-SHA-256 subject/source fingerprints for allowlisted failed-login audit fields; raw unknown email and source address never enter audit or logs.
 
 - [ ] **Step 1: Write RED authentication/session tests**
 
