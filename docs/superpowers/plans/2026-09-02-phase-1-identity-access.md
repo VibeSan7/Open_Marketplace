@@ -619,11 +619,17 @@ before any migration command.
 - [ ] **Step 4: Create and inspect the first migration**
 
 ```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations identity
+docker rm -f open-marketplace-task2-makemigrations 2>/dev/null || true
+docker compose -f compose.yaml -f compose.test.yaml run --name open-marketplace-task2-makemigrations --build test python manage.py makemigrations identity
+mkdir -p open_marketplace/identity/migrations
+docker cp open-marketplace-task2-makemigrations:/app/open_marketplace/identity/migrations/. open_marketplace/identity/migrations/
+docker rm open-marketplace-task2-makemigrations
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py migrate --plan
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py migrate --noinput
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py shell -c 'from django.db import connection; tables = set(connection.introspection.table_names()); assert "identity_account" in tables; assert "auth_user" not in tables'
 ```
 
-Expected: first identity migration creates `identity_account`; no `auth_user` model is used.
+Expected: first identity migration creates `identity_account`; `migrate --plan` may still list Django's swappable `auth.0001 Create model User` operation, but live PostgreSQL introspection proves that `auth_user` was not created.
 
 - [ ] **Step 5: Run GREEN and full checks**
 

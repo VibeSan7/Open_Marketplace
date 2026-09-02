@@ -12,6 +12,8 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 FROM runtime AS test
 USER root
-RUN uv sync --locked --dev --no-install-project
+RUN uv sync --locked --dev --no-install-project \
+    && mkdir -p /app/.import_linter_cache \
+    && chown appuser:appuser /app/.import_linter_cache
 USER appuser
 CMD ["python", "manage.py", "test", "open_marketplace", "-v", "2"]
