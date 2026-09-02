@@ -19,7 +19,7 @@ from open_marketplace.outbox.public import claim_ready_messages
 class RegistrationConcurrencyTests(TransactionTestCase):
     reset_sequences = True
     email = "concurrent@example.com"
-    password = "V9!qL2@xP7#z"
+    password = f"T3st!{uuid4().hex}"
     now = datetime(2026, 9, 2, 12, tzinfo=UTC)
 
     def public_module(self):

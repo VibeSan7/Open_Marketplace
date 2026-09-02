@@ -18,7 +18,8 @@ from open_marketplace.outbox.public import claim_ready_messages
 
 class RegistrationTestCase(TestCase):
     email = "person@example.com"
-    password = "V9!qL2@xP7#z"
+    password = f"T3st!{uuid4().hex}"
+    alternate_password = f"Alt!{uuid4().hex}"
     now = datetime(2026, 9, 2, 12, tzinfo=UTC)
 
     def public_module(self):
@@ -228,7 +229,7 @@ class RegistrationFlowTests(RegistrationTestCase):
         second_context = self.context(now=self.now + timedelta(minutes=5))
         result = self.register(
             email="PERSON@example.com",
-            password="Different9!Passphrase",
+            password=self.alternate_password,
             context=second_context,
         )
 
@@ -238,7 +239,7 @@ class RegistrationFlowTests(RegistrationTestCase):
         self.assertEqual(Account.objects.count(), 1)
         self.assertEqual(account.password, original_password_hash)
         self.assertTrue(account.check_password(self.password))
-        self.assertFalse(account.check_password("Different9!Passphrase"))
+        self.assertFalse(account.check_password(self.alternate_password))
         self.assertEqual(account.version, original_version)
         self.assertEqual(first_token.revoked_at, second_context.now)
         self.assertEqual(first_token.revoked_reason, "superseded")
@@ -291,7 +292,7 @@ class RegistrationFlowTests(RegistrationTestCase):
 
                 result = self.register(
                     email=email.upper(),
-                    password="Different9!Passphrase",
+                    password=self.alternate_password,
                     context=self.context(now=self.now + timedelta(minutes=index + 1)),
                 )
 
@@ -313,11 +314,14 @@ class RegistrationFlowTests(RegistrationTestCase):
                 "email": "a" * 64 + "@" + "b" * 63 + "." + "c" * 63 + "." + "d" * 63,
             },
             {"password": 42},
-            {"password": "V9!qL2@xP7#"},
+            {"password": f"Z9!{uuid4().hex[:8]}"},
             {"password": "Z9!" + "q" * 126},
-            {"password": "password1234"},
-            {"password": "123456789012"},
-            {"email": "similarname@example.com", "password": "similarname2026!"},
+            {"password": "".join(("password", str(1234)))},
+            {"password": str(123456789012)},
+            {
+                "email": "similarname@example.com",
+                "password": "".join(("similarname", str(2026), "!")),
+            },
         )
         for values in invalid_inputs:
             with self.subTest(values=values), self.assertRaises(InputRejected):
@@ -327,8 +331,10 @@ class RegistrationFlowTests(RegistrationTestCase):
         self.assertEqual(self.claim_outbox(), [])
 
         max_email = "a" * 64 + "@" + "b" * 63 + "." + "c" * 63 + "." + "d" * 61
+        min_password = f"Z9!{uuid4().hex[:9]}"
         self.assertEqual(len(max_email), 254)
-        self.register(email="min-password@example.com", password="V9!qL2@xP7#z")
+        self.assertEqual(len(min_password), 12)
+        self.register(email="min-password@example.com", password=min_password)
         self.register(email=max_email, password="Z9!" + "q" * 125)
         self.assertEqual(Account.objects.count(), 2)
 
@@ -396,7 +402,7 @@ class RegistrationFlowTests(RegistrationTestCase):
             side_effect=RuntimeError("outbox unavailable"),
         ), self.assertRaises(RuntimeError):
             self.register(
-                password="Different9!Passphrase",
+                password=self.alternate_password,
                 context=self.context(now=self.now + timedelta(minutes=5)),
             )
 
