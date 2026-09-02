@@ -80,6 +80,7 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     "open_marketplace.identity.apps.IdentityConfig",
     "open_marketplace.audit.apps.AuditConfig",
+    "open_marketplace.outbox.apps.OutboxConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

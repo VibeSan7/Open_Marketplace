@@ -727,15 +727,16 @@ git commit -m "feat(audit): add append-only audit log"
 **Objective:** Надёжно сохранить и повторить email/internal events без длинной транзакции и без повторения предметного действия.
 
 **Files:**
-- Create: `open_marketplace/outbox/models.py`, `application.py`, `public.py`
+- Create: `open_marketplace/outbox/apps.py`, `models.py`, `application.py`, `public.py`
 - Create: `open_marketplace/outbox/migrations/0001_initial.py`
 - Create: `open_marketplace/outbox/tests/test_outbox.py`, `test_concurrency.py`
+- Modify: `open_marketplace/config/settings.py`
 
 **Interfaces:**
 
 ```python
 enqueue_outbox_message(*, message_type: OutboxMessageType, format_version: Literal[1],
-                       payload: dict[str, object], encrypted_delivery: bytes | None,
+                       payload: dict[str, object], delivery: dict[str, str] | None,
                        idempotency_key: str) -> UUID
 claim_ready_messages(*, worker_id: str, now: datetime, lease_seconds: int, limit: int) -> list[ClaimedMessage]
 mark_message_succeeded(*, message_id: UUID, worker_id: str,
@@ -749,9 +750,17 @@ retry_message_from_manual_review(*, message_id: UUID, reason: str, context: Oper
 query_manual_review_messages(*, query: OutboxQuery, context: OperationContext, authorize: Authorize) -> tuple[OutboxMessageView, ...]
 ```
 
+`enqueue_outbox_message` is the only encryption boundary. It validates the exact phase-1 payload and delivery schema for `(message_type, format_version)` and then encrypts the delivery dictionary with `OUTBOX_ENCRYPTION_KEY`; subject modules never construct ciphertext or read the key directly. The persisted safe payload never contains `recipient`, `absolute_token_url` or another delivery field. SMTP delivery requires a valid email recipient of at most 320 characters; token URLs are absolute `http`/`https` URLs of at most 2048 characters with no credentials or fragment. The internal seller-admission event requires `delivery is None`. Encrypted delivery is at most 8192 bytes and is erased only on terminal success. Decryption in the later worker validates the same exact schema again before use.
+
+Outbox identifiers in payload are canonical lowercase UUID strings. `role`, `decision`, `change` and seller `state` use only the closed values in the shared contract; no unknown key, nested value or extra delivery field is accepted. `idempotency_key` and `worker_id` are 1–128 characters from `[A-Za-z0-9._:-]`. Duplicate idempotency keys raise `ConcurrentConflict` without creating a second row. `safe_error` is a non-secret machine code of 1–128 lowercase characters from `[a-z0-9_.-]`, not raw exception text. A manual retry reason is trimmed, non-empty and at most 1024 characters.
+
+Phase-1 retry constants are closed: five automatic delivery attempts; `lease_seconds` from 1 through 300; claim and query `limit` from 1 through 100; and retry delay `min(60 * 2 ** (attempt_number - 1), 3600)` seconds. Attempt numbers are monotonic and never reset, including after manual review. A completion or retry transition succeeds only while state is `processing`, `worker_id` and `attempt_number` match the current claim, and the lease is still active at `now`; stale or expired claims raise `ConcurrentConflict`. At attempt five the worker uses `mark_message_for_manual_review` rather than scheduling another automatic retry. A manual retry keeps the same row and idempotency key, clears lease/error fields, becomes immediately claimable and grants the next monotonic attempt.
+
+`query_manual_review_messages` and `retry_message_from_manual_review` both call `authorize(context, "outbox.manual_retry")` internally and require a matching account/permission decision. Outbox scopes use only `outbox:<field>:<value>` where `<field>` is `state`, `message_type` or `id`; values within one field are ORed and different fields are ANDed. Empty, malformed or unknown scopes deny access. The query accepts only `state="manual_review"`, applies requested `message_type` as an additional narrowing filter, orders newest first by `(created_at, id)`, and uses the final row UUID as a cursor within the same authorized result set. Manual retry selects its target through the same authorized predicate. Both transition into and retry out of `manual_review` append an audit record inside the same database transaction without copying ciphertext or delivery plaintext.
+
 - [ ] **Step 1: Write RED state-machine and concurrency tests**
 
-Cover `pending → processing → succeeded`, `processing → retry_wait`, maximum attempts → `manual_review`, expired lease reclamation, stale owner/attempt completion denial after reclaim (including reused worker ID), supported message-type/format-version validation, ciphertext separation from allowlisted payload, duplicate idempotency key rejection and two workers using `select_for_update(skip_locked=True)`. Also prove manual-review query/retry deny a missing permission, require a non-empty reason, apply `AuthorizationDecision.scopes`, and audit both transition and retry without exposing encrypted delivery.
+Cover `pending → processing → succeeded`, `processing → retry_wait`, exact exponential delay, fifth attempt → `manual_review`, expired lease reclamation, stale/expired owner or attempt completion denial after reclaim (including reused worker ID), all six exact message payload/delivery schemas, encryption-at-rest and ciphertext erasure after success, duplicate idempotency key rejection and two workers using `select_for_update(skip_locked=True)`. Also prove every numeric/string boundary, malformed safe-error code, invalid URL/recipient, manual-review query/retry denial without `outbox.manual_retry`, matching decision actor, required reason, closed scope intersection, stable cursor ordering, monotonic manual retry and atomic audit rollback without exposing encrypted delivery.
 
 - [ ] **Step 2: Run RED**
 
@@ -761,20 +770,26 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python
 
 - [ ] **Step 3: Implement short transactional claims**
 
-Claim and state update occur inside `transaction.atomic()`. Every completion/retry transition locks the row and matches state, unique per-process `worker_id` and current `attempt_number`; stale results cannot close a reclaimed attempt. External delivery is not called by `claim_ready_messages`. Enqueue validates the shared closed type/version/payload/delivery registry before insert; ordinary payload contains only non-secret routing/domain references, while recipient and one-time-link material live only in `encrypted_delivery`. Clear tokens never enter ordinary payload fields or logs.
+Register `OutboxConfig` in Django settings before generating the migration. The model stores UUID id, type/version, safe JSON payload, encrypted binary delivery, unique idempotency key, created time, monotonic attempts, next-attempt time, claim time, worker id, lease expiry, state, bounded safe-error code and success time. Claim and state update occur inside `transaction.atomic()` with PostgreSQL `select_for_update(skip_locked=True)`. Every completion/retry transition locks the row and checks state, worker, attempt and active lease; stale results cannot close a reclaimed attempt. External delivery is never called by `claim_ready_messages`. Public results are immutable dataclasses and never expose an ORM model.
 
 - [ ] **Step 4: Run GREEN with `TransactionTestCase`**
 
 ```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations outbox
+docker rm -f open-marketplace-task4-makemigrations 2>/dev/null || true
+docker compose -f compose.yaml -f compose.test.yaml run --name open-marketplace-task4-makemigrations --build test python manage.py makemigrations outbox
+mkdir -p open_marketplace/outbox/migrations
+docker cp open-marketplace-task4-makemigrations:/app/open_marketplace/outbox/migrations/. open_marketplace/outbox/migrations/
+docker rm open-marketplace-task4-makemigrations
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations --check --dry-run
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py migrate --plan
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.outbox.tests -v 2
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add open_marketplace/outbox
-git commit -m "feat: add leased transactional outbox"
+git add docs/superpowers/plans/2026-09-02-phase-1-identity-access.md open_marketplace/outbox open_marketplace/config/settings.py
+git commit -m "feat(outbox): add leased transactional outbox"
 ```
 
 ---
@@ -812,7 +827,7 @@ Expected RED: `OneTimeToken`, `register_account` and `verify_email` do not exist
 
 - [ ] **Step 3: Implement minimal token and registration operations**
 
-Generate 256-bit tokens with `secrets.token_urlsafe(32)`, persist only `sha256(raw_token)`, encrypt the delivery copy with `OUTBOX_ENCRYPTION_KEY`, and erase delivery ciphertext after terminal outbox success. A shared link builder uses only validated `APP_BASE_URL`; request headers are never inputs. `register_account` locks by canonical email and writes account/token/audit/outbox in one outer transaction; repeating a pending registration rotates only its verification token and never changes its stored password. `verify_email` locks the token and account, marks one use, activates only a pending account and revokes sibling verification tokens. Do not use Django signals.
+Generate 256-bit tokens with `secrets.token_urlsafe(32)` and persist only `sha256(raw_token)`. Identity passes the exact plaintext delivery dictionary to `enqueue_outbox_message`; the outbox module validates and encrypts it with `OUTBOX_ENCRYPTION_KEY`, and later erases delivery ciphertext after terminal success. A shared link builder uses only validated `APP_BASE_URL`; request headers are never inputs. `register_account` locks by canonical email and writes account/token/audit/outbox in one outer transaction; repeating a pending registration rotates only its verification token and never changes its stored password. `verify_email` locks the token and account, marks one use, activates only a pending account and revokes sibling verification tokens. Do not use Django signals.
 
 - [ ] **Step 4: Run GREEN and rollback tests**
 
