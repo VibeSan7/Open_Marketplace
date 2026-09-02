@@ -187,6 +187,8 @@ SellerProfileQuery(state: SellerState | None, owner_id: UUID | None,
 
 Expected application errors are typed as `InputRejected`, `AuthenticationDenied`, `PermissionDenied`, `InvalidState`, `ConcurrentConflict`, `TokenRejected` and `RateLimited`. Adapters map them to neutral HTML/Admin responses; unexpected exceptions retain only a correlation/request ID outside internal logs.
 
+These shared error types live in `open_marketplace/common/errors.py`. Feature modules reuse them instead of defining incompatible module-local variants.
+
 ## Planned File Map
 
 ```text
@@ -209,7 +211,7 @@ D:/Open_Marketplace/
   open_marketplace/
     __init__.py
     config/{settings.py,urls.py,asgi.py,wsgi.py}
-    common/{types.py,crypto.py,clock.py}
+    common/{types.py,errors.py,crypto.py,clock.py}
     identity/{apps.py,domain.py,managers.py,models.py,application.py,public.py,middleware.py,migrations/,tests/}
     access/{apps.py,domain.py,models.py,application.py,public.py,migrations/,management/commands/,tests/}
     seller_onboarding/{apps.py,domain.py,models.py,application.py,public.py,migrations/,tests/}
@@ -652,9 +654,11 @@ git commit -m "feat: add canonical account model"
 **Objective:** Создать единственный интерфейс добавления аудита без прикладного изменения или удаления существующих записей.
 
 **Files:**
-- Create: `open_marketplace/audit/models.py`, `application.py`, `public.py`
+- Create: `open_marketplace/common/errors.py`
+- Create: `open_marketplace/audit/apps.py`, `models.py`, `application.py`, `public.py`
 - Create: `open_marketplace/audit/migrations/0001_initial.py`
 - Create: `open_marketplace/audit/tests/test_audit.py`
+- Modify: `open_marketplace/config/settings.py`
 
 **Interfaces:**
 
@@ -678,9 +682,13 @@ The operation calls `decision = authorize(context, "audit.read")` internally, in
 
 `before` and `after` are flat dictionaries. Their only permitted keys are `kind`, `state`, `email_verified`, `totp_enabled`, `role`, `requirement_source`, `version`, `decision`, `session_count`, `revoked_session_count`, `message_type`, `format_version`, `attempt_number`, `next_attempt_at`, `token_purpose`, `subject_fingerprint`, `source_fingerprint` and `expires_at`. Values are bounded `str`, `int`, `bool` or `None`; datetimes use a UTC ISO-8601 string, and fingerprints are fixed 64-character lowercase hexadecimal HMAC digests. Object/account/application/session identifiers remain in the dedicated actor/object columns and are not duplicated into these dictionaries. Unknown keys, nested containers and non-scalar values are rejected before persistence.
 
+Exact audit bounds are closed phase-1 constants: `action`, `object_type`, `result` and `effective_role` are at most 64 characters; `object_id` is at most 128; `reason` is at most 1024; string values inside `before`/`after` are at most 256; integer values are from `0` through `2**63 - 1`; and query `limit` is from `1` through `100`. Violations raise `InputRejected` rather than truncating or clamping data.
+
+Audit queries order entries newest first by `(occurred_at, id)`. A cursor is the UUID of the final entry returned by the previous page and resumes strictly after that row within the same authorized-and-requested result set; an unknown cursor is rejected. Audit scopes use only `audit:<field>:<value>` where `<field>` is `actor_id`, `action`, `object_type`, `object_id` or `result`. Multiple values for one field are ORed; different fields are ANDed. Requested filters are always ANDed with the resulting authorized predicate. Empty, malformed or unknown audit scopes deny access rather than broadening it.
+
 - [ ] **Step 1: Write RED tests**
 
-Prove append succeeds; existing entries reject repeated instance `save`, `save(update_fields=...)`, `delete`, QuerySet `update`/`delete`/`bulk_update` and manager `update_or_create`; every listed before/after key and scalar type is accepted while an unknown key, nested container, overlong value or malformed fingerprint is rejected; `password`, `token`, `secret`, `totp`, `recovery_code` keys are rejected at any attempted nesting; missing `audit.read` is denied; reviewer/security scopes cannot be widened through query filters; and pagination limit/cursor are bounded.
+Prove append succeeds; existing entries reject repeated instance `save`, `save(update_fields=...)`, `delete`, QuerySet `update`/`delete`/`bulk_update` and manager `update_or_create`; every listed before/after key and scalar type is accepted while an unknown key, nested container, overlong value, out-of-range integer or malformed fingerprint/datetime is rejected; `password`, `token`, `secret`, `totp`, `recovery_code` keys are rejected at any attempted nesting; missing `audit.read` is denied; malformed/empty scopes deny; reviewer/security scopes cannot be widened through query filters; and the exact limit/cursor/order boundaries are enforced.
 
 - [ ] **Step 2: Run RED**
 
@@ -690,20 +698,26 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python
 
 - [ ] **Step 3: Implement append-only model and manager**
 
-Use UUID actor/object identifiers rather than ForeignKey imports. The model permits only initial insert through the audit append manager; it rejects every existing-instance save/delete plus QuerySet/manager bulk or update path, and is never registered with model Admin. Keep database migrations/raw operator maintenance outside the application runtime as the only explicit escape path.
+Register `AuditConfig` in Django settings before creating the migration. Use UUID actor/object identifiers rather than ForeignKey imports. The model permits only initial insert through the audit append manager; it rejects direct create/bulk-create, every existing-instance save/delete plus QuerySet/manager bulk or update path, and is never registered with model Admin. Keep database migrations/raw operator maintenance outside the application runtime as the only explicit escape path.
 
 - [ ] **Step 4: Run GREEN and migration checks**
 
 ```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations audit
+docker rm -f open-marketplace-task3-makemigrations 2>/dev/null || true
+docker compose -f compose.yaml -f compose.test.yaml run --name open-marketplace-task3-makemigrations --build test python manage.py makemigrations audit
+mkdir -p open_marketplace/audit/migrations
+docker cp open-marketplace-task3-makemigrations:/app/open_marketplace/audit/migrations/. open_marketplace/audit/migrations/
+docker rm open-marketplace-task3-makemigrations
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations --check --dry-run
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py migrate --plan
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.audit.tests -v 2
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add open_marketplace/audit
-git commit -m "feat: add append-only audit log"
+git add docs/superpowers/plans/2026-09-02-phase-1-identity-access.md open_marketplace/common/errors.py open_marketplace/audit open_marketplace/config/settings.py
+git commit -m "feat(audit): add append-only audit log"
 ```
 
 ---
