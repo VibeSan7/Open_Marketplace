@@ -35,6 +35,7 @@ from open_marketplace.outbox.public import enqueue_outbox_message
 _TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]{43}$")
 _OPERATION_SOURCES = frozenset({"html", "admin", "command", "worker"})
 _TOKEN_REJECTED_MESSAGE = "Email verification token is invalid."
+_PASSWORD_RESET_REJECTED_MESSAGE = "Password reset token is invalid."
 _NEUTRAL_ACCEPTED = NeutralAccepted(accepted=True)
 _AUTHENTICATION_DENIED_MESSAGE = "Authentication failed."
 _SESSION_UNAVAILABLE_MESSAGE = "Session is unavailable."
@@ -537,13 +538,31 @@ def _is_live_session(registry, now):
 
 def _current_session(context, *, for_update=False):
     _validate_authenticated_context(context)
-    queryset = AccountSession.objects.select_related("account")
     if for_update:
-        queryset = queryset.select_for_update()
-    registry = queryset.filter(
-        pk=context.session_id,
-        account_id=context.actor_account_id,
-    ).first()
+        account = (
+            Account.objects.select_for_update()
+            .filter(pk=context.actor_account_id)
+            .first()
+        )
+        registry = (
+            AccountSession.objects.select_for_update()
+            .filter(
+                pk=context.session_id,
+                account_id=context.actor_account_id,
+            )
+            .first()
+        )
+        if registry is not None and account is not None:
+            registry.account = account
+    else:
+        registry = (
+            AccountSession.objects.select_related("account")
+            .filter(
+                pk=context.session_id,
+                account_id=context.actor_account_id,
+            )
+            .first()
+        )
     if (
         registry is None
         or registry.account.state != Account.State.ACTIVE
@@ -675,6 +694,29 @@ def revoke_other_sessions(*, context: OperationContext) -> int:
         return count
 
 
+def _revoke_sessions_for_security_event_locked(*, account, reason, context):
+    if reason not in AccountSession.RevocationReason.values:
+        _reject("reason is invalid.")
+    queryset = _live_sessions_for_account(account, context.now)
+    session_ids = _locked_live_session_ids(queryset, context.now)
+    count = AccountSession.objects.filter(pk__in=session_ids).update(
+        revoked_at=context.now,
+        revoked_reason=reason,
+    )
+    append_audit_entry(
+        context=context,
+        action="identity.sessions_revoked_for_security_event",
+        object_type="account",
+        object_id=str(account.id),
+        result="succeeded",
+        reason=reason,
+        before={},
+        after={"revoked_session_count": count},
+        effective_role=None,
+    )
+    return count
+
+
 def revoke_sessions_for_security_event(
     *,
     account_id: UUID,
@@ -690,24 +732,11 @@ def revoke_sessions_for_security_event(
         account = Account.objects.select_for_update().filter(pk=account_id).first()
         if account is None:
             _session_unavailable()
-        queryset = _live_sessions_for_account(account, context.now)
-        session_ids = _locked_live_session_ids(queryset, context.now)
-        count = AccountSession.objects.filter(pk__in=session_ids).update(
-            revoked_at=context.now,
-            revoked_reason=reason,
-        )
-        append_audit_entry(
-            context=context,
-            action="identity.sessions_revoked_for_security_event",
-            object_type="account",
-            object_id=str(account.id),
-            result="succeeded",
+        return _revoke_sessions_for_security_event_locked(
+            account=account,
             reason=reason,
-            before={},
-            after={"revoked_session_count": count},
-            effective_role=None,
+            context=context,
         )
-        return count
 
 
 def get_session_security_snapshot(
@@ -730,3 +759,250 @@ def get_session_security_snapshot(
         absolute_expires_at=registry.absolute_expires_at,
         reauthenticated_at=registry.reauthenticated_at,
     )
+
+
+def _eligible_password_reset_account(account):
+    return (
+        account is not None
+        and account.kind in (Account.Kind.ORDINARY, Account.Kind.SERVICE)
+        and account.state in (Account.State.ACTIVE, Account.State.BLOCKED)
+        and account.email_verified_at is not None
+    )
+
+
+def _revoke_active_password_reset_tokens(*, account, now, reason, exclude_id=None):
+    queryset = OneTimeToken.objects.select_for_update().filter(
+        account=account,
+        purpose=OneTimeToken.Purpose.PASSWORD_RESET,
+        used_at__isnull=True,
+        revoked_at__isnull=True,
+        expires_at__gt=now,
+    )
+    if exclude_id is not None:
+        queryset = queryset.exclude(pk=exclude_id)
+    return queryset.update(revoked_at=now, revoked_reason=reason)
+
+
+def _enqueue_protected_account_change(*, account, change, context):
+    enqueue_outbox_message(
+        message_type="identity.protected_account_change",
+        format_version=1,
+        payload={"account_id": str(account.id), "change": change},
+        delivery={"recipient": account.email},
+        idempotency_key=(
+            f"identity.protected_account_change:{change}:{context.request_id}"
+        ),
+    )
+
+
+def request_password_reset(
+    *,
+    email: str,
+    context: OperationContext,
+) -> NeutralAccepted:
+    _validate_anonymous_context(context)
+    canonical_email = _canonical_registration_email(email)
+    with transaction.atomic():
+        account = (
+            Account.objects.select_for_update()
+            .filter(email=canonical_email)
+            .first()
+        )
+        if not _eligible_password_reset_account(account):
+            return _NEUTRAL_ACCEPTED
+
+        _revoke_active_password_reset_tokens(
+            account=account,
+            now=context.now,
+            reason="superseded",
+        )
+        raw_token, token_digest = generate_one_time_token()
+        expires_at = context.now + settings.PASSWORD_RESET_TTL
+        token = OneTimeToken.objects.create(
+            account=account,
+            purpose=OneTimeToken.Purpose.PASSWORD_RESET,
+            token_digest=token_digest,
+            created_at=context.now,
+            expires_at=expires_at,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.password_reset_requested",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={},
+            after={
+                "token_purpose": OneTimeToken.Purpose.PASSWORD_RESET.value,
+                "expires_at": expires_at.isoformat(),
+            },
+            effective_role=None,
+        )
+        enqueue_outbox_message(
+            message_type="identity.password_reset",
+            format_version=1,
+            payload={"account_id": str(account.id), "token_id": str(token.id)},
+            delivery={
+                "recipient": account.email,
+                "absolute_token_url": (
+                    f"{settings.APP_BASE_URL}/identity/reset-password/{raw_token}/"
+                ),
+            },
+            idempotency_key=f"identity.password_reset:{token.id}",
+        )
+    return _NEUTRAL_ACCEPTED
+
+
+def _reject_password_reset_token():
+    raise InputRejected(_PASSWORD_RESET_REJECTED_MESSAGE)
+
+
+def _validated_password_reset_digest(raw_token):
+    if not isinstance(raw_token, str) or not _TOKEN_PATTERN.fullmatch(raw_token):
+        _reject_password_reset_token()
+    return hash_one_time_token(raw_token)
+
+
+def _validated_new_password_hash(new_password, account):
+    if isinstance(new_password, str) and account.check_password(new_password):
+        _reject("new password must differ from the current password.")
+    return _validated_password_hash(new_password, canonical_email=account.email)
+
+
+def reset_password(
+    *,
+    raw_token: str,
+    new_password: str,
+    context: OperationContext,
+) -> None:
+    _validate_anonymous_context(context)
+    token_digest = _validated_password_reset_digest(raw_token)
+    candidate = (
+        OneTimeToken.objects.filter(
+            token_digest=token_digest,
+            purpose=OneTimeToken.Purpose.PASSWORD_RESET,
+        )
+        .values("id", "account_id")
+        .first()
+    )
+    if candidate is None:
+        _reject_password_reset_token()
+
+    with transaction.atomic():
+        account = (
+            Account.objects.select_for_update()
+            .filter(pk=candidate["account_id"])
+            .first()
+        )
+        if not _eligible_password_reset_account(account):
+            _reject_password_reset_token()
+        token = (
+            OneTimeToken.objects.select_for_update()
+            .filter(
+                pk=candidate["id"],
+                account_id=account.id,
+                token_digest=token_digest,
+                purpose=OneTimeToken.Purpose.PASSWORD_RESET,
+            )
+            .first()
+        )
+        if (
+            token is None
+            or token.used_at is not None
+            or token.revoked_at is not None
+            or context.now >= token.expires_at
+        ):
+            _reject_password_reset_token()
+
+        encoded_password = _validated_new_password_hash(new_password, account)
+        before_version = account.version
+        account.password = encoded_password
+        account.version += 1
+        account.save(update_fields={"password", "version", "updated_at"})
+        token.used_at = context.now
+        token.save(update_fields={"used_at"})
+        _revoke_active_password_reset_tokens(
+            account=account,
+            now=context.now,
+            reason="password_reset_completed",
+            exclude_id=token.id,
+        )
+        revoked_session_count = _revoke_sessions_for_security_event_locked(
+            account=account,
+            reason=AccountSession.RevocationReason.PASSWORD_RESET,
+            context=context,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.password_reset_completed",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={"version": before_version},
+            after={
+                "version": account.version,
+                "token_purpose": OneTimeToken.Purpose.PASSWORD_RESET.value,
+                "revoked_session_count": revoked_session_count,
+            },
+            effective_role=None,
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="password_reset",
+            context=context,
+        )
+
+
+def change_password(
+    *,
+    current_password: str,
+    new_password: str,
+    context: OperationContext,
+) -> None:
+    with transaction.atomic():
+        current = _current_session(context, for_update=True)
+        account = Account.objects.select_for_update().get(pk=current.account_id)
+        password_candidate = (
+            current_password
+            if isinstance(current_password, str) and len(current_password) <= 128
+            else ""
+        )
+        if not account.check_password(password_candidate):
+            _authentication_denied()
+
+        encoded_password = _validated_new_password_hash(new_password, account)
+        before_version = account.version
+        account.password = encoded_password
+        account.version += 1
+        account.save(update_fields={"password", "version", "updated_at"})
+        _revoke_active_password_reset_tokens(
+            account=account,
+            now=context.now,
+            reason="password_changed",
+        )
+        revoked_session_count = _revoke_sessions_for_security_event_locked(
+            account=account,
+            reason=AccountSession.RevocationReason.PASSWORD_CHANGED,
+            context=context,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.password_changed",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={"version": before_version},
+            after={
+                "version": account.version,
+                "revoked_session_count": revoked_session_count,
+            },
+            effective_role=None,
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="password_changed",
+            context=context,
+        )

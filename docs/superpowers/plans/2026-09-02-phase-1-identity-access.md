@@ -958,6 +958,16 @@ reset_password(*, raw_token: str, new_password: str, context: OperationContext) 
 change_password(*, current_password: str, new_password: str, context: OperationContext) -> None
 ```
 
+**Fixed Task 7 contract:**
+
+- `request_password_reset` validates and canonicalizes a valid email but always returns the same `NeutralAccepted`. It issues a reset only for an email-verified ordinary or service account whose state is `active` or `blocked`; unknown and pending accounts cause no token, audit or outbox mutation. Reset never changes account state or TOTP state, so a blocked account stays blocked.
+- A new request revokes every older active password-reset token as `superseded`, creates a 30-minute token and sends exactly `{APP_BASE_URL}/identity/reset-password/{raw_token}/` through `identity.password_reset` with payload `{account_id, token_id}` and encrypted delivery `{recipient, absolute_token_url}`.
+- Malformed, unknown, wrong-purpose, expired, used, revoked or newly ineligible reset tokens all raise one generic `InputRejected`. Expiry is invalid at `context.now >= expires_at`. Password validation happens before token consumption; a weak password or one matching the current password is rejected without token/account/session mutation.
+- Successful reset and authenticated change increment `Account.version`, revoke every live session including the current session for `change_password`, and revoke every other active password-reset token. Token revocation reasons are exactly `superseded`, `password_reset_completed` and `password_changed`; the selected reset token is marked used, not revoked.
+- Anonymous reset calls a private locked session-revocation helper only after the token has proved the target account. The public `revoke_sessions_for_security_event` wrapper remains protected by a valid current session and must not be weakened for reset.
+- Reset completion and authenticated change send `identity.protected_account_change` with safe payload `{account_id, change}` where change is respectively `password_reset` or `password_changed`, and encrypted delivery `{recipient}`. Passwords, password hashes and raw/digested tokens never enter audit, outbox safe payloads or logs.
+- Account/password/token/session/audit/outbox effects are one outer transaction. Injected audit or outbox failure rolls back password, Account version, token consumption/revocation and session revocation together.
+
 - [ ] **Step 1: Write RED password tests**
 
 Cover known/unknown neutral response, 30-minute expiry, purpose isolation, one-time use, newer-token revocation of older reset tokens, current-password proof, password validators, all-session revocation, notification outbox and audit without clear token/password.
