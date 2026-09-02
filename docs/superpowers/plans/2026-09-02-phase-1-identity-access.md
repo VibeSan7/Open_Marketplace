@@ -801,8 +801,8 @@ git commit -m "feat(outbox): add leased transactional outbox"
 **Files:**
 - Create: `open_marketplace/common/crypto.py`
 - Create: `open_marketplace/identity/application.py`
-- Create: `open_marketplace/identity/tests/test_registration.py`, `test_tokens.py`
-- Modify: `open_marketplace/identity/models.py`, `public.py`
+- Create: `open_marketplace/identity/tests/test_registration.py`, `test_tokens.py`, `test_registration_concurrency.py`
+- Modify: `open_marketplace/identity/domain.py`, `models.py`, `public.py`
 - Create: identity migration for `OneTimeToken`
 
 **Interfaces:**
@@ -812,37 +812,58 @@ register_account(*, email: str, password: str, context: OperationContext) -> Neu
 verify_email(*, raw_token: str, context: OperationContext) -> UUID
 ```
 
+`NeutralAccepted` is a frozen, slotted identity-domain dataclass whose only field is `accepted: Literal[True]`; every valid registration request returns the same `NeutralAccepted(accepted=True)`. Registration requires an anonymous `OperationContext` and validates/canonicalizes email before database access. The canonical email is at most 254 characters. Password input is a string of 12–128 characters and passes every configured Django validator, including common-password, numeric-password and account/email similarity validation. The password hash is computed before looking up the email on every new, pending, active, blocked and service-account path so the expensive operation does not reveal account existence; only a new ordinary account stores that hash.
+
+For a new email, one outer transaction creates an ordinary `pending_email_verification` Account, token, audit entry and outbox message. For an existing pending ordinary account, the stored password and Account version remain unchanged; the operation revokes the prior active email-verification token and creates a new token, audit and outbox message. Existing active/blocked accounts and every service account return the same neutral result without account/token/audit/outbox mutation. Public registration can therefore never issue a token that activates a staff-invitation account. A missing-row creation race is resolved through the canonical-email uniqueness constraint and a savepoint, after which the winning Account row is locked; simultaneous requests produce one Account and one active verification token, never a duplicate account.
+
+`OneTimeToken` stores UUID id, `PROTECT` Account relation, purpose, unique lowercase SHA-256 digest, explicit created/expiry times, use time, revocation time and bounded revocation reason. Purpose values are exactly `email_verification`, `password_reset` and `mandatory_totp_recovery`. Phase-1 revocation reasons used here are exactly `superseded` and `account_verified`. Database constraints require `expires_at > created_at`, forbid a token from being both used and revoked, and require revocation timestamp/reason to be null or non-null together. An active token is unconsumed, unrevoked and unexpired. New issuance revokes prior active tokens of the same account and purpose as `superseded`.
+
+Raw tokens are generated with `secrets.token_urlsafe(32)`, have exactly 43 URL-safe `[A-Za-z0-9_-]` characters and are stored only as `sha256(raw_token)`; malformed or oversized token input is rejected before hashing. The verification URL is exactly `{APP_BASE_URL}/identity/verify-email/{raw_token}/`. It is built only from validated settings and never from request Host/forwarding headers. Identity passes outbox type `identity.email_verification`, safe payload `{account_id, token_id}`, plaintext delivery `{recipient, absolute_token_url}` and idempotency key `identity.email_verification:{token_id}`; outbox owns encryption.
+
+Registration audit actions are exactly `identity.account_registered` and `identity.email_verification_reissued`; verification uses `identity.email_verified`. Audit contains only allowlisted state/kind/email-verified/token-purpose/expiry metadata and UUID object IDs, never email, password, hash, digest or raw token. Active/blocked/service neutral no-op responses create no audit entry.
+
+`verify_email` uses `context.now` as the sole clock and treats `now >= expires_at` as expired. Unknown, malformed, wrong-purpose, expired, used, revoked, wrong-kind and wrong-state tokens all raise the same generic `InputRejected`. It first resolves only candidate IDs, then locks in the fixed Account → Token order and rechecks every condition. Success changes only a pending ordinary account to active, sets `email_verified_at = context.now`, increments Account version, marks the selected token used, revokes every other unconsumed/unrevoked email-verification token as `account_verified`, appends audit in the same transaction and returns the Account UUID. Concurrent use succeeds once. Do not use Django signals.
+
 - [ ] **Step 1: Write RED registration/token tests**
 
-Cover new registration, repeated pending registration without changing the existing password, active/blocked neutral response, 24-hour expiry, purpose isolation, one-time use, prior verification-token revocation, Django 12–128/common-password validation, configured-origin link generation despite hostile `Host`/forwarding headers, and no clear token in account/token/audit/outbox fields.
+Cover all new/pending/active/blocked/service branches; immutable neutral result; email/password/type/length/common/numeric/similarity boundaries; unchanged pending password and Account version; 43-character token format and digest-only storage; configured-origin link despite hostile Host/forwarding values; exact outbox payload/delivery/idempotency; audit allowlist; 24-hour just-before/at/after boundary; purpose isolation; unknown/malformed/used/revoked/wrong-state generic rejection; one-time use; prior-token revocation; Account version transition; no clear email/password/token/digest in audit or safe outbox/account/token fields; and transaction rollback on audit/outbox failure.
+
+Use `TransactionTestCase` to prove simultaneous same-email registration creates one Account and one active token, and concurrent verification succeeds only once without deadlock.
 
 - [ ] **Step 2: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
-  python manage.py test open_marketplace.identity.tests.test_registration open_marketplace.identity.tests.test_tokens -v 2
+  python manage.py test open_marketplace.identity.tests.test_registration open_marketplace.identity.tests.test_tokens open_marketplace.identity.tests.test_registration_concurrency -v 2
 ```
 
-Expected RED: `OneTimeToken`, `register_account` and `verify_email` do not exist.
+Expected RED: `OneTimeToken`, `NeutralAccepted`, `register_account` and `verify_email` do not exist.
 
 - [ ] **Step 3: Implement minimal token and registration operations**
 
-Generate 256-bit tokens with `secrets.token_urlsafe(32)` and persist only `sha256(raw_token)`. Identity passes the exact plaintext delivery dictionary to `enqueue_outbox_message`; the outbox module validates and encrypts it with `OUTBOX_ENCRYPTION_KEY`, and later erases delivery ciphertext after terminal success. A shared link builder uses only validated `APP_BASE_URL`; request headers are never inputs. `register_account` locks by canonical email and writes account/token/audit/outbox in one outer transaction; repeating a pending registration rotates only its verification token and never changes its stored password. `verify_email` locks the token and account, marks one use, activates only a pending account and revokes sibling verification tokens. Do not use Django signals.
+Keep cryptographic token generation/hash helpers domain-independent in `common.crypto`; orchestration, model access, configured URL construction, audit and outbox calls stay inside identity application code. Use one outer `transaction.atomic()` per domain operation, nested savepoints only for the canonical-email creation race, and the fixed Account → OneTimeToken lock order. Do not add HTTP, email sending, throttle persistence or password-reset behavior in this task.
 
-- [ ] **Step 4: Run GREEN and rollback tests**
+- [ ] **Step 4: Run GREEN, migration and rollback checks**
 
-Inject audit and outbox failures and prove no account/token state commits partially.
+Inject audit and outbox failures and prove no account/token state commits partially. Generate the migration in a named container and copy it out because Compose source is image-copied rather than bind-mounted.
 
 ```bash
+docker rm -f open-marketplace-task5-makemigrations 2>/dev/null || true
+docker compose -f compose.yaml -f compose.test.yaml run --name open-marketplace-task5-makemigrations --build test python manage.py makemigrations identity
+mkdir -p open_marketplace/identity/migrations
+docker cp open-marketplace-task5-makemigrations:/app/open_marketplace/identity/migrations/. open_marketplace/identity/migrations/
+docker rm open-marketplace-task5-makemigrations
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations --check --dry-run
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py migrate --plan
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
-  python manage.py test open_marketplace.identity.tests.test_registration open_marketplace.identity.tests.test_tokens -v 2
+  python manage.py test open_marketplace.identity.tests.test_registration open_marketplace.identity.tests.test_tokens open_marketplace.identity.tests.test_registration_concurrency -v 2
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add open_marketplace/common/crypto.py open_marketplace/identity
-git commit -m "feat: add registration and email verification"
+git add docs/superpowers/plans/2026-09-02-phase-1-identity-access.md open_marketplace/common/crypto.py open_marketplace/identity
+git commit -m "feat(identity): add registration and email verification"
 ```
 
 ---

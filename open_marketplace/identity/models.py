@@ -1,8 +1,10 @@
 from uuid import uuid4
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q
 
 from open_marketplace.identity.domain import canonicalize_email
 from open_marketplace.identity.managers import AccountManager
@@ -78,3 +80,57 @@ class Account(AbstractBaseUser):
                 raise ValidationError({"kind": "Account kind is immutable."})
 
         super().save(*args, **kwargs)
+
+
+class OneTimeToken(models.Model):
+    class Purpose(models.TextChoices):
+        EMAIL_VERIFICATION = "email_verification", "Email verification"
+        PASSWORD_RESET = "password_reset", "Password reset"
+        MANDATORY_TOTP_RECOVERY = (
+            "mandatory_totp_recovery",
+            "Mandatory TOTP recovery",
+        )
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="one_time_tokens",
+    )
+    purpose = models.CharField(max_length=32, choices=Purpose.choices)
+    token_digest = models.CharField(max_length=64, unique=True, editable=False)
+    created_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True)
+    revoked_at = models.DateTimeField(null=True)
+    revoked_reason = models.CharField(max_length=64, null=True)
+
+    class Meta:
+        db_table = "identity_one_time_token"
+        constraints = (
+            models.CheckConstraint(
+                condition=Q(expires_at__gt=F("created_at")),
+                name="identity_token_expiry_after_create",
+            ),
+            models.CheckConstraint(
+                condition=Q(used_at__isnull=True) | Q(revoked_at__isnull=True),
+                name="identity_token_not_used_and_revoked",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(revoked_at__isnull=True, revoked_reason__isnull=True)
+                    | Q(revoked_at__isnull=False, revoked_reason__isnull=False)
+                ),
+                name="identity_token_revocation_pair",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("account", "purpose", "created_at", "id"),
+                name="identity_token_subject_idx",
+            ),
+            models.Index(
+                fields=("purpose", "expires_at"),
+                name="identity_token_expiry_idx",
+            ),
+        )
