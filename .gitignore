@@ -1,0 +1,12 @@
+.env
+.venv/
+.model-launcher-runtime/
+__pycache__/
+*.py[cod]
+.coverage
+artifacts/
+*.dump
+*.backup
+*.sql
+*.sql.gz
+*.sqlite3

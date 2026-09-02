@@ -1,0 +1,26 @@
+services:
+  postgres-test:
+    image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:?required}
+      POSTGRES_USER: ${DATABASE_USER:?required}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?required}
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  test:
+    build:
+      context: .
+      target: test
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: postgres-test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
