@@ -37,6 +37,7 @@ OutboxMessageType = Literal[
     "identity.password_reset",
     "identity.mandatory_totp_recovery",
     "access.staff_invitation",
+    "seller_onboarding.application_submitted",
     "seller_onboarding.application_decision",
     "identity.protected_account_change",
     "seller_onboarding.admission_change",
@@ -54,6 +55,7 @@ _MESSAGE_TYPES = frozenset(
         "identity.password_reset",
         "identity.mandatory_totp_recovery",
         "access.staff_invitation",
+        "seller_onboarding.application_submitted",
         "seller_onboarding.application_decision",
         "identity.protected_account_change",
         "seller_onboarding.admission_change",
@@ -67,6 +69,10 @@ _PAYLOAD_SCHEMAS = {
         "token_id": "uuid",
     },
     "access.staff_invitation": {"invitation_id": "uuid", "role": "role"},
+    "seller_onboarding.application_submitted": {
+        "application_id": "uuid",
+        "version_id": "uuid",
+    },
     "seller_onboarding.application_decision": {
         "application_id": "uuid",
         "decision": "decision",
@@ -81,6 +87,7 @@ _DELIVERY_SCHEMAS = {
         {"recipient", "absolute_token_url"}
     ),
     "access.staff_invitation": frozenset({"recipient", "absolute_token_url"}),
+    "seller_onboarding.application_submitted": None,
     "seller_onboarding.application_decision": frozenset({"recipient"}),
     "identity.protected_account_change": frozenset({"recipient"}),
     "seller_onboarding.admission_change": None,

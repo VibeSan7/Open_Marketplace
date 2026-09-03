@@ -74,6 +74,7 @@ class OutboxTestCase(TestCase):
         invitation_id = str(uuid4())
         application_id = str(uuid4())
         seller_id = str(uuid4())
+        version_id = str(uuid4())
         return (
             (
                 "identity.email_verification",
@@ -116,6 +117,11 @@ class OutboxTestCase(TestCase):
                     "recipient": "person@example.com",
                     "absolute_token_url": "https://example.com/recover/TOTP_TOKEN",
                 },
+            ),
+            (
+                "seller_onboarding.application_submitted",
+                {"application_id": application_id, "version_id": version_id},
+                None,
             ),
             (
                 "seller_onboarding.admission_change",
@@ -262,7 +268,7 @@ class OutboxPublicContractTests(OutboxTestCase):
 
 
 class OutboxEnqueueValidationTests(OutboxTestCase):
-    def test_all_seven_exact_payload_and_delivery_schemas_are_encrypted_at_rest(self):
+    def test_all_eight_exact_payload_and_delivery_schemas_are_encrypted_at_rest(self):
         OutboxMessage = self.model_class()
 
         for index, (message_type, payload, delivery) in enumerate(self.message_cases()):
@@ -382,13 +388,16 @@ class OutboxEnqueueValidationTests(OutboxTestCase):
             with self.subTest(delivery=delivery), self.assertRaises(InputRejected):
                 self.enqueue(message_type=message_type, payload=payload, delivery=delivery)
 
-        internal_type, internal_payload, _ = self.message_cases()[-1]
-        with self.assertRaises(InputRejected):
-            self.enqueue(
-                message_type=internal_type,
-                payload=internal_payload,
-                delivery={"recipient": "person@example.com"},
-            )
+        for internal_type, internal_payload, delivery in self.message_cases():
+            if delivery is None:
+                with self.subTest(internal_type=internal_type), self.assertRaises(
+                    InputRejected
+                ):
+                    self.enqueue(
+                        message_type=internal_type,
+                        payload=internal_payload,
+                        delivery={"recipient": "person@example.com"},
+                    )
 
     def test_idempotency_key_boundaries_and_duplicate_rejection(self):
         ConcurrentConflict = self.errors_module().ConcurrentConflict

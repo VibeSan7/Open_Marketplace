@@ -1259,9 +1259,12 @@ git commit -m "feat: add invited staff accounts"
 **Objective:** Реализовать ordinary-account draft/submit/withdraw history with one unfinished application and immutable submitted versions.
 
 **Files:**
+- Create: `open_marketplace/seller_onboarding/__init__.py`, `apps.py`, `migrations/__init__.py`, `tests/__init__.py`
 - Create: `open_marketplace/seller_onboarding/domain.py`, `models.py`, `application.py`, `public.py`
 - Create: `open_marketplace/seller_onboarding/migrations/0001_initial.py`
 - Create: `open_marketplace/seller_onboarding/tests/test_applications.py`, `test_versions.py`, `test_concurrency.py`
+- Modify: `open_marketplace/config/settings.py`
+- Modify: `open_marketplace/outbox/application.py`, `tests/test_outbox.py`
 
 **Interfaces:**
 
@@ -1276,7 +1279,7 @@ get_own_seller_application(*, application_id: UUID, context: OperationContext) -
 
 - [ ] **Step 1: Write RED draft/version tests**
 
-Cover exact test-only fields, active/verified ordinary owner, own-only access, one unfinished application, allowed draft/submit/withdraw transitions, immutable submitted version, monotonically increasing `(application, version_number)`, separate new history after terminal withdraw, and atomically linked audit/outbox.
+Cover exact test-only fields, active/verified ordinary owner, own-only access, one unfinished application, allowed draft/submit/withdraw transitions, immutable submitted version, monotonically increasing `(application, version_number)`, separate new history after terminal withdraw, and atomically linked audit plus `seller_onboarding.application_submitted` outbox event.
 
 - [ ] **Step 2: Write RED concurrency tests and run RED**
 
@@ -1289,7 +1292,7 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 - [ ] **Step 3: Implement models/constraints/own operations**
 
-Use a conditional `UniqueConstraint` for unfinished states and unique `(application, version_number)`. Updates lock the application, compare actor from context, and never update a submitted version. Submission creates/freezes a version and writes audit/outbox in one transaction; withdrawal never deletes history.
+Register `SellerOnboardingConfig` in `INSTALLED_APPS`. Add the strict internal outbox type `seller_onboarding.application_submitted` version 1 with payload `{application_id, version_id}` and no delivery data. Use a conditional `UniqueConstraint` for unfinished states and unique `(application, version_number)`. Updates lock the application, compare actor from context, and never update a submitted version. Submission creates/freezes a version and writes audit/outbox in one transaction; withdrawal never deletes history.
 
 - [ ] **Step 4: Run GREEN and commit**
 
@@ -1297,7 +1300,8 @@ Use a conditional `UniqueConstraint` for unfinished states and unique `(applicat
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations seller_onboarding
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
   python manage.py test open_marketplace.seller_onboarding.tests.test_applications open_marketplace.seller_onboarding.tests.test_versions open_marketplace.seller_onboarding.tests.test_concurrency -v 2
-git add open_marketplace/seller_onboarding
+git add open_marketplace/seller_onboarding open_marketplace/config/settings.py \
+  open_marketplace/outbox/application.py open_marketplace/outbox/tests/test_outbox.py
 git commit -m "feat: add versioned seller applications"
 ```
 
