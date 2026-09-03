@@ -13,6 +13,19 @@ SellerApplicationState: TypeAlias = Literal[
     "withdrawn",
 ]
 
+SellerState: TypeAlias = Literal[
+    "awaiting_owner_totp",
+    "active",
+    "suspended",
+    "revoked",
+]
+
+SellerReviewDecisionValue: TypeAlias = Literal[
+    "request_changes",
+    "approve",
+    "reject",
+]
+
 
 @dataclass(frozen=True, slots=True)
 class SellerDraftData:
@@ -43,3 +56,29 @@ class SellerApplicationVersionView:
     version_number: int
     data: SellerDraftData
     submitted_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class SellerReviewQuery:
+    states: tuple[SellerApplicationState, ...]
+    reviewer_id: UUID | None
+    limit: int
+    cursor: UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class SellerProfileView:
+    id: UUID
+    owner_id: UUID
+    application_id: UUID
+    approved_version: int
+    state: SellerState
+    restriction_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SellerProfileQuery:
+    state: SellerState | None
+    owner_id: UUID | None
+    limit: int
+    cursor: UUID | None
