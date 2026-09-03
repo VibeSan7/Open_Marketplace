@@ -2092,3 +2092,164 @@ def remove_totp_requirement(
         if requirement is not None and requirement.removed_at is None:
             requirement.removed_at = context.now
             requirement.save(update_fields={"removed_at"})
+
+
+def provision_service_account_for_invitation(
+    *,
+    email: str,
+    password: str,
+    invitation_id: UUID,
+    context: OperationContext,
+) -> tuple[UUID, TotpSetupView | None]:
+    if not isinstance(invitation_id, UUID):
+        _reject("invitation_id must be a UUID.")
+    canonical_email = _canonical_registration_email(email)
+    with transaction.atomic():
+        account = Account.objects.select_for_update().filter(email=canonical_email).first()
+        if account is not None:
+            if account.kind != Account.Kind.SERVICE or account.state != Account.State.ACTIVE:
+                raise InvalidState("The invitation email belongs to an ordinary account.")
+            if account.email_verified_at is None:
+                raise InvalidState("The service account is unavailable.")
+            if context.actor_account_id is None or context.session_id is None:
+                _authentication_denied()
+            current = _current_session(context, for_update=True)
+            if current.account_id != account.id:
+                raise AuthenticationDenied("Authentication failed.")
+            _verify_current_password(account, password)
+            return account.id, None
+
+        _validate_anonymous_context(context)
+        encoded_password = _validated_password_hash(
+            password,
+            canonical_email=canonical_email,
+        )
+        account = Account(
+            email=canonical_email,
+            kind=Account.Kind.SERVICE,
+            state=Account.State.ACTIVE,
+            email_verified_at=context.now,
+        )
+        account.password = encoded_password
+        account.save(force_insert=True)
+        secret = pyotp.random_base32(length=32)
+        _, setup_token_digest = generate_one_time_token()
+        setup_token = OneTimeToken.objects.create(
+            account=account,
+            purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
+            token_digest=setup_token_digest,
+            created_at=context.now,
+            expires_at=context.now + settings.TOTP_SETUP_TTL,
+        )
+        setup = TotpSetup.objects.create(
+            account=account,
+            session=None,
+            recovery_token=setup_token,
+            encrypted_secret=_encrypt_totp_secret(secret),
+            created_at=context.now,
+            expires_at=context.now + settings.TOTP_SETUP_TTL,
+        )
+        return account.id, _totp_setup_view(setup=setup, account=account, secret=secret)
+
+
+def enable_invited_service_totp(
+    *,
+    account_id: UUID,
+    setup_id: UUID | None,
+    code: str,
+    invitation_id: UUID,
+    context: OperationContext,
+) -> tuple[str, ...]:
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    if setup_id is not None and not isinstance(setup_id, UUID):
+        _reject("setup_id must be a UUID or None.")
+    if not isinstance(invitation_id, UUID):
+        _reject("invitation_id must be a UUID.")
+    with transaction.atomic():
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if (
+            account is None
+            or account.kind != Account.Kind.SERVICE
+            or account.state != Account.State.ACTIVE
+            or account.email_verified_at is None
+        ):
+            _authentication_denied()
+        if setup_id is None:
+            _current_session(context, for_update=True)
+            credential = _active_totp_credential(account)
+            if credential is None:
+                _authentication_denied()
+            counter = _accepted_totp_counter(
+                secret=_decrypt_totp_secret(credential),
+                code=code,
+                now=context.now,
+                last_accepted_counter=credential.last_accepted_counter,
+            )
+            if counter is None:
+                _authentication_denied()
+            credential.last_accepted_counter = counter
+            credential.save(update_fields={"last_accepted_counter"})
+            return ()
+
+        setup = TotpSetup.objects.select_for_update().filter(
+            pk=setup_id,
+            account_id=account.id,
+            session__isnull=True,
+            recovery_token__isnull=False,
+        ).first()
+        if (
+            setup is None
+            or setup.consumed_at is not None
+            or setup.invalidated_at is not None
+            or context.now >= setup.expires_at
+            or _active_totp_credential(account) is not None
+        ):
+            _authentication_denied()
+        counter = _accepted_totp_counter(
+            secret=_decrypt_totp_secret(setup),
+            code=code,
+            now=context.now,
+            last_accepted_counter=None,
+        )
+        if counter is None:
+            _authentication_denied()
+        TotpCredential.objects.create(
+            account=account,
+            encrypted_secret=setup.encrypted_secret,
+            confirmed_at=context.now,
+            last_accepted_counter=counter,
+        )
+        setup.consumed_at = context.now
+        setup.save(update_fields={"consumed_at"})
+        setup.recovery_token.used_at = context.now
+        setup.recovery_token.save(update_fields={"used_at"})
+        codes = _generate_recovery_code_set(account=account, now=context.now)
+        append_audit_entry(
+            context=context,
+            action="identity.totp_enabled",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={"totp_enabled": False},
+            after={"totp_enabled": True},
+            effective_role=None,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.recovery_codes_issued",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=None,
+            before={},
+            after={"totp_enabled": True},
+            effective_role=None,
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="totp_enabled",
+            context=context,
+        )
+        return codes
