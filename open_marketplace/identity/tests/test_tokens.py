@@ -262,7 +262,16 @@ class OneTimeTokenTests(RegistrationTestCase):
                 password=self.password,
             )
             account.state = state
-            account.save(update_fields={"state", "updated_at"})
+            update_fields = {"state", "updated_at"}
+            if state == Account.State.BLOCKED:
+                account.blocked_at = self.now
+                account.blocked_by_id = uuid4()
+                account.block_reason = "Test fixture block."
+                account.block_audit_id = uuid4()
+                update_fields.update(
+                    {"blocked_at", "blocked_by_id", "block_reason", "block_audit_id"}
+                )
+            account.save(update_fields=update_fields)
             raw_token = chr(ord("D") + index) * 43
             self.create_token(account=account, raw_token=raw_token)
             self.assert_token_rejected(raw_token)

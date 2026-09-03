@@ -36,6 +36,10 @@ class Account(AbstractBaseUser):
         default=State.PENDING_EMAIL_VERIFICATION,
     )
     email_verified_at = models.DateTimeField(null=True, blank=True)
+    blocked_at = models.DateTimeField(null=True)
+    blocked_by_id = models.UUIDField(null=True, editable=False)
+    block_reason = models.TextField(null=True)
+    block_audit_id = models.UUIDField(null=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     version = models.PositiveBigIntegerField(default=1)
@@ -48,6 +52,31 @@ class Account(AbstractBaseUser):
 
     class Meta:
         db_table = "identity_account"
+        constraints = (
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        state="blocked",
+                        blocked_at__isnull=False,
+                        blocked_by_id__isnull=False,
+                        block_reason__isnull=False,
+                        block_audit_id__isnull=False,
+                    )
+                    | Q(
+                        ~Q(state="blocked"),
+                        blocked_at__isnull=True,
+                        blocked_by_id__isnull=True,
+                        block_reason__isnull=True,
+                        block_audit_id__isnull=True,
+                    )
+                ),
+                name="identity_account_block_metadata_state",
+            ),
+            models.CheckConstraint(
+                condition=Q(block_reason__isnull=True) | ~Q(block_reason=""),
+                name="identity_account_block_reason_present",
+            ),
+        )
 
     @property
     def is_active(self):
@@ -237,6 +266,13 @@ class TotpSetup(models.Model):
         AccountSession,
         on_delete=models.PROTECT,
         related_name="totp_setups",
+        null=True,
+    )
+    recovery_token = models.ForeignKey(
+        OneTimeToken,
+        on_delete=models.PROTECT,
+        related_name="totp_setups",
+        null=True,
     )
     encrypted_secret = models.BinaryField(editable=False)
     created_at = models.DateTimeField()
@@ -265,6 +301,13 @@ class TotpSetup(models.Model):
                     | Q(invalidated_at__gte=F("created_at"))
                 ),
                 name="identity_totp_setup_invalidated_after_create",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(session__isnull=False, recovery_token__isnull=True)
+                    | Q(session__isnull=True, recovery_token__isnull=False)
+                ),
+                name="identity_totp_setup_exactly_one_binding",
             ),
         )
         indexes = (

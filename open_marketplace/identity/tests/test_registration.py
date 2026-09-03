@@ -285,7 +285,16 @@ class RegistrationFlowTests(RegistrationTestCase):
                 )
                 account = create(email=email, password=self.password)
                 account.state = state
-                account.save(update_fields={"state", "updated_at"})
+                update_fields = {"state", "updated_at"}
+                if state == Account.State.BLOCKED:
+                    account.blocked_at = self.now
+                    account.blocked_by_id = uuid4()
+                    account.block_reason = "Test fixture block."
+                    account.block_audit_id = uuid4()
+                    update_fields.update(
+                        {"blocked_at", "blocked_by_id", "block_reason", "block_audit_id"}
+                    )
+                account.save(update_fields=update_fields)
                 original_password = account.password
                 original_version = account.version
                 token_count = Token.objects.count()

@@ -48,6 +48,15 @@ class AccountSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class AccountQuery:
+    kind: AccountKind | None
+    state: AccountState | None
+    canonical_email: str | None
+    limit: int
+    cursor: UUID | None
+
+
+@dataclass(frozen=True, slots=True)
 class AuthenticationResult:
     account_id: AccountId
     kind: AccountKind

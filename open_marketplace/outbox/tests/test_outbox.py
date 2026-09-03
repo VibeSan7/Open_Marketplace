@@ -110,6 +110,14 @@ class OutboxTestCase(TestCase):
                 {"recipient": "person@example.com"},
             ),
             (
+                "identity.mandatory_totp_recovery",
+                {"account_id": account_id, "token_id": token_id},
+                {
+                    "recipient": "person@example.com",
+                    "absolute_token_url": "https://example.com/recover/TOTP_TOKEN",
+                },
+            ),
+            (
                 "seller_onboarding.admission_change",
                 {"seller_id": seller_id, "state": "active"},
                 None,
@@ -254,7 +262,7 @@ class OutboxPublicContractTests(OutboxTestCase):
 
 
 class OutboxEnqueueValidationTests(OutboxTestCase):
-    def test_all_six_exact_payload_and_delivery_schemas_are_encrypted_at_rest(self):
+    def test_all_seven_exact_payload_and_delivery_schemas_are_encrypted_at_rest(self):
         OutboxMessage = self.model_class()
 
         for index, (message_type, payload, delivery) in enumerate(self.message_cases()):
