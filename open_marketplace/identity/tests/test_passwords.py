@@ -62,6 +62,14 @@ class PasswordOperationTests(TestCase):
             if kind == Account.Kind.SERVICE
             else Account.objects.create_user
         )
+        block_metadata = {}
+        if state == Account.State.BLOCKED:
+            block_metadata = {
+                "blocked_at": self.now,
+                "blocked_by_id": uuid4(),
+                "block_reason": "Test fixture block.",
+                "block_audit_id": uuid4(),
+            }
         return create(
             email=email or f"person-{uuid4()}@example.com",
             password=self.password,
@@ -71,6 +79,7 @@ class PasswordOperationTests(TestCase):
                 if state == Account.State.PENDING_EMAIL_VERIFICATION
                 else self.now - timedelta(days=1)
             ),
+            **block_metadata,
         )
 
     def create_registry(self, account, *, absolute_expires_at=None):

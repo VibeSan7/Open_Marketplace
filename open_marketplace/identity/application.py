@@ -15,6 +15,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Exists, OuterRef
 
 from open_marketplace.audit.public import append_audit_entry
 from open_marketplace.common.crypto import (
@@ -25,9 +26,12 @@ from open_marketplace.common.errors import (
     AuthenticationDenied,
     InputRejected,
     InvalidState,
+    PermissionDenied,
 )
-from open_marketplace.common.types import OperationContext
+from open_marketplace.common.types import Authorize, AuthorizationDecision, OperationContext
 from open_marketplace.identity.domain import (
+    AccountQuery,
+    AccountSnapshot,
     AuthenticationResult,
     NeutralAccepted,
     SessionRevocationReason,
@@ -60,6 +64,8 @@ _DEVICE_LABEL_MAX_LENGTH = 200
 _SESSION_KEY_MAX_LENGTH = 40
 _TOTP_ISSUER = "Open Marketplace"
 _DUMMY_PASSWORD_HASH = make_password(token_urlsafe(32))
+_ACCOUNT_ADMIN_REASON_MAX_LENGTH = 1024
+_ACCOUNT_QUERY_MAX_LIMIT = 100
 
 
 def _reject(message):
@@ -417,6 +423,29 @@ def _failed_authentication_audit(*, canonical_email, context):
     )
 
 
+def _failed_mandatory_totp_recovery_audit(*, canonical_email, context):
+    append_audit_entry(
+        context=context,
+        action="identity.mandatory_totp_recovery_failed",
+        object_type="authentication_attempt",
+        object_id=str(context.request_id),
+        result="failed",
+        reason="mandatory_totp_recovery_failed",
+        before={},
+        after={
+            "subject_fingerprint": _fingerprint(
+                "mandatory-totp-recovery-subject",
+                canonical_email or "invalid",
+            ),
+            "source_fingerprint": _fingerprint(
+                "mandatory-totp-recovery-source",
+                context.source_address,
+            ),
+        },
+        effective_role=None,
+    )
+
+
 def _authenticated_context(*, account, registry, context):
     return OperationContext(
         actor_account_id=account.id,
@@ -444,6 +473,24 @@ def _active_totp_credential(account):
         TotpCredential.objects.select_for_update()
         .filter(account=account, disabled_at__isnull=True)
         .first()
+    )
+
+
+def _has_active_totp_requirement(account):
+    return TotpRequirement.objects.select_for_update().filter(
+        account=account,
+        removed_at__isnull=True,
+    ).exists()
+
+
+def _has_open_mandatory_totp_recovery(account):
+    return _has_active_totp_requirement(account) and (
+        OneTimeToken.objects.select_for_update().filter(
+            account=account,
+            purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
+            used_at__isnull=True,
+            revoked_at__isnull=True,
+        ).exists()
     )
 
 
@@ -479,6 +526,8 @@ def _accepted_totp_counter(*, secret, code, now, last_accepted_counter):
 def _consume_second_factor(*, account, second_factor, context):
     credential = _active_totp_credential(account)
     if credential is None:
+        if _has_open_mandatory_totp_recovery(account):
+            _authentication_denied()
         if second_factor is not None:
             _authentication_denied()
         return None
@@ -953,6 +1002,216 @@ def _enqueue_protected_account_change(*, account, change, context):
     )
 
 
+def _validated_account_admin_reason(reason):
+    if not isinstance(reason, str):
+        _reject("reason must be a string.")
+    normalized = reason.strip()
+    if not normalized or len(normalized) > _ACCOUNT_ADMIN_REASON_MAX_LENGTH:
+        _reject("reason is invalid.")
+    return normalized
+
+
+def _authorize_security_admin(*, context, authorize, permission):
+    _validate_authenticated_context(context)
+    if not callable(authorize):
+        raise PermissionDenied("Authorization is required.")
+    decision = authorize(context=context, permission=permission)
+    if (
+        not isinstance(decision, AuthorizationDecision)
+        or decision.account_id != context.actor_account_id
+        or decision.permission != permission
+        or "security_admin" not in decision.effective_roles
+    ):
+        raise PermissionDenied("Authorization decision does not match the request.")
+    return decision
+
+
+def block_account(
+    *,
+    account_id: UUID,
+    reason: str,
+    context: OperationContext,
+    authorize: Authorize,
+) -> None:
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    reason = _validated_account_admin_reason(reason)
+    with transaction.atomic():
+        decision = _authorize_security_admin(
+            context=context,
+            authorize=authorize,
+            permission="account.block",
+        )
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if account is None or account.state != Account.State.ACTIVE:
+            raise InvalidState("Account cannot be blocked from its current state.")
+        if account.id == decision.account_id:
+            raise InvalidState("A security administrator cannot block their own account.")
+
+        before_version = account.version
+        revoked_session_count = _revoke_sessions_for_security_event_locked(
+            account=account,
+            reason=AccountSession.RevocationReason.ACCOUNT_BLOCKED,
+            context=context,
+        )
+        account.state = Account.State.BLOCKED.value
+        account.blocked_at = context.now
+        account.blocked_by_id = decision.account_id
+        account.block_reason = reason
+        account.version += 1
+        account.block_audit_id = append_audit_entry(
+            context=context,
+            action="identity.account_blocked",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=reason,
+            before={"state": Account.State.ACTIVE.value, "version": before_version},
+            after={
+                "state": Account.State.BLOCKED.value,
+                "version": account.version,
+                "revoked_session_count": revoked_session_count,
+            },
+            effective_role="security_admin",
+        )
+        account.save(
+            update_fields={
+                "state",
+                "blocked_at",
+                "blocked_by_id",
+                "block_reason",
+                "block_audit_id",
+                "version",
+                "updated_at",
+            }
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="account_blocked",
+            context=context,
+        )
+
+
+def unblock_account(
+    *,
+    account_id: UUID,
+    reason: str,
+    context: OperationContext,
+    authorize: Authorize,
+) -> None:
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    reason = _validated_account_admin_reason(reason)
+    with transaction.atomic():
+        _authorize_security_admin(
+            context=context,
+            authorize=authorize,
+            permission="account.unblock",
+        )
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if account is None or account.state != Account.State.BLOCKED:
+            raise InvalidState("Account cannot be unblocked from its current state.")
+
+        before_version = account.version
+        account.state = Account.State.ACTIVE.value
+        account.blocked_at = None
+        account.blocked_by_id = None
+        account.block_reason = None
+        account.block_audit_id = None
+        account.version += 1
+        append_audit_entry(
+            context=context,
+            action="identity.account_unblocked",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=reason,
+            before={"state": Account.State.BLOCKED.value, "version": before_version},
+            after={"state": Account.State.ACTIVE.value, "version": account.version},
+            effective_role="security_admin",
+        )
+        account.save(
+            update_fields={
+                "state",
+                "blocked_at",
+                "blocked_by_id",
+                "block_reason",
+                "block_audit_id",
+                "version",
+                "updated_at",
+            }
+        )
+        _enqueue_protected_account_change(
+            account=account,
+            change="account_unblocked",
+            context=context,
+        )
+
+
+def _validated_account_query(query):
+    if not isinstance(query, AccountQuery):
+        _reject("query must be an AccountQuery.")
+    if query.kind is not None and query.kind not in Account.Kind.values:
+        _reject("query kind is invalid.")
+    if query.state is not None and query.state not in Account.State.values:
+        _reject("query state is invalid.")
+    if type(query.limit) is not int or not 1 <= query.limit <= _ACCOUNT_QUERY_MAX_LIMIT:
+        _reject("query limit is invalid.")
+    if query.cursor is not None and not isinstance(query.cursor, UUID):
+        _reject("query cursor must be a UUID or None.")
+    if query.canonical_email is not None:
+        if not isinstance(query.canonical_email, str):
+            _reject("query canonical_email is invalid.")
+        try:
+            canonical = canonicalize_email(query.canonical_email)
+        except (AttributeError, DjangoValidationError):
+            _reject("query canonical_email is invalid.")
+        if canonical != query.canonical_email or len(canonical) > 254:
+            _reject("query canonical_email is invalid.")
+
+
+def query_accounts(
+    *,
+    query: AccountQuery,
+    context: OperationContext,
+    authorize: Authorize,
+) -> tuple[AccountSnapshot, ...]:
+    _validated_account_query(query)
+    with transaction.atomic():
+        _authorize_security_admin(
+            context=context,
+            authorize=authorize,
+            permission="account.read",
+        )
+        active_credential = TotpCredential.objects.filter(
+            account_id=OuterRef("pk"),
+            disabled_at__isnull=True,
+        )
+        queryset = Account.objects.annotate(
+            query_totp_enabled=Exists(active_credential)
+        )
+        if query.kind is not None:
+            queryset = queryset.filter(kind=query.kind)
+        if query.state is not None:
+            queryset = queryset.filter(state=query.state)
+        if query.canonical_email is not None:
+            queryset = queryset.filter(email=query.canonical_email)
+        if query.cursor is not None:
+            queryset = queryset.filter(id__gt=query.cursor)
+        accounts = queryset.order_by("id")[: query.limit]
+        return tuple(
+            AccountSnapshot(
+                id=account.id,
+                email=account.email,
+                kind=account.kind,
+                state=account.state,
+                email_verified_at=account.email_verified_at,
+                totp_enabled=account.query_totp_enabled,
+            )
+            for account in accounts
+        )
+
+
 def request_password_reset(
     *,
     email: str,
@@ -1201,6 +1460,305 @@ def _revoke_unused_recovery_codes(*, account, now):
     ).update(revoked_at=now)
 
 
+def recover_mandatory_totp(
+    *,
+    account_id: UUID,
+    reason: str,
+    context: OperationContext,
+    authorize: Authorize,
+) -> None:
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    reason = _validated_account_admin_reason(reason)
+    with transaction.atomic():
+        decision = _authorize_security_admin(
+            context=context,
+            authorize=authorize,
+            permission="identity.mandatory_totp_recover",
+        )
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if account is not None and account.id == decision.account_id:
+            raise InvalidState(
+                "A security administrator cannot recover their own mandatory TOTP."
+            )
+        if (
+            account is None
+            or account.state != Account.State.ACTIVE
+            or account.email_verified_at is None
+        ):
+            raise InvalidState("Account is unavailable for mandatory TOTP recovery.")
+        has_requirement = TotpRequirement.objects.select_for_update().filter(
+            account=account,
+            removed_at__isnull=True,
+        ).exists()
+        credential = _active_totp_credential(account)
+        recovery_in_progress = credential is None and (
+            TotpCredential.objects.select_for_update().filter(
+                account=account,
+                disabled_at__isnull=False,
+            ).exists()
+            and OneTimeToken.objects.select_for_update().filter(
+                account=account,
+                purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
+                used_at__isnull=True,
+            ).exists()
+        )
+        if not has_requirement or (credential is None and not recovery_in_progress):
+            raise InvalidState("Account has no recoverable mandatory TOTP credential.")
+
+        TotpSetup.objects.select_for_update().filter(
+            account=account,
+            consumed_at__isnull=True,
+            invalidated_at__isnull=True,
+            expires_at__gt=context.now,
+        ).update(invalidated_at=context.now)
+        OneTimeToken.objects.select_for_update().filter(
+            account=account,
+            purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
+            used_at__isnull=True,
+            revoked_at__isnull=True,
+            expires_at__gt=context.now,
+        ).update(revoked_at=context.now, revoked_reason="superseded")
+        if credential is not None:
+            credential.disabled_at = context.now
+            credential.save(update_fields={"disabled_at"})
+        _revoke_unused_recovery_codes(account=account, now=context.now)
+        revoked_session_count = _revoke_sessions_for_security_event_locked(
+            account=account,
+            reason=AccountSession.RevocationReason.MANDATORY_TOTP_RECOVERED,
+            context=context,
+        )
+
+        raw_token, token_digest = generate_one_time_token()
+        expires_at = context.now + settings.MANDATORY_TOTP_RECOVERY_TTL
+        token = OneTimeToken.objects.create(
+            account=account,
+            purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
+            token_digest=token_digest,
+            created_at=context.now,
+            expires_at=expires_at,
+        )
+        append_audit_entry(
+            context=context,
+            action="identity.mandatory_totp_recovery_started",
+            object_type="account",
+            object_id=str(account.id),
+            result="succeeded",
+            reason=reason,
+            before={"totp_enabled": credential is not None},
+            after={
+                "totp_enabled": False,
+                "revoked_session_count": revoked_session_count,
+                "token_purpose": OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY.value,
+                "expires_at": expires_at.isoformat(),
+            },
+            effective_role="security_admin",
+        )
+        enqueue_outbox_message(
+            message_type="identity.mandatory_totp_recovery",
+            format_version=1,
+            payload={"account_id": str(account.id), "token_id": str(token.id)},
+            delivery={
+                "recipient": account.email,
+                "absolute_token_url": (
+                    f"{settings.APP_BASE_URL}/identity/"
+                    f"recover-mandatory-totp/{raw_token}/"
+                ),
+            },
+            idempotency_key=f"identity.mandatory_totp_recovery:{token.id}",
+        )
+
+
+def _validated_mandatory_totp_recovery_digest(raw_token):
+    if not isinstance(raw_token, str) or not _TOKEN_PATTERN.fullmatch(raw_token):
+        _authentication_denied()
+    return hash_one_time_token(raw_token)
+
+
+def _lock_mandatory_totp_recovery_subject(token_digest):
+    candidate = OneTimeToken.objects.filter(token_digest=token_digest).values(
+        "id",
+        "account_id",
+    ).first()
+    if candidate is None:
+        _authentication_denied()
+    account = Account.objects.select_for_update().filter(
+        pk=candidate["account_id"]
+    ).first()
+    token = OneTimeToken.objects.select_for_update().filter(
+        pk=candidate["id"],
+        account=account,
+    ).first()
+    if account is None or token is None:
+        _authentication_denied()
+    return account, token
+
+
+def _require_live_mandatory_totp_recovery(*, account, token, now):
+    if (
+        account.state != Account.State.ACTIVE
+        or account.email_verified_at is None
+        or token.purpose != OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY
+        or token.used_at is not None
+        or token.revoked_at is not None
+        or now >= token.expires_at
+        or TotpCredential.objects.select_for_update().filter(
+            account=account,
+            disabled_at__isnull=True,
+        ).exists()
+        or not TotpRequirement.objects.select_for_update().filter(
+            account=account,
+            removed_at__isnull=True,
+        ).exists()
+    ):
+        _authentication_denied()
+
+
+def _totp_setup_view(*, setup, account, secret):
+    totp = pyotp.TOTP(secret, digits=6, interval=30)
+    return TotpSetupView(
+        setup_id=setup.id,
+        manual_secret=secret,
+        provisioning_uri=totp.provisioning_uri(
+            name=account.email,
+            issuer_name=_TOTP_ISSUER,
+        ),
+        expires_at=setup.expires_at,
+    )
+
+
+def begin_mandatory_totp_recovery(
+    *,
+    raw_token: str,
+    current_password: str,
+    context: OperationContext,
+) -> TotpSetupView:
+    _validate_anonymous_context(context)
+    canonical_email = None
+    try:
+        token_digest = _validated_mandatory_totp_recovery_digest(raw_token)
+        with transaction.atomic():
+            account, token = _lock_mandatory_totp_recovery_subject(token_digest)
+            canonical_email = account.email
+            _require_live_mandatory_totp_recovery(
+                account=account,
+                token=token,
+                now=context.now,
+            )
+            _verify_current_password(account, current_password)
+            TotpSetup.objects.select_for_update().filter(
+                account=account,
+                consumed_at__isnull=True,
+                invalidated_at__isnull=True,
+                expires_at__gt=context.now,
+            ).update(invalidated_at=context.now)
+            secret = pyotp.random_base32(length=32)
+            setup = TotpSetup.objects.create(
+                account=account,
+                session=None,
+                recovery_token=token,
+                encrypted_secret=_encrypt_totp_secret(secret),
+                created_at=context.now,
+                expires_at=min(
+                    context.now + settings.TOTP_SETUP_TTL,
+                    token.expires_at,
+                ),
+            )
+            return _totp_setup_view(setup=setup, account=account, secret=secret)
+    except AuthenticationDenied:
+        _failed_mandatory_totp_recovery_audit(
+            canonical_email=canonical_email,
+            context=context,
+        )
+        raise
+
+
+def complete_mandatory_totp_recovery(
+    *,
+    raw_token: str,
+    setup_id: UUID,
+    code: str,
+    context: OperationContext,
+) -> tuple[str, ...]:
+    _validate_anonymous_context(context)
+    canonical_email = None
+    try:
+        if not isinstance(setup_id, UUID):
+            _authentication_denied()
+        token_digest = _validated_mandatory_totp_recovery_digest(raw_token)
+        with transaction.atomic():
+            account, token = _lock_mandatory_totp_recovery_subject(token_digest)
+            canonical_email = account.email
+            _require_live_mandatory_totp_recovery(
+                account=account,
+                token=token,
+                now=context.now,
+            )
+            setup = TotpSetup.objects.select_for_update().filter(
+                pk=setup_id,
+                account=account,
+                session__isnull=True,
+                recovery_token=token,
+            ).first()
+            if (
+                setup is None
+                or setup.consumed_at is not None
+                or setup.invalidated_at is not None
+                or context.now >= setup.expires_at
+            ):
+                _authentication_denied()
+            counter = _accepted_totp_counter(
+                secret=_decrypt_totp_secret(setup),
+                code=code,
+                now=context.now,
+                last_accepted_counter=None,
+            )
+            if counter is None:
+                _authentication_denied()
+
+            TotpCredential.objects.create(
+                account=account,
+                encrypted_secret=setup.encrypted_secret,
+                confirmed_at=context.now,
+                last_accepted_counter=counter,
+            )
+            _revoke_unused_recovery_codes(account=account, now=context.now)
+            codes = _generate_recovery_code_set(account=account, now=context.now)
+            token.used_at = context.now
+            token.save(update_fields={"used_at"})
+            setup.consumed_at = context.now
+            setup.save(update_fields={"consumed_at"})
+            TotpSetup.objects.select_for_update().filter(
+                account=account,
+                consumed_at__isnull=True,
+                invalidated_at__isnull=True,
+                expires_at__gt=context.now,
+            ).exclude(pk=setup.id).update(invalidated_at=context.now)
+            append_audit_entry(
+                context=context,
+                action="identity.mandatory_totp_recovery_completed",
+                object_type="account",
+                object_id=str(account.id),
+                result="succeeded",
+                reason=None,
+                before={"totp_enabled": False},
+                after={"totp_enabled": True},
+                effective_role=None,
+            )
+            _enqueue_protected_account_change(
+                account=account,
+                change="totp_recovered",
+                context=context,
+            )
+            return codes
+    except AuthenticationDenied:
+        _failed_mandatory_totp_recovery_audit(
+            canonical_email=canonical_email,
+            context=context,
+        )
+        raise
+
+
 def begin_totp_setup(
     *,
     current_password: str,
@@ -1212,6 +1770,8 @@ def begin_totp_setup(
         _verify_current_password(account, current_password)
         if _active_totp_credential(account) is not None:
             raise InvalidState("TOTP is already enabled.")
+        if _has_open_mandatory_totp_recovery(account):
+            _authentication_denied()
 
         TotpSetup.objects.select_for_update().filter(
             account=account,
@@ -1252,6 +1812,8 @@ def enable_totp(
         current = _current_session(context, for_update=True)
         account = current.account
         if _active_totp_credential(account) is not None:
+            _authentication_denied()
+        if _has_open_mandatory_totp_recovery(account):
             _authentication_denied()
         setup = (
             TotpSetup.objects.select_for_update()

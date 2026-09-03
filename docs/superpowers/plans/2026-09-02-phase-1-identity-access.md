@@ -1137,11 +1137,14 @@ git commit -m "feat: add exact staff permissions"
 
 ### Task 10: Account block/unblock and mandatory TOTP recovery
 
-**Objective:** Реализовать две security-admin procedures inside identity with internal authorization, reason and complete session revocation.
+**Objective:** Реализовать security-admin операции блокировки, разблокировки и восстановления обязательного TOTP внутри identity с внутренней авторизацией, обязательной причиной и полным отзывом затронутых сеансов.
 
 **Files:**
-- Modify: `open_marketplace/identity/models.py`, `application.py`, `public.py`
+- Modify: `open_marketplace/identity/domain.py`, `models.py`, `application.py`, `public.py`
+- Create: `open_marketplace/identity/migrations/0005_account_administration_and_totp_recovery.py`
 - Create: `open_marketplace/identity/tests/test_account_administration.py`, `test_totp_recovery.py`
+- Modify: `open_marketplace/outbox/application.py`, `tests/test_outbox.py`
+- Modify: существующие test fixtures, создающие `state="blocked"`
 
 **Interfaces:**
 
@@ -1157,25 +1160,29 @@ query_accounts(*, query: AccountQuery, context: OperationContext, authorize: Aut
 
 - [ ] **Step 1: Write RED administration/recovery tests**
 
-Cover missing/wrong permission, spoofed actor mismatch, mandatory non-empty reason, account state transitions, all-session revocation on block/recovery, 30-minute one-time recovery token, current-password proof before a replacement setup, setup/token/account binding, old credential/code revocation, email-only bypass denial, successful replacement code, scoped/bounded account query, and rollback of all effects after injected audit/outbox failure.
+Cover missing/wrong permission, spoofed actor mismatch, mandatory non-empty reason, exact account state transitions, self-block and self-recovery denial, block metadata integrity, all-session revocation on block/recovery, immediate old credential/code revocation, fail-closed password login when mandatory TOTP has no active credential, denial of ordinary TOTP setup/enable during mandatory recovery, neutral secret-free audit of failed recovery proofs, 30-minute one-time recovery token, current-password proof before a replacement setup, setup/token/account binding, email-only bypass denial, successful replacement code, no automatic login, scoped/bounded account query, exact `identity.mandatory_totp_recovery` outbox schema, and rollback of all effects after injected audit/outbox failure.
 
 - [ ] **Step 2: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
-  python manage.py test open_marketplace.identity.tests.test_account_administration open_marketplace.identity.tests.test_totp_recovery -v 2
+  python manage.py test open_marketplace.identity.tests.test_account_administration \
+  open_marketplace.identity.tests.test_totp_recovery \
+  open_marketplace.outbox.tests.test_outbox -v 2
 ```
 
 - [ ] **Step 3: Implement protected operations**
 
-Each privileged entry calls `authorize(context, exact_permission)` before mutation, derives administrator only from the returned decision, locks target state, and writes reason/actor/audit/outbox in one outer transaction. `begin_mandatory_totp_recovery` is the only setup path available to a target who cannot log in without mandatory TOTP: it validates the emailed recovery token without consuming it, verifies the current password and creates a setup bound to token and account. Completion consumes only that token and its confirmed fresh setup; it never disables or removes the mandatory requirement.
+Each privileged entry calls `authorize(context=context, permission=exact_permission)` inside the outer transaction before mutation, derives the administrator only from the returned decision, locks target state, and writes state/audit/outbox/session changes atomically. Blocking permits only `active -> blocked`, rejects self-blocking, records reason/actor/time/audit linkage, and revokes all live target sessions; unblocking permits only `blocked -> active` and clears current block metadata while immutable audit retains history. Recovery rejects self-recovery, accepts only an active email-verified account with an active mandatory TOTP requirement and either an active credential or a proven unfinished prior recovery, immediately disables the old credential and revokes codes and sessions, then sends a 30-minute link through `identity.mandatory_totp_recovery`. An open administrator-initiated recovery — active mandatory requirement, no active credential, and an unused unrevoked recovery token — fails closed at normal login and rejects ordinary `begin_totp_setup`/`enable_totp`, so only the token-bound recovery path can replace the factor; initial mandatory enrollment without such a token keeps its existing limited setup flow. `begin_mandatory_totp_recovery` validates that emailed token without consuming it, verifies the current password, and creates an encrypted setup bound to that token and account. Completion consumes only that token and its confirmed fresh setup, creates a new credential and recovery-code set, preserves the mandatory requirement, and creates no session. Failed password/TOTP proofs append only neutral HMAC subject/source fingerprints; persistent throttling remains Task 17.
 
 - [ ] **Step 4: Run GREEN and commit**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
-  python manage.py test open_marketplace.identity.tests.test_account_administration open_marketplace.identity.tests.test_totp_recovery -v 2
-git add open_marketplace/identity
+  python manage.py test open_marketplace.identity.tests.test_account_administration \
+  open_marketplace.identity.tests.test_totp_recovery \
+  open_marketplace.outbox.tests.test_outbox -v 2
+git add docs/superpowers open_marketplace/access/tests open_marketplace/identity open_marketplace/outbox
 git commit -m "feat: add protected account recovery operations"
 ```
 

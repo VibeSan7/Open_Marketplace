@@ -35,6 +35,7 @@ OutboxState = Literal["pending", "processing", "retry_wait", "succeeded", "manua
 OutboxMessageType = Literal[
     "identity.email_verification",
     "identity.password_reset",
+    "identity.mandatory_totp_recovery",
     "access.staff_invitation",
     "seller_onboarding.application_decision",
     "identity.protected_account_change",
@@ -51,6 +52,7 @@ _MESSAGE_TYPES = frozenset(
     {
         "identity.email_verification",
         "identity.password_reset",
+        "identity.mandatory_totp_recovery",
         "access.staff_invitation",
         "seller_onboarding.application_decision",
         "identity.protected_account_change",
@@ -60,6 +62,10 @@ _MESSAGE_TYPES = frozenset(
 _PAYLOAD_SCHEMAS = {
     "identity.email_verification": {"account_id": "uuid", "token_id": "uuid"},
     "identity.password_reset": {"account_id": "uuid", "token_id": "uuid"},
+    "identity.mandatory_totp_recovery": {
+        "account_id": "uuid",
+        "token_id": "uuid",
+    },
     "access.staff_invitation": {"invitation_id": "uuid", "role": "role"},
     "seller_onboarding.application_decision": {
         "application_id": "uuid",
@@ -71,6 +77,9 @@ _PAYLOAD_SCHEMAS = {
 _DELIVERY_SCHEMAS = {
     "identity.email_verification": frozenset({"recipient", "absolute_token_url"}),
     "identity.password_reset": frozenset({"recipient", "absolute_token_url"}),
+    "identity.mandatory_totp_recovery": frozenset(
+        {"recipient", "absolute_token_url"}
+    ),
     "access.staff_invitation": frozenset({"recipient", "absolute_token_url"}),
     "seller_onboarding.application_decision": frozenset({"recipient"}),
     "identity.protected_account_change": frozenset({"recipient"}),
