@@ -1,21 +1,43 @@
 from open_marketplace.access.application import (
+    accept_staff_invitation,
     authorize,
+    begin_staff_invitation_acceptance,
+    bootstrap_security_admin,
     check_permission,
+    invite_staff_member,
     list_active_roles,
+    list_staff_invitations,
+    revoke_staff_invitation,
     revoke_staff_role,
 )
 from open_marketplace.access.domain import (
     PermissionCode,
     RoleAssignmentView,
+    StaffAcceptanceResult,
+    StaffAcceptanceSetup,
+    StaffAcceptanceMode,
+    StaffInvitationQuery,
+    StaffInvitationView,
     StaffRole,
 )
 
 __all__ = (
     "PermissionCode",
     "RoleAssignmentView",
+    "StaffAcceptanceResult",
+    "StaffAcceptanceMode",
+    "StaffAcceptanceSetup",
+    "StaffInvitationQuery",
+    "StaffInvitationView",
     "StaffRole",
+    "accept_staff_invitation",
     "authorize",
+    "begin_staff_invitation_acceptance",
+    "bootstrap_security_admin",
     "check_permission",
+    "invite_staff_member",
     "list_active_roles",
+    "list_staff_invitations",
+    "revoke_staff_invitation",
     "revoke_staff_role",
 )
