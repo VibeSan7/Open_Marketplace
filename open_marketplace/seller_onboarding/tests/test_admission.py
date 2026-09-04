@@ -384,6 +384,38 @@ class SellerAdmissionTestCase(TestCase):
         self.assertIsNone(restore_result)
         profile = self.models.SellerProfile.objects.get(pk=seller_id)
         self.assertEqual(profile.state, "active")
+        self.assertIsNone(profile.restriction_reason)
+
+    def test_repeated_admission_cycles_emit_distinct_outbox_messages(self):
+        owner = self.owner(totp=True)
+        application_id, _, seller_id, _ = self.reviewed_application(owner)
+
+        self.public.suspend_seller(
+            seller_id=seller_id,
+            reason="First hold.",
+            context=self.admin_context(),
+        )
+        self.public.restore_seller(
+            seller_id=seller_id,
+            reason="First hold cleared.",
+            context=self.admin_context(),
+        )
+        self.public.suspend_seller(
+            seller_id=seller_id,
+            reason="Second hold.",
+            context=self.admin_context(),
+        )
+
+        profile = self.models.SellerProfile.objects.get(pk=seller_id)
+        self.assertEqual(profile.state, "suspended")
+        self.assertEqual(
+            OutboxMessage.objects.filter(
+                message_type="seller_onboarding.admission_change",
+                payload__seller_id=str(seller_id),
+                payload__state="suspended",
+            ).count(),
+            2,
+        )
 
     def test_admission_audit_records_transition_and_reason(self):
         owner = self.owner(totp=True)

@@ -821,7 +821,9 @@ def _change_admission(*, seller_id, reason, context, transition, permission, act
             raise InvalidState("Seller profile cannot change admission.")
         before_state = profile.state
         profile.state = transition["to"]
-        profile.restriction_reason = reason
+        profile.restriction_reason = (
+            None if profile.state == SellerProfile.State.ACTIVE else reason
+        )
         profile.updated_at = context.now
         profile.save(update_fields=("state", "restriction_reason", "updated_at"))
         _audit_profile(
@@ -837,8 +839,8 @@ def _change_admission(*, seller_id, reason, context, transition, permission, act
             payload={"seller_id": str(profile.id), "state": profile.state},
             delivery=None,
             idempotency_key=(
-                f"seller_onboarding.admission_change:{profile.id}:{before_state}:"
-                f"{profile.state}"
+                f"seller_onboarding.admission_change:{profile.id}:{profile.state}:"
+                f"{context.request_id}"
             ),
         )
         if transition["to"] == SellerProfile.State.REVOKED:
