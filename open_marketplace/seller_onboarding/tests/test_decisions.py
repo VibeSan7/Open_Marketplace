@@ -5,7 +5,7 @@ Task 13 implements them.
 """
 from datetime import UTC, datetime, timedelta
 from importlib import import_module
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from django.apps import apps
 from django.contrib.sessions.backends.db import SessionStore
@@ -379,6 +379,24 @@ class ReviewDecisionTestCase(TestCase):
                 context=self.reviewer_context(),
             )
 
+    def test_request_id_cannot_replay_a_different_decision_operation(self):
+        owner = self.owner(totp=True)
+        application_id, _ = self.submitted_application(owner)
+        reviewer_context = self.reviewer_context()
+        self.start_review(application_id, reviewer_context)
+        self.public.reject_seller_application(
+            application_id=application_id,
+            reason="Same reason.",
+            context=reviewer_context,
+        )
+
+        with self.assertRaises(InvalidState):
+            self.public.approve_seller_application(
+                application_id=application_id,
+                reason="Same reason.",
+                context=reviewer_context,
+            )
+
     def test_approve_is_denied_without_reason_or_from_wrong_state(self):
         owner = self.owner(totp=True)
         application_id, _ = self.submitted_application(owner)
@@ -481,6 +499,49 @@ class ReviewDecisionTestCase(TestCase):
                 ),
                 context=self.security_context(),
             )
+
+    def test_review_queue_uuid_cursor_matches_uuid_ordering(self):
+        lower_id = UUID("00000000-0000-0000-0000-000000000001")
+        higher_id = UUID("ffffffff-ffff-ffff-ffff-ffffffffffff")
+        self.models.SellerApplication.objects.create(
+            id=higher_id,
+            applicant_id=uuid4(),
+            state="submitted",
+            current_version=1,
+            created_at=self.now - timedelta(minutes=1),
+            submitted_at=self.now - timedelta(minutes=1),
+        )
+        self.models.SellerApplication.objects.create(
+            id=lower_id,
+            applicant_id=uuid4(),
+            state="submitted",
+            current_version=1,
+            created_at=self.now,
+            submitted_at=self.now,
+        )
+        reviewer_context = self.reviewer_context()
+
+        first_page = self.public.list_seller_review_queue(
+            query=self.public.SellerReviewQuery(
+                states=("submitted",),
+                reviewer_id=None,
+                limit=1,
+                cursor=None,
+            ),
+            context=reviewer_context,
+        )
+        second_page = self.public.list_seller_review_queue(
+            query=self.public.SellerReviewQuery(
+                states=("submitted",),
+                reviewer_id=None,
+                limit=1,
+                cursor=first_page[0].id,
+            ),
+            context=reviewer_context,
+        )
+
+        self.assertEqual([item.id for item in first_page], [lower_id])
+        self.assertEqual([item.id for item in second_page], [higher_id])
 
     def test_reviewer_cannot_edit_application_data_or_suspend_seller(self):
         owner = self.owner()

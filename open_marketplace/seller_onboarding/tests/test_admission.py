@@ -5,7 +5,7 @@ Task 13 implements them.
 """
 from datetime import UTC, datetime, timedelta
 from importlib import import_module
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pyotp
 from django.apps import apps
@@ -285,10 +285,11 @@ class SellerAdmissionTestCase(TestCase):
             code=code,
             context=owner_context,
         )
-        self.public.activate_seller_after_totp(
+        result = self.public.activate_seller_after_totp(
             seller_id=seller_id,
             context=owner_context,
         )
+        self.assertIsNone(result)
         profile = self.models.SellerProfile.objects.get(pk=seller_id)
         self.assertEqual(profile.state, "active")
 
@@ -309,6 +310,36 @@ class SellerAdmissionTestCase(TestCase):
                 context=other_context,
             )
 
+    def test_activate_requires_a_live_owner_session(self):
+        owner = self.owner(totp=False)
+        application_id, _, seller_id, _ = self.reviewed_application(owner)
+        self.enable_totp(owner)
+        context_without_session = self.context(owner, registry=None, source="html")
+
+        with self.assertRaises(PermissionDenied):
+            self.public.activate_seller_after_totp(
+                seller_id=seller_id,
+                context=context_without_session,
+            )
+
+        profile = self.models.SellerProfile.objects.get(pk=seller_id)
+        self.assertEqual(profile.state, "awaiting_owner_totp")
+
+    def test_activate_requires_an_active_verified_owner(self):
+        owner = self.owner(totp=False)
+        application_id, owner_context, seller_id, _ = self.reviewed_application(owner)
+        self.enable_totp(owner)
+        Account.objects.filter(pk=owner.id).update(email_verified_at=None)
+
+        with self.assertRaises(PermissionDenied):
+            self.public.activate_seller_after_totp(
+                seller_id=seller_id,
+                context=owner_context,
+            )
+
+        profile = self.models.SellerProfile.objects.get(pk=seller_id)
+        self.assertEqual(profile.state, "awaiting_owner_totp")
+
     def test_suspend_restore_keep_requirement_and_require_admin_reason_and_state(self):
         owner = self.owner(totp=True)
         application_id, _, seller_id, _ = self.reviewed_application(owner)
@@ -320,11 +351,12 @@ class SellerAdmissionTestCase(TestCase):
                 context=self.admin_context(),
             )
         admin_context = self.admin_context()
-        self.public.suspend_seller(
+        suspend_result = self.public.suspend_seller(
             seller_id=seller_id,
             reason="Reviewing the shop.",
             context=admin_context,
         )
+        self.assertIsNone(suspend_result)
         profile = self.models.SellerProfile.objects.get(pk=seller_id)
         self.assertEqual(profile.state, "suspended")
         self.assertEqual(profile.restriction_reason, "Reviewing the shop.")
@@ -344,23 +376,44 @@ class SellerAdmissionTestCase(TestCase):
                 context=admin_context,
             )
 
-        self.public.restore_seller(
+        restore_result = self.public.restore_seller(
             seller_id=seller_id,
             reason="Cleared.",
             context=admin_context,
         )
+        self.assertIsNone(restore_result)
         profile = self.models.SellerProfile.objects.get(pk=seller_id)
         self.assertEqual(profile.state, "active")
+
+    def test_admission_audit_records_transition_and_reason(self):
+        owner = self.owner(totp=True)
+        application_id, _, seller_id, _ = self.reviewed_application(owner)
+        admin_context = self.admin_context()
+
+        self.public.suspend_seller(
+            seller_id=seller_id,
+            reason="Reviewing the shop.",
+            context=admin_context,
+        )
+
+        entry = AuditEntry.objects.get(
+            action="seller_onboarding.seller_profile_suspended",
+            object_id=str(seller_id),
+        )
+        self.assertEqual(entry.before, {"state": "active"})
+        self.assertEqual(entry.after, {"state": "suspended"})
+        self.assertEqual(entry.reason, "Reviewing the shop.")
 
     def test_revoke_is_terminal_and_removes_only_that_profiles_totp_requirement(self):
         owner = self.owner(totp=True)
         application_id, _, seller_id, _ = self.reviewed_application(owner)
         admin_context = self.admin_context()
-        self.public.revoke_seller(
+        result = self.public.revoke_seller(
             seller_id=seller_id,
             reason="Violation.",
             context=admin_context,
         )
+        self.assertIsNone(result)
         profile = self.models.SellerProfile.objects.get(pk=seller_id)
         self.assertEqual(profile.state, "revoked")
         requirement = TotpRequirement.objects.get(
@@ -449,6 +502,65 @@ class SellerAdmissionTestCase(TestCase):
                 ),
                 context=owner_context,
             )
+
+    def test_profile_query_uuid_cursor_matches_uuid_ordering(self):
+        lower_id = UUID("00000000-0000-0000-0000-000000000001")
+        higher_id = UUID("ffffffff-ffff-ffff-ffff-ffffffffffff")
+        older_application = self.models.SellerApplication.objects.create(
+            applicant_id=uuid4(),
+            state="approved",
+            current_version=1,
+            created_at=self.now - timedelta(minutes=1),
+            submitted_at=self.now - timedelta(minutes=1),
+        )
+        newer_application = self.models.SellerApplication.objects.create(
+            applicant_id=uuid4(),
+            state="approved",
+            current_version=1,
+            created_at=self.now,
+            submitted_at=self.now,
+        )
+        self.models.SellerProfile.objects.create(
+            id=higher_id,
+            owner_id=uuid4(),
+            application=older_application,
+            approved_version=1,
+            state="active",
+            created_at=self.now - timedelta(minutes=1),
+            updated_at=self.now - timedelta(minutes=1),
+        )
+        self.models.SellerProfile.objects.create(
+            id=lower_id,
+            owner_id=uuid4(),
+            application=newer_application,
+            approved_version=1,
+            state="active",
+            created_at=self.now,
+            updated_at=self.now,
+        )
+        admin_context = self.admin_context()
+
+        first_page = self.public.query_seller_profiles(
+            query=self.public.SellerProfileQuery(
+                state=None,
+                owner_id=None,
+                limit=1,
+                cursor=None,
+            ),
+            context=admin_context,
+        )
+        second_page = self.public.query_seller_profiles(
+            query=self.public.SellerProfileQuery(
+                state=None,
+                owner_id=None,
+                limit=1,
+                cursor=first_page[0].id,
+            ),
+            context=admin_context,
+        )
+
+        self.assertEqual([item.id for item in first_page], [lower_id])
+        self.assertEqual([item.id for item in second_page], [higher_id])
 
     def test_ordinary_account_without_profile_has_no_owner_view(self):
         owner = self.owner(totp=True)

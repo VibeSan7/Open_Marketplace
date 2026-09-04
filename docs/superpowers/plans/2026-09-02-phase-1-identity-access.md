@@ -1356,6 +1356,8 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 Use row locks, unique owner/application constraints and one outer transaction for decision/profile/owner/TOTP-requirement/audit/outbox. Profile creation adds an identity `seller_profile` TOTP requirement whether the profile starts active or awaiting TOTP; only terminal seller revocation removes it, in the same transaction. Privileged operations derive actor from context and call `access.public.authorize` internally. `enable_totp_and_activate_waiting_seller` opens one outer transaction, calls `identity.public.enable_totp`, queries the owner's profile, activates only `awaiting_owner_totp`, and rolls credential/recovery/profile/audit/outbox back together on any failure.
 
+Independent review remediation (after commit `425a11d`): decision replay now compares the recorded decision with the retried one; UUID cursor filters match `id` ordering in both review-queue and profile queries; profile admission audits record the real prior state and the mandatory reason; `activate_seller_after_totp` requires an active, email-verified ordinary account with a live session; admission operations return `None` per the approved interfaces; the profile-creation fallback only replays a profile of the same version. Full suite 229/229.
+
 - [x] **Step 5: Run GREEN and contracts**
 
 ```bash

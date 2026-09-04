@@ -7,6 +7,7 @@ from django.db import IntegrityError, transaction
 
 from open_marketplace.audit.public import append_audit_entry
 from open_marketplace.common.errors import (
+    AuthenticationDenied,
     ConcurrentConflict,
     InputRejected,
     InvalidState,
@@ -17,6 +18,7 @@ from open_marketplace.identity.public import (
     add_totp_requirement,
     get_account_snapshot,
     remove_totp_requirement,
+    require_live_session_security_snapshot,
 )
 from open_marketplace.outbox.public import enqueue_outbox_message
 from open_marketplace.access.public import authorize
@@ -395,9 +397,6 @@ def get_own_seller_application(
 _REVIEW_QUERY_MAX_LIMIT = 100
 _PROFILE_QUERY_MAX_LIMIT = 100
 _REASON_MAX_LENGTH = 1024
-_ADMISSION_REQUIRED_STATES = frozenset(
-    {"active", "suspended", "awaiting_owner_totp"}
-)
 
 
 def _validate_reason(reason):
@@ -460,7 +459,11 @@ def _create_profile(application, version_number, context):
         existing = SellerProfile.objects.filter(
             owner_id=application.applicant_id
         ).first()
-        if existing is not None and existing.application_id == application.id:
+        if (
+            existing is not None
+            and existing.application_id == application.id
+            and existing.approved_version == version_number
+        ):
             return existing.id
         raise ConcurrentConflict("The seller profile already exists.") from None
     add_totp_requirement(
@@ -484,17 +487,18 @@ def _create_profile(application, version_number, context):
     return profile.id
 
 
-def _audit_profile(context, profile, action):
-    state = getattr(profile.state, "value", profile.state)
+def _audit_profile(context, profile, action, *, before_state=None, reason=None):
+    before_state = getattr(before_state, "value", before_state)
+    after_state = getattr(profile.state, "value", profile.state)
     return append_audit_entry(
         context=context,
         action=action,
         object_type="seller_profile",
         object_id=str(profile.id),
         result="success",
-        reason=None,
-        before={"state": state},
-        after={"state": state},
+        reason=reason,
+        before={"state": before_state},
+        after={"state": after_state},
         effective_role=None,
     )
 
@@ -539,7 +543,12 @@ def request_seller_application_changes(*, application_id, reason, context):
     reason = _validate_reason(reason)
     with transaction.atomic():
         application = _reviewable_application(application_id, context, lock=True)
-        replayed = _replay_decision(application, reason, context)
+        replayed = _replay_decision(
+            application,
+            SellerReviewDecision.Decision.REQUEST_CHANGES,
+            reason,
+            context,
+        )
         if replayed is not None:
             return
         if application.state != SellerApplication.State.UNDER_REVIEW:
@@ -557,7 +566,12 @@ def approve_seller_application(*, application_id, reason, context):
     reason = _validate_reason(reason)
     with transaction.atomic():
         application = _reviewable_application(application_id, context, lock=True)
-        replayed = _replay_decision(application, reason, context)
+        replayed = _replay_decision(
+            application,
+            SellerReviewDecision.Decision.APPROVE,
+            reason,
+            context,
+        )
         if replayed is not None:
             return replayed
         if application.state != SellerApplication.State.UNDER_REVIEW:
@@ -575,7 +589,12 @@ def reject_seller_application(*, application_id, reason, context):
     reason = _validate_reason(reason)
     with transaction.atomic():
         application = _reviewable_application(application_id, context, lock=True)
-        replayed = _replay_decision(application, reason, context)
+        replayed = _replay_decision(
+            application,
+            SellerReviewDecision.Decision.REJECT,
+            reason,
+            context,
+        )
         if replayed is not None:
             return
         if application.state != SellerApplication.State.UNDER_REVIEW:
@@ -588,7 +607,7 @@ def reject_seller_application(*, application_id, reason, context):
         )
 
 
-def _replay_decision(application, reason, context):
+def _replay_decision(application, decision, reason, context):
     """Return an idempotent replay result for the same request id, else None."""
     version_number = application.current_version
     existing = SellerReviewDecision.objects.filter(
@@ -597,11 +616,7 @@ def _replay_decision(application, reason, context):
     ).first()
     if existing is None or existing.request_id != context.request_id:
         return None
-    if existing.reason != reason or existing.decision not in {
-        SellerReviewDecision.Decision.REQUEST_CHANGES,
-        SellerReviewDecision.Decision.APPROVE,
-        SellerReviewDecision.Decision.REJECT,
-    }:
+    if existing.decision != decision or existing.reason != reason:
         raise InvalidState("Seller application version is already decided.")
     if existing.decision == SellerReviewDecision.Decision.APPROVE:
         return _existing_profile_for(application)
@@ -617,10 +632,6 @@ def _apply_decision(*, application, decision, reason, context):
         version_number=version_number,
     ).first()
     if existing is not None:
-        if existing.request_id == context.request_id:
-            if decision == SellerReviewDecision.Decision.APPROVE:
-                return _existing_profile_for(application)
-            return None
         raise InvalidState("Seller application version is already decided.")
     try:
         with transaction.atomic():
@@ -678,7 +689,7 @@ def list_seller_review_queue(*, query, context):
     applications = SellerApplication.objects.filter(state__in=query.states)
     if query.reviewer_id is not None:
         applications = applications.filter(reviewer_id=query.reviewer_id)
-    applications = applications.order_by("created_at", "id")
+    applications = applications.order_by("id")
     if query.cursor is not None:
         applications = applications.filter(id__gt=query.cursor)
     applications = applications[: query.limit]
@@ -745,7 +756,7 @@ def query_seller_profiles(*, query, context):
         profiles = profiles.filter(owner_id=query.owner_id)
     if query.cursor is not None:
         profiles = profiles.filter(id__gt=query.cursor)
-    profiles = profiles.order_by("created_at", "id")[: query.limit]
+    profiles = profiles.order_by("id")[: query.limit]
     return tuple(_profile_view(profile) for profile in profiles)
 
 
@@ -764,16 +775,20 @@ def _owned_profile(seller_id, context, *, lock=False):
 
 
 def activate_seller_after_totp(*, seller_id, context):
-    _validate_context(context)
-    if context.actor_account_id is None:
-        raise PermissionDenied("Seller profile is unavailable.")
-    try:
-        owner = get_account_snapshot(context.actor_account_id)
-    except ObjectDoesNotExist:
-        raise PermissionDenied("Seller profile is unavailable.") from None
-    if not owner.totp_enabled:
-        raise InvalidState("Owner TOTP is not enabled.")
     with transaction.atomic():
+        owner = _require_ordinary_account(context)
+        if context.session_id is None:
+            raise PermissionDenied("Seller profile is unavailable.")
+        try:
+            require_live_session_security_snapshot(
+                session_id=context.session_id,
+                account_id=owner.id,
+                now=context.now,
+            )
+        except AuthenticationDenied:
+            raise PermissionDenied("Seller profile is unavailable.") from None
+        if not owner.totp_enabled:
+            raise InvalidState("Owner TOTP is not enabled.")
         profile = _owned_profile(seller_id, context, lock=True)
         if profile.state != SellerProfile.State.AWAITING_OWNER_TOTP:
             raise InvalidState("Seller profile cannot be activated.")
@@ -785,6 +800,7 @@ def activate_seller_after_totp(*, seller_id, context):
             context=context,
             profile=profile,
             action="seller_onboarding.seller_profile_activated",
+            before_state=before_state,
         )
         enqueue_outbox_message(
             message_type="seller_onboarding.admission_change",
@@ -793,7 +809,7 @@ def activate_seller_after_totp(*, seller_id, context):
             delivery=None,
             idempotency_key=f"seller_onboarding.admission_change:{profile.id}:activated",
         )
-        return before_state
+
 
 
 def _change_admission(*, seller_id, reason, context, transition, permission, action):
@@ -808,7 +824,13 @@ def _change_admission(*, seller_id, reason, context, transition, permission, act
         profile.restriction_reason = reason
         profile.updated_at = context.now
         profile.save(update_fields=("state", "restriction_reason", "updated_at"))
-        _audit_profile(context=context, profile=profile, action=action)
+        _audit_profile(
+            context=context,
+            profile=profile,
+            action=action,
+            before_state=before_state,
+            reason=reason,
+        )
         enqueue_outbox_message(
             message_type="seller_onboarding.admission_change",
             format_version=1,
@@ -826,7 +848,7 @@ def _change_admission(*, seller_id, reason, context, transition, permission, act
                 source_id=profile.id,
                 context=context,
             )
-        return profile.id
+
 
 
 def _profile_for_admin(seller_id, context, *, lock=False):
@@ -841,7 +863,7 @@ def _profile_for_admin(seller_id, context, *, lock=False):
 
 
 def suspend_seller(*, seller_id, reason, context):
-    return _change_admission(
+    _change_admission(
         seller_id=seller_id,
         reason=reason,
         context=context,
@@ -852,7 +874,7 @@ def suspend_seller(*, seller_id, reason, context):
 
 
 def restore_seller(*, seller_id, reason, context):
-    return _change_admission(
+    _change_admission(
         seller_id=seller_id,
         reason=reason,
         context=context,
@@ -863,7 +885,7 @@ def restore_seller(*, seller_id, reason, context):
 
 
 def revoke_seller(*, seller_id, reason, context):
-    return _change_admission(
+    _change_admission(
         seller_id=seller_id,
         reason=reason,
         context=context,
