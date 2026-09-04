@@ -1337,26 +1337,28 @@ revoke_seller(*, seller_id: UUID, reason: str, context: OperationContext) -> Non
 enable_totp_and_activate_waiting_seller(*, setup_id: UUID, code: str, context: OperationContext) -> tuple[str, ...]
 ```
 
-- [ ] **Step 1: Write RED decision/admission tests**
+- [x] **Step 1: Write RED decision/admission tests**
 
 Cover every review/profile transition, exact reviewer/security permission, mandatory reason, staff non-editability, bounded/scoped review and seller-profile queries, changes-requested → new immutable version → submit, reject/reapply, approved reapplication denial, one owner/profile, owner TOTP deciding `active` vs `awaiting_owner_totp`, independent ordinary account, requirement persistence during suspend/restore, and terminal `revoked` removing only that profile's TOTP requirement.
 
-- [ ] **Step 2: Write RED concurrency/idempotency tests**
+- [x] **Step 2: Write RED concurrency/idempotency tests**
 
 Use `TransactionTestCase` for simultaneous review claim and approval. `context.request_id` is the sole operation/idempotency identifier: retrying it returns the existing profile and creates no duplicate decision/profile/audit/outbox; a different request against an already decided version fails by state.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
   python manage.py test open_marketplace.seller_onboarding.tests.test_decisions open_marketplace.seller_onboarding.tests.test_admission open_marketplace.seller_onboarding.tests.test_review_concurrency -v 2
 ```
 
-- [ ] **Step 4: Implement review/profile/admission operations**
+- [x] **Step 4: Implement review/profile/admission operations**
 
 Use row locks, unique owner/application constraints and one outer transaction for decision/profile/owner/TOTP-requirement/audit/outbox. Profile creation adds an identity `seller_profile` TOTP requirement whether the profile starts active or awaiting TOTP; only terminal seller revocation removes it, in the same transaction. Privileged operations derive actor from context and call `access.public.authorize` internally. `enable_totp_and_activate_waiting_seller` opens one outer transaction, calls `identity.public.enable_totp`, queries the owner's profile, activates only `awaiting_owner_totp`, and rolls credential/recovery/profile/audit/outbox back together on any failure.
 
-- [ ] **Step 5: Run GREEN and contracts**
+Independent review remediation (after commit `425a11d`): decision replay now compares the recorded decision with the retried one; UUID cursor filters match `id` ordering in both review-queue and profile queries; profile admission audits record the real prior state and the mandatory reason; `activate_seller_after_totp` requires an active, email-verified ordinary account with a live session; admission operations return `None` per the approved interfaces; the profile-creation fallback only replays a profile of the same version. Follow-up review found and fixed repeat admission-cycle outbox collisions and stale `restriction_reason` after restore. Final full suite 230/230.
+
+- [x] **Step 5: Run GREEN and contracts**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations seller_onboarding
@@ -1364,7 +1366,7 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test lint-imports --no-cache
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add open_marketplace/seller_onboarding open_marketplace/workflows/totp.py

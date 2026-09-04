@@ -115,3 +115,62 @@ class SellerApplicationVersion(models.Model):
         raise SellerApplicationVersionMutationForbidden(
             "Submitted application versions are immutable."
         )
+
+
+class SellerReviewDecision(models.Model):
+    class Decision(models.TextChoices):
+        REQUEST_CHANGES = "request_changes", "Request changes"
+        APPROVE = "approve", "Approve"
+        REJECT = "reject", "Reject"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    application = models.ForeignKey(
+        SellerApplication,
+        on_delete=models.PROTECT,
+        related_name="review_decisions",
+    )
+    version_number = models.PositiveIntegerField()
+    decision = models.CharField(max_length=32, choices=Decision.choices)
+    reason = models.TextField()
+    reviewer_id = models.UUIDField()
+    occurred_at = models.DateTimeField()
+    request_id = models.UUIDField(db_index=True)
+
+    class Meta:
+        ordering = ("occurred_at", "id")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("application", "version_number"),
+                name="seller_review_decision_version_unique",
+            ),
+        )
+
+
+class SellerProfile(models.Model):
+    class State(models.TextChoices):
+        AWAITING_OWNER_TOTP = "awaiting_owner_totp", "Awaiting owner TOTP"
+        ACTIVE = "active", "Active"
+        SUSPENDED = "suspended", "Suspended"
+        REVOKED = "revoked", "Revoked"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    owner_id = models.UUIDField(unique=True)
+    application = models.ForeignKey(
+        SellerApplication,
+        on_delete=models.PROTECT,
+        related_name="seller_profiles",
+    )
+    approved_version = models.PositiveIntegerField()
+    state = models.CharField(max_length=32, choices=State.choices)
+    restriction_reason = models.TextField(null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ("created_at", "id")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("application", "approved_version"),
+                name="seller_profile_application_version_unique",
+            ),
+        )
