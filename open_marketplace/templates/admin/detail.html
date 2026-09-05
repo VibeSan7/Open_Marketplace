@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<dl>
+  {% for label, value in fields %}
+    <dt>{{ label }}</dt>
+    <dd>{{ value|default:"—" }}</dd>
+  {% endfor %}
+</dl>
+
+{% if role_list_url %}
+  <p><a href="{{ role_list_url }}">Manage active roles</a></p>
+{% endif %}
+
+{% for label, url, needs_reason in actions %}
+  <form method="post" action="{{ url }}">
+    {% csrf_token %}
+    {% if needs_reason %}<label>Reason <input name="reason" required></label>{% endif %}
+    <button type="submit">{{ label }}</button>
+  </form>
+{% endfor %}
+{% endblock %}
