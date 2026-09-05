@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Seller applications{% endblock %}
+{% block content %}
+<h1>Seller applications</h1>
+{% for application in applications %}
+  <article>
+    <p>State: {{ application.state }}</p>
+    {% if application.reason %}<p>Reason: {{ application.reason }}</p>{% endif %}
+    <a href="{% url 'seller-application-detail' application_id=application.id %}">View application</a>
+  </article>
+{% empty %}
+  <p>No applications.</p>
+{% endfor %}
+{% endblock %}

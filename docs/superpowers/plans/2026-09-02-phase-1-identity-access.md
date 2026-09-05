@@ -1430,33 +1430,38 @@ git commit -m "feat: add identity and invitation HTML flows"
 **Objective:** Дать ordinary account страницы draft/submit/withdraw/status/history/reapplication.
 
 **Files:**
-- Modify: `open_marketplace/web/forms.py`, `seller_views.py`, `urls.py`
+- Modify: `open_marketplace/seller_onboarding/application.py`, `public.py`
+- Modify: `open_marketplace/seller_onboarding/tests/test_applications.py`
+- Create: `open_marketplace/seller_onboarding/tests/web_fixtures.py`
+- Modify: `open_marketplace/web/forms.py`, `urls.py`
+- Create: `open_marketplace/web/seller_views.py`
 - Create: templates under `templates/seller/`
 - Create: `open_marketplace/web/tests/test_seller_pages.py`
 
 **Interfaces:**
 - Consumes only `seller_onboarding.public` and `identity.public`.
+- Adds `get_own_seller_application_draft(*, application_id, context) -> SellerDraftData | None`; it enforces ownership and editable state inside `seller_onboarding`, returns `None` for a new empty draft, and never exposes draft data through shared list or review views.
 - Produces named routes: `seller-application-create`, `seller-application-edit`, `seller-application-submit`, `seller-application-withdraw`, `seller-applications`, `seller-application-detail`, `seller-status`.
 
-- [ ] **Step 1: Write RED tests**
+- [x] **Step 1: Write RED tests**
 
-Prove own-only access, test fields only, immutable submitted version, visible decision reason, new version after changes, separate reapplication after reject/withdraw, one unfinished application and no catalog links/actions.
+Prove the own-only editable-draft query and HTML access, test fields only, immutable submitted version, visible decision reason, new version after changes, separate reapplication after reject/withdraw, one unfinished application and no catalog links/actions.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.web.tests.test_seller_pages -v 2
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.seller_onboarding.tests.test_applications open_marketplace.web.tests.test_seller_pages -v 2
 ```
 
-- [ ] **Step 3: Implement minimal pages**
+- [x] **Step 3: Implement minimal pages**
 
 Keep display/edit forms separate. Never render real-document upload fields, payment fields, KYC text or placeholders implying production approval.
 
-- [ ] **Step 4: Run GREEN and commit**
+- [x] **Step 4: Run GREEN and commit**
 
 ```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.web.tests.test_seller_pages -v 2
-git add open_marketplace/web open_marketplace/templates/seller
+docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.seller_onboarding.tests.test_applications open_marketplace.web.tests.test_seller_pages -v 2
+git add open_marketplace/seller_onboarding/application.py open_marketplace/seller_onboarding/public.py open_marketplace/seller_onboarding/tests/test_applications.py open_marketplace/seller_onboarding/tests/web_fixtures.py open_marketplace/web open_marketplace/templates/seller docs/superpowers/plans/2026-09-02-phase-1-identity-access.md
 git commit -m "feat: add seller application HTML flow"
 ```
 

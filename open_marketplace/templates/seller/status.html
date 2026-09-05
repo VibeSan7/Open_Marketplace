@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Seller status{% endblock %}
+{% block content %}
+<h1>Seller status</h1>
+{% if profile %}
+  <p>State: {{ profile.state }}</p>
+  {% if profile.restriction_reason %}<p>Reason: {{ profile.restriction_reason }}</p>{% endif %}
+{% else %}
+  <p>No seller profile.</p>
+{% endif %}
+{% endblock %}

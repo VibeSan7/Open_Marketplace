@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Seller application{% endblock %}
+{% block content %}
+<h1>Seller application</h1>
+<p>Start a seller application.</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Start application</button>
+</form>
+{% endblock %}

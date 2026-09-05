@@ -17,6 +17,21 @@ class PasswordResetRequestForm(forms.Form):
     email = forms.EmailField(max_length=254)
 
 
+class SellerApplicationForm(forms.Form):
+    business_form = forms.ChoiceField(
+        choices=(
+            ("sole_proprietor", "Sole proprietor"),
+            ("legal_entity", "Legal entity"),
+            ("self_employed", "Self-employed"),
+        )
+    )
+    display_name = forms.CharField(max_length=256)
+    official_name = forms.CharField(max_length=256)
+    registration_identifier = forms.CharField(max_length=128)
+    contact_email = forms.EmailField(max_length=254)
+    test_data_attested = forms.BooleanField()
+
+
 class PasswordResetConfirmForm(forms.Form):
     new_password = forms.CharField(
         max_length=128,

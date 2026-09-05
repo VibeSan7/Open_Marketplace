@@ -392,6 +392,28 @@ def get_own_seller_application(
     return _application_view(application), tuple(_version_view(version) for version in versions)
 
 
+def get_own_seller_application_draft(
+    *, application_id: UUID, context: OperationContext
+) -> SellerDraftData | None:
+    _require_ordinary_account(context)
+    _validate_application_id(application_id)
+    application = _owned_application(application_id=application_id, context=context)
+    if application.state not in _EDITABLE_STATES:
+        raise InvalidState("Seller application draft is not editable.")
+    if all(
+        getattr(application, field) is None
+        for field in (
+            "business_form",
+            "display_name",
+            "official_name",
+            "registration_identifier",
+            "contact_email",
+        )
+    ):
+        return None
+    return _stored_draft(application)
+
+
 # --- Task 13: review, profile and admission -------------------------------
 
 _REVIEW_QUERY_MAX_LIMIT = 100
