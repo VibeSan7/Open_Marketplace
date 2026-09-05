@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Seller application{% endblock %}
+{% block content %}
+<h1>Seller application</h1>
+<p>State: {{ application.state }}</p>
+{% if application.reason %}<p>Reason: {{ application.reason }}</p>{% endif %}
+{% if application.state == "draft" or application.state == "changes_requested" %}
+  <p><a href="{% url 'seller-application-edit' application_id=application.id %}">Edit application</a></p>
+  <form method="post" action="{% url 'seller-application-submit' application_id=application.id %}">
+    {% csrf_token %}
+    <button type="submit">Submit application</button>
+  </form>
+{% endif %}
+{% if application.state == "draft" or application.state == "submitted" or application.state == "under_review" or application.state == "changes_requested" %}
+  <form method="post" action="{% url 'seller-application-withdraw' application_id=application.id %}">
+    {% csrf_token %}
+    <button type="submit">Withdraw application</button>
+  </form>
+{% elif application.state == "rejected" or application.state == "withdrawn" %}
+  <p><a href="{% url 'seller-application-create' %}">Start a new application</a></p>
+{% endif %}
+{% for version in versions %}
+  <article>
+    <h2>Submitted version {{ version.version_number }}</h2>
+    <dl>
+      <dt>Business form</dt><dd>{{ version.data.business_form }}</dd>
+      <dt>Display name</dt><dd>{{ version.data.display_name }}</dd>
+      <dt>Official name</dt><dd>{{ version.data.official_name }}</dd>
+      <dt>Registration identifier</dt><dd>{{ version.data.registration_identifier }}</dd>
+      <dt>Contact email</dt><dd>{{ version.data.contact_email }}</dd>
+      <dt>Test data attested</dt><dd>{{ version.data.test_data_attested }}</dd>
+    </dl>
+  </article>
+{% endfor %}
+{% endblock %}

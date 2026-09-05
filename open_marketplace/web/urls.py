@@ -1,6 +1,6 @@
 from django.urls import path
 
-from open_marketplace.web import identity_views, staff_views
+from open_marketplace.web import identity_views, seller_views, staff_views
 
 urlpatterns = [
     path("register/", identity_views.register, name="register"),
@@ -83,4 +83,35 @@ urlpatterns = [
         {"purpose": "staff_invitation", "clean_name": "staff-invitation-accept"},
         name="staff-invitation-entry",
     ),
+    path(
+        "seller/applications/create/",
+        seller_views.seller_application_create,
+        name="seller-application-create",
+    ),
+    path(
+        "seller/applications/<uuid:application_id>/edit/",
+        seller_views.seller_application_edit,
+        name="seller-application-edit",
+    ),
+    path(
+        "seller/applications/<uuid:application_id>/submit/",
+        seller_views.seller_application_submit,
+        name="seller-application-submit",
+    ),
+    path(
+        "seller/applications/<uuid:application_id>/withdraw/",
+        seller_views.seller_application_withdraw,
+        name="seller-application-withdraw",
+    ),
+    path(
+        "seller/applications/",
+        seller_views.seller_applications,
+        name="seller-applications",
+    ),
+    path(
+        "seller/applications/<uuid:application_id>/",
+        seller_views.seller_application_detail,
+        name="seller-application-detail",
+    ),
+    path("seller/status/", seller_views.seller_status, name="seller-status"),
 ]

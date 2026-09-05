@@ -437,3 +437,61 @@ class SellerApplicationTestCase(TestCase):
             "draft",
         )
         self.assertEqual(self.AuditEntry.objects.count(), audit_count)
+
+    def test_own_editable_draft_query_returns_only_saved_editable_data(self):
+        owner = self.account()
+        other = self.account()
+        owner_context = self.context(owner.id)
+        other_context = self.context(other.id)
+        application_id = self.public.create_seller_application(context=owner_context)
+
+        self.assertIsNone(
+            self.public.get_own_seller_application_draft(
+                application_id=application_id,
+                context=owner_context,
+            )
+        )
+
+        self.public.update_seller_application_draft(
+            application_id=application_id,
+            data=self.draft(),
+            context=owner_context,
+        )
+        saved = self.public.get_own_seller_application_draft(
+            application_id=application_id,
+            context=owner_context,
+        )
+        self.assertEqual(saved.display_name, "Test shop")
+        self.assertEqual(saved.contact_email, "owner@example.com")
+
+        with self.assertRaises(PermissionDenied):
+            self.public.get_own_seller_application_draft(
+                application_id=application_id,
+                context=other_context,
+            )
+        with self.assertRaises(PermissionDenied):
+            self.public.get_own_seller_application_draft(
+                application_id=uuid4(),
+                context=owner_context,
+            )
+
+        self.public.submit_seller_application(
+            application_id=application_id,
+            context=owner_context,
+        )
+        with self.assertRaises(InvalidState):
+            self.public.get_own_seller_application_draft(
+                application_id=application_id,
+                context=owner_context,
+            )
+
+        self.models.SellerApplication.objects.filter(pk=application_id).update(
+            state="changes_requested"
+        )
+        self.assertEqual(
+            self.public.get_own_seller_application_draft(
+                application_id=application_id,
+                context=owner_context,
+            ),
+            saved,
+        )

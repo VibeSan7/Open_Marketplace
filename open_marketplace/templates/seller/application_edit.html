@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Seller application{% endblock %}
+{% block content %}
+<h1>Seller application</h1>
+{% if message %}<p>{{ message }}</p>{% endif %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save application</button>
+</form>
+{% endblock %}
