@@ -1388,35 +1388,35 @@ git commit -m "feat: add seller review and admission"
 **Interfaces:**
 - Identity views consume only `identity.public`; staff invitation pages consume only `access.public`. Seller-owner TOTP activation consumes the `workflows.totp` coordinator.
 - Produces named token-free form routes: `register`, `verify-email-complete`, `login`, `logout`, `password-reset-request`, `password-reset-confirm`, `password-change`, `security`, `reauthenticate`, `totp-setup`, `totp-disable`, `recovery-codes-replace`, `mandatory-totp-recovery`, `sessions`, `session-revoke`, `sessions-revoke-others`, and `staff-invitation-accept`. Separate sensitive-link entry routes exist for email verification, password reset, mandatory-TOTP recovery and staff invitation; their token-bearing paths only perform the clean-URL exchange described below.
-- A sensitive-link GET accepts the raw email token exactly once at a dedicated route, encrypts it with `LINK_EXCHANGE_ENCRYPTION_KEY` into a purpose-bound envelope stored in the server-side Django session with a short expiry, and immediately returns `303 See Other` to a token-free URL. It performs no domain mutation. A single-step clean POST consumes and deletes its envelope before calling the public operation. For staff acceptance and mandatory-TOTP recovery, the first POST consumes the initial envelope and, only after successful `begin_*`, replaces it with a shorter-lived encrypted continuation envelope containing the same token plus the returned setup/acceptance identifier; the final POST consumes and deletes that continuation before completion. Expired, missing, replayed, cross-session or wrong-purpose envelopes fail neutrally.
+- A sensitive-link GET accepts the raw email token exactly once at a dedicated route, encrypts it with `LINK_EXCHANGE_ENCRYPTION_KEY` into a purpose-bound envelope stored in the server-side Django session for 10 minutes, and immediately returns `303 See Other` to a token-free URL. It performs no domain mutation. A single-step clean POST consumes and deletes its envelope before calling the public operation. For staff acceptance and mandatory-TOTP recovery, the first POST consumes the initial envelope and, only after successful `begin_*`, replaces it with a 5-minute encrypted continuation envelope containing the same token plus the returned setup/acceptance identifier; the final POST consumes and deletes that continuation before completion. Expired, missing, replayed, cross-session or wrong-purpose envelopes fail neutrally.
 - Sensitive-link responses and clean forms send `Cache-Control: no-store` and `Referrer-Policy: no-referrer`; forms never copy a token into HTML, query strings or hidden fields. A logging filter is attached to every configured Django/application handler and redacts sensitive route segments before records are formatted.
 - Request middleware generates a new UUID request ID server-side and ignores client attempts to choose it; the same ID enters `OperationContext`, internal logs and an allowed response header. With safe-default `DEBUG=false`, custom `handler500` renders only a neutral page plus that ID. It never renders a traceback, exception text, request body or sensitive path.
 - GET is otherwise read-only; logout, email verification completion, password change/reset confirmation, TOTP confirmation/recovery, staff invitation acceptance and session revocation are CSRF-protected POST.
 - Login rotates/creates the Django server-side session key before calling `authenticate_account`; the operation binds that key to the credentials-derived account and returns the registry `session_id`. The view writes account/session UUIDs only after success and never calls a separate account-selected session-registration operation. A failed attempt flushes that anonymous key. On following requests, `identity.middleware` reconstructs `request.user` only after registry validation; web and Admin never import the Account model. HTML/Admin context construction takes `source_address` only from `request.META["REMOTE_ADDR"]`; it ignores client-supplied forwarding headers until a future trusted-proxy design explicitly replaces this local rule.
 - New staff acceptance is a clean-URL two-step flow: the first POST calls `begin_staff_invitation_acceptance` with password and the initial-envelope token; the second uses the continuation envelope to call `accept_staff_invitation`. The pending account receives no role before completion, and the resulting recovery codes are rendered once under `no-store`. Existing service accounts authenticate normally and then complete TOTP before acceptance without receiving a replacement recovery set. Mandatory-TOTP recovery follows the same continuation pattern with `begin_mandatory_totp_recovery` and `complete_mandatory_totp_recovery`.
 
-- [ ] **Step 1: Write RED client and token-hygiene tests**
+- [x] **Step 1: Write RED client and token-hygiene tests**
 
 Use Django `Client(enforce_csrf_checks=True)`. Cover all routes, neutral messages, safe `next` handling, credentials-to-registry-session binding, session rotation, registration/verification/reset/TOTP/session flows, mandatory-TOTP recovery and both new/existing-account staff invitations. With sentinel tokens, captured Django/application logs and rendered bodies, prove every state-changing route rejects missing CSRF; the initial sensitive GET is mutation-free; redirect targets are token-free; initial and continuation envelopes are encrypted, session/purpose-bound, expiring and single-use; and no raw session ID, token or secret is redisplayed or logged. Inject an unexpected operation exception and prove rollback, a neutral response containing only its request/correlation ID, no traceback to the browser, and redacted internal logs. Recovery codes appear once. Settings tests prove `HttpOnly`/`SameSite` defaults and that `DJANGO_SECURE_COOKIES=true` enables secure session/CSRF cookies plus HTTPS redirect/security flags.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
   python manage.py test open_marketplace.web.tests.test_identity_pages open_marketplace.web.tests.test_session_pages open_marketplace.web.tests.test_totp_pages open_marketplace.web.tests.test_staff_invitation_pages open_marketplace.web.tests.test_sensitive_links -v 2
 ```
 
-- [ ] **Step 3: Implement thin forms/views/templates and logging redaction**
+- [x] **Step 3: Implement thin forms/views/templates and logging redaction**
 
 Views translate form input into an `OperationContext`, invoke public operations, and map typed expected errors to neutral messages. No view imports another module’s models. Exchange sensitive links before rendering and register the redacting filter on Django request/server loggers. The domain token is never persisted a second time: the short-lived encrypted session envelope is only transport state.
 
-- [ ] **Step 4: Run GREEN**
+- [x] **Step 4: Run GREEN**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.web.tests -v 2
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add open_marketplace/web open_marketplace/templates open_marketplace/config

@@ -95,10 +95,12 @@ AUTH_USER_MODEL = "identity.Account"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "open_marketplace.web.middleware.RequestIdMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "open_marketplace.identity.middleware.SessionRegistryMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -108,7 +110,7 @@ ROOT_URLCONF = "open_marketplace.config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "open_marketplace" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -170,8 +172,45 @@ LINK_EXCHANGE_ENCRYPTION_KEY = _fernet_key("LINK_EXCHANGE_ENCRYPTION_KEY")
 THROTTLE_HASH_KEY = _hmac_key("THROTTLE_HASH_KEY")
 
 _secure_cookies = os.environ.get("DJANGO_SECURE_COOKIES", "false").lower() == "true"
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = _secure_cookies
 CSRF_COOKIE_SECURE = _secure_cookies
+SECURE_SSL_REDIRECT = _secure_cookies
+SECURE_HSTS_SECONDS = 31536000 if _secure_cookies else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _secure_cookies
+SECURE_HSTS_PRELOAD = _secure_cookies
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "sensitive_routes": {
+            "()": "open_marketplace.web.logging.SensitiveRouteFilter",
+        },
+    },
+    "formatters": {
+        "default": {
+            "format": "{levelname} {name} request_id={request_id} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["sensitive_routes"],
+            "formatter": "default",
+        },
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.server": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "open_marketplace": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
 
 EMAIL_VERIFICATION_TTL = timedelta(hours=24)
 PASSWORD_RESET_TTL = timedelta(minutes=30)

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Request failed{% endblock %}
+{% block content %}
+<h1>Request failed</h1>
+<p>Unable to complete this request.</p>
+{% if request_id %}<p>Request ID: {{ request_id }}</p>{% endif %}
+{% endblock %}

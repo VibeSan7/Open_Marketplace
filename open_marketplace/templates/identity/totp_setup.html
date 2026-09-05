@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Set up TOTP{% endblock %}
+{% block content %}
+<h1>Set up TOTP</h1>
+<p>Manual secret: <code>{{ setup.manual_secret }}</code></p>
+<p>Provisioning URI: <code>{{ setup.provisioning_uri }}</code></p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Confirm TOTP</button>
+</form>
+{% endblock %}

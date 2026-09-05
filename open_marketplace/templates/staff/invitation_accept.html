@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Accept staff invitation{% endblock %}
+{% block content %}
+<h1>Accept staff invitation</h1>
+{% if message %}<p>{{ message }}</p>{% endif %}
+{% if setup %}
+<p>Manual secret: <code>{{ setup.manual_secret }}</code></p>
+<p>Provisioning URI: <code>{{ setup.provisioning_uri }}</code></p>
+{% endif %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Continue</button>
+</form>
+{% endblock %}
