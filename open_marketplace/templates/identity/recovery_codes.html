@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Recovery codes{% endblock %}
+{% block content %}
+<h1>Recovery codes</h1>
+<p>Save these codes now. They will not be shown again.</p>
+<ul>
+  {% for code in recovery_codes %}<li><code>{{ code }}</code></li>{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Security{% endblock %}
+{% block content %}
+<h1>Security</h1>
+{% if account %}
+<p>Email: {{ account.email }}</p>
+<p>TOTP enabled: {{ account.totp_enabled|yesno:"yes,no" }}</p>
+{% endif %}
+<nav>
+  <a href="{% url 'sessions' %}">Sessions</a>
+  <a href="{% url 'reauthenticate' %}">Reauthenticate</a>
+  <a href="{% url 'totp-setup' %}">Set up TOTP</a>
+  <a href="{% url 'totp-disable' %}">Disable TOTP</a>
+  <a href="{% url 'recovery-codes-replace' %}">Replace recovery codes</a>
+</nav>
+<form method="post" action="{% url 'logout' %}">
+  {% csrf_token %}
+  <button type="submit">Sign out</button>
+</form>
+{% endblock %}

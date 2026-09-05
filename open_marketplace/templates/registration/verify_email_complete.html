@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Verify email{% endblock %}
+{% block content %}
+<h1>Verify email</h1>
+{% if message %}<p>{{ message }}</p>{% endif %}
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Verify email</button>
+</form>
+{% endblock %}
