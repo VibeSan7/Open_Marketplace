@@ -1,4 +1,5 @@
 import hmac
+import math
 import re
 import unicodedata
 from base64 import urlsafe_b64decode
@@ -15,7 +16,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from open_marketplace.audit.public import append_audit_entry
 from open_marketplace.common.crypto import (
@@ -27,6 +28,7 @@ from open_marketplace.common.errors import (
     InputRejected,
     InvalidState,
     PermissionDenied,
+    RateLimited,
 )
 from open_marketplace.common.types import Authorize, AuthorizationDecision, OperationContext
 from open_marketplace.identity.domain import (
@@ -37,6 +39,8 @@ from open_marketplace.identity.domain import (
     SessionRevocationReason,
     SessionSecuritySnapshot,
     SessionView,
+    ThrottleDecision,
+    ThrottleScope,
     TotpSetupView,
     canonicalize_email,
 )
@@ -45,6 +49,7 @@ from open_marketplace.identity.models import (
     AccountSession,
     OneTimeToken,
     RecoveryCode,
+    SecurityThrottle,
     TotpCredential,
     TotpRequirement,
     TotpSetup,
@@ -66,6 +71,10 @@ _TOTP_ISSUER = "Open Marketplace"
 _DUMMY_PASSWORD_HASH = make_password(token_urlsafe(32))
 _ACCOUNT_ADMIN_REASON_MAX_LENGTH = 1024
 _ACCOUNT_QUERY_MAX_LIMIT = 100
+_EMAIL_THROTTLE_SCOPES = frozenset(
+    {"registration_email", "password_reset_email", "staff_invitation_email"}
+)
+_RATE_LIMITED_MESSAGE = "Too many requests. Try again later."
 
 
 def _reject(message):
@@ -214,6 +223,14 @@ def register_account(
         password,
         canonical_email=canonical_email,
     )
+    throttle = check_email_throttle(
+        scope=SecurityThrottle.Scope.REGISTRATION_EMAIL,
+        email=canonical_email,
+        source_address=context.source_address,
+        now=context.now,
+    )
+    if not throttle.allowed:
+        return _NEUTRAL_ACCEPTED
     with transaction.atomic():
         account, created = _lock_or_create_account(
             canonical_email,
@@ -362,6 +379,188 @@ def _fingerprint(scope, value):
         f"{scope}\0{value}".encode("utf-8"),
         sha256,
     ).hexdigest()
+
+
+def _validated_source_address(source_address):
+    if not isinstance(source_address, str) or not source_address.strip():
+        _reject("context source_address is required.")
+    return source_address
+
+
+def _throttle_key_hash(scope, key_kind, value):
+    key = urlsafe_b64decode(settings.THROTTLE_HASH_KEY.encode("ascii"))
+    return hmac.new(
+        key,
+        f"{scope}\0{key_kind}\0{value}".encode("utf-8"),
+        sha256,
+    ).hexdigest()
+
+
+def _validated_throttle_input(*, scope, account_key_hash, source_key_hash, now):
+    if scope not in SecurityThrottle.Scope.values:
+        _reject("scope is invalid.")
+    for value in (account_key_hash, source_key_hash):
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            _reject("throttle key hash is invalid.")
+    _validate_utc(now, name="now")
+
+
+def _throttle_policy(scope):
+    if scope == SecurityThrottle.Scope.LOGIN:
+        return settings.LOGIN_THROTTLE_THRESHOLD, settings.LOGIN_THROTTLE_WINDOW
+    return settings.EMAIL_THROTTLE_LIMIT, settings.EMAIL_THROTTLE_WINDOW
+
+
+def _retry_after_seconds(rows, now):
+    waits = [
+        math.ceil((row.blocked_until - now).total_seconds())
+        for row in rows
+        if row.blocked_until is not None and row.blocked_until > now
+    ]
+    return max(waits, default=0)
+
+
+def _reset_expired_throttle(row, *, now, window):
+    if now < row.window_started_at + window:
+        return
+    row.window_started_at = now
+    row.allowed_attempt_count = 0
+    row.blocked_until = None
+    row.save(
+        update_fields=("window_started_at", "allowed_attempt_count", "blocked_until")
+    )
+
+
+def _next_blocked_until(row, *, scope, threshold, window, now):
+    if row.allowed_attempt_count < threshold:
+        return None
+    if scope != SecurityThrottle.Scope.LOGIN:
+        return row.window_started_at + window
+    delay_index = min(
+        row.allowed_attempt_count - threshold,
+        len(settings.LOGIN_THROTTLE_DELAYS) - 1,
+    )
+    return now + timedelta(seconds=settings.LOGIN_THROTTLE_DELAYS[delay_index])
+
+
+def _locked_throttle_rows(*, scope, account_key_hash, source_key_hash, now):
+    keys = (
+        (SecurityThrottle.KeyKind.ACCOUNT, account_key_hash),
+        (SecurityThrottle.KeyKind.SOURCE, source_key_hash),
+    )
+    for _ in range(2):
+        SecurityThrottle.objects.bulk_create(
+            tuple(
+                SecurityThrottle(
+                    scope=scope,
+                    key_kind=key_kind,
+                    key_hash=key_hash,
+                    window_started_at=now,
+                )
+                for key_kind, key_hash in keys
+            ),
+            ignore_conflicts=True,
+        )
+        rows = {
+            (row.key_kind, row.key_hash): row
+            for row in SecurityThrottle.objects.select_for_update()
+            .filter(scope=scope)
+            .filter(
+                Q(key_kind=keys[0][0], key_hash=keys[0][1])
+                | Q(key_kind=keys[1][0], key_hash=keys[1][1])
+            )
+            .order_by("key_kind")
+        }
+        if len(rows) == len(keys):
+            return tuple(rows[key] for key in keys)
+    raise RuntimeError("Security throttle rows could not be locked.")
+
+
+def check_throttle(
+    *,
+    scope: ThrottleScope,
+    account_key_hash: str,
+    source_key_hash: str,
+    now: datetime,
+) -> ThrottleDecision:
+    _validated_throttle_input(
+        scope=scope,
+        account_key_hash=account_key_hash,
+        source_key_hash=source_key_hash,
+        now=now,
+    )
+    threshold, window = _throttle_policy(scope)
+    with transaction.atomic():
+        rows = _locked_throttle_rows(
+            scope=scope,
+            account_key_hash=account_key_hash,
+            source_key_hash=source_key_hash,
+            now=now,
+        )
+        for row in rows:
+            _reset_expired_throttle(row, now=now, window=window)
+        retry_after_seconds = _retry_after_seconds(rows, now)
+        if retry_after_seconds:
+            return ThrottleDecision(
+                allowed=False,
+                retry_after_seconds=retry_after_seconds,
+            )
+        for row in rows:
+            row.allowed_attempt_count += 1
+            row.blocked_until = _next_blocked_until(
+                row,
+                scope=scope,
+                threshold=threshold,
+                window=window,
+                now=now,
+            )
+            row.save(update_fields=("allowed_attempt_count", "blocked_until"))
+    return ThrottleDecision(allowed=True, retry_after_seconds=0)
+
+
+def _inspect_throttle(*, scope, account_key_hash, source_key_hash, now):
+    _validated_throttle_input(
+        scope=scope,
+        account_key_hash=account_key_hash,
+        source_key_hash=source_key_hash,
+        now=now,
+    )
+    _, window = _throttle_policy(scope)
+    rows = []
+    with transaction.atomic():
+        for key_kind, key_hash in (
+            (SecurityThrottle.KeyKind.ACCOUNT, account_key_hash),
+            (SecurityThrottle.KeyKind.SOURCE, source_key_hash),
+        ):
+            row = (
+                SecurityThrottle.objects.select_for_update()
+                .filter(scope=scope, key_kind=key_kind, key_hash=key_hash)
+                .first()
+            )
+            if row is not None and now < row.window_started_at + window:
+                rows.append(row)
+    retry_after_seconds = _retry_after_seconds(rows, now)
+    return ThrottleDecision(
+        allowed=not retry_after_seconds,
+        retry_after_seconds=retry_after_seconds,
+    )
+
+
+def check_email_throttle(*, scope, email, source_address, now):
+    if scope not in _EMAIL_THROTTLE_SCOPES:
+        _reject("scope is invalid.")
+    canonical_email = _canonical_registration_email(email)
+    source_address = _validated_source_address(source_address)
+    return check_throttle(
+        scope=scope,
+        account_key_hash=_throttle_key_hash(scope, "account", canonical_email),
+        source_key_hash=_throttle_key_hash(scope, "source", source_address),
+        now=now,
+    )
+
+
+def _raise_rate_limited():
+    raise RateLimited(_RATE_LIMITED_MESSAGE)
 
 
 def _normalized_device_label(device_label):
@@ -588,8 +787,28 @@ def authenticate_account(
     _validate_second_factor(second_factor)
     canonical_email = _canonical_login_email(email)
     normalized_label = _normalized_device_label(device_label)
+    source_address = _validated_source_address(context.source_address)
+    account_key_hash = _throttle_key_hash(
+        SecurityThrottle.Scope.LOGIN,
+        "account",
+        canonical_email or "invalid",
+    )
+    source_key_hash = _throttle_key_hash(
+        SecurityThrottle.Scope.LOGIN,
+        "source",
+        source_address,
+    )
+    throttle = _inspect_throttle(
+        scope=SecurityThrottle.Scope.LOGIN,
+        account_key_hash=account_key_hash,
+        source_key_hash=source_key_hash,
+        now=context.now,
+    )
+    if not throttle.allowed:
+        _raise_rate_limited()
     password_candidate = password if isinstance(password, str) and len(password) <= 128 else ""
     result = None
+    rate_limited = False
 
     with transaction.atomic():
         _lock_fresh_django_session(django_session_key, context.now)
@@ -629,6 +848,13 @@ def authenticate_account(
                 canonical_email=canonical_email,
                 context=context,
             )
+            throttle = check_throttle(
+                scope=SecurityThrottle.Scope.LOGIN,
+                account_key_hash=account_key_hash,
+                source_key_hash=source_key_hash,
+                now=context.now,
+            )
+            rate_limited = not throttle.allowed
         else:
             ttl = (
                 settings.SERVICE_SESSION_ABSOLUTE_TTL
@@ -682,6 +908,8 @@ def authenticate_account(
             )
 
     if result is None:
+        if rate_limited:
+            _raise_rate_limited()
         _authentication_denied()
     return result
 
@@ -1219,6 +1447,14 @@ def request_password_reset(
 ) -> NeutralAccepted:
     _validate_anonymous_context(context)
     canonical_email = _canonical_registration_email(email)
+    throttle = check_email_throttle(
+        scope=SecurityThrottle.Scope.PASSWORD_RESET_EMAIL,
+        email=canonical_email,
+        source_address=context.source_address,
+        now=context.now,
+    )
+    if not throttle.allowed:
+        return _NEUTRAL_ACCEPTED
     with transaction.atomic():
         account = (
             Account.objects.select_for_update()

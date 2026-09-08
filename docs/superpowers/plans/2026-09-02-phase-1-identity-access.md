@@ -62,7 +62,7 @@ The checked-in Django settings expose these exact named phase-1 values; later ta
 - `PASSWORD_MIN_LENGTH = 12` and `PASSWORD_MAX_LENGTH = 128`, with Django common-password validation;
 - `ORDINARY_SESSION_ABSOLUTE_TTL = 30 days`;
 - `SERVICE_SESSION_ABSOLUTE_TTL = 12 hours` and `SERVICE_SESSION_IDLE_TTL = 30 minutes`;
-- `LOGIN_THROTTLE_THRESHOLD = 5` with `LOGIN_THROTTLE_WINDOW = 15 minutes` and growing bounded delay after the threshold;
+- `LOGIN_THROTTLE_THRESHOLD = 5` with `LOGIN_THROTTLE_WINDOW = 15 minutes`, `LOGIN_THROTTLE_INITIAL_DELAY = 5 seconds` and `LOGIN_THROTTLE_MAX_DELAY = 60 seconds`; the first five failed attempts are recorded without a pre-authentication denial, then the next attempt is delayed for 5 seconds, and every subsequently permitted failed attempt doubles the next delay through 10, 20 and 40 seconds to the 60-second cap;
 - `EMAIL_THROTTLE_LIMIT = 3` with `EMAIL_THROTTLE_WINDOW = 1 hour` independently per purpose plus source limit.
 
 Task 1 architecture tests assert these exact settings. The responsible feature task tests the just-before/at/just-after boundary with an injected `Clock`; expiry and reauthentication are invalid when `now >= deadline`.
@@ -1520,9 +1520,10 @@ git commit -m "feat: add role-separated staff admin"
 
 **Files:**
 - Modify: `open_marketplace/config/settings.py`
-- Modify: `open_marketplace/identity/models.py`, `application.py`, `public.py`
+- Modify: `open_marketplace/identity/models.py`, `domain.py`, `application.py`, `public.py`
 - Modify: `open_marketplace/access/application.py`
 - Create: identity migration for `SecurityThrottle`
+- Create: `open_marketplace/identity/management/commands/purge_security_throttles.py`
 - Create: `open_marketplace/tests/test_security.py`
 
 **Interfaces:**
@@ -1530,24 +1531,28 @@ git commit -m "feat: add role-separated staff admin"
 ```python
 check_throttle(*, scope: ThrottleScope, account_key_hash: str,
                source_key_hash: str, now: datetime) -> ThrottleDecision
+check_email_throttle(*, scope: Literal["registration_email", "password_reset_email", "staff_invitation_email"],
+                     email: str, source_address: str, now: datetime) -> ThrottleDecision
 ```
 
-- [ ] **Step 1: Write RED boundary/concurrency tests**
+- [x] **Step 1: Write RED boundary/concurrency tests**
 
-Cover five failed logins in 15 minutes, growing delay, success not erasing attack evidence, account+source counters, no permanent account lock from a foreign source, three email requests per hour per purpose plus source limit, equal external messages/timing class for known and unknown email, `REMOTE_ADDR` use with spoofed forwarding headers ignored, no raw address in counters/audit/logs, window expiry and simultaneous counter updates under `TransactionTestCase`.
+Cover five failed logins in a fixed 15-minute window anchored at the first recorded failure; the first five failures are permitted and recorded, the next attempt is denied for 5 seconds, and every subsequently permitted failure sets the next delay to 10, 20, 40 and then at most 60 seconds. Cover success not erasing attack evidence, successful login after a bounded delay, independent account and source counters, no permanent account lock from a foreign source, three email requests in a fixed one-hour window per purpose and independently per account/source, equal external messages/timing class for known and unknown email, `REMOTE_ADDR` use with spoofed forwarding headers ignored, no raw address in counters/audit/logs, reset exactly at the fixed-window boundary, fail-closed public throttle inputs, bounded retention cleanup and simultaneous counter updates under `TransactionTestCase`. A throttled staff invitation raises one bounded generic application error and creates neither an invitation nor an outbox message; registration and password reset retain their existing neutral response.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
   python manage.py test open_marketplace.tests.test_security -v 2
 ```
 
-- [ ] **Step 3: Implement PostgreSQL counters**
+- [x] **Step 3: Implement PostgreSQL counters**
 
-Use the Task 1 `THROTTLE_HASH_KEY` inside the application layer to derive account/source keys with HMAC-SHA-256 from canonical email and `context.source_address`; adapters never precompute or persist them. The HMAC input includes the exact `ThrottleScope`, so limits do not consume another purpose's budget. Use row locking/upsert in short transactions; return only `allowed` and bounded `retry_after_seconds`. Integrate checks before password work and before registration/reset/Admin staff-invitation email creation without changing neutral responses. HTML/Admin operations reject a missing server-observed address. The local `bootstrap_security_admin` command is the sole explicit exemption: it has no network source and is already bounded by the no-active-admin and one-live-bootstrap-invitation invariants; worker paths do not originate these requests.
+Use the Task 1 `THROTTLE_HASH_KEY` inside the identity application layer to derive keys. The exact UTF-8 HMAC-SHA-256 inputs are `{scope}\0account\0{canonical_email}` and `{scope}\0source\0{context.source_address}`. Adapters never precompute or persist them; `check_email_throttle` is the narrow public port that lets `access.application` reuse this identity-owned boundary for staff invitations. `SecurityThrottle` stores one row per independent `(scope, key_kind, key_hash)`, where `key_kind` is exactly `account` or `source`, `key_hash` is 64-character lowercase hexadecimal, and a unique constraint protects that tuple. Each row stores only its fixed-window start, allowed-attempt count and optional block-until time; no raw email or address is stored.
 
-- [ ] **Step 4: Run GREEN and commit**
+`check_throttle` atomically consumes one attempt only when both independent rows currently allow it; exceeding either counter denies the attempt without consuming either row. It creates missing rows with a conflict-safe PostgreSQL upsert, locks account then source rows in deterministic order, resets a row when `now >= window_started_at + configured_window`, and returns only `allowed` plus the maximum bounded seconds until both rows can proceed. For login, `authenticate_account` performs a non-consuming check before password work and calls the consuming counter only after failed authentication; a successful login therefore neither consumes nor erases failure evidence. For email operations, the consuming check occurs before registration/reset/Admin staff-invitation mutation. A throttled registration or password-reset request returns the existing `NeutralAccepted`; a throttled staff invitation raises one bounded generic `RateLimited` error. HTML/Admin operations reject a missing or empty server-observed address. The local `bootstrap_security_admin` command is the sole explicit exemption: it has no network source and is already bounded by the no-active-admin and one-live-bootstrap-invitation invariants; worker paths do not originate these requests. `purge_security_throttles` removes expired rows in bounded lock-skipping batches, never deletes a row whose `blocked_until` is still in the future, and uses an index on `(scope, window_started_at)`; production deployment must schedule this command before exposing the application to untrusted traffic.
+
+- [x] **Step 4: Run GREEN and commit**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \

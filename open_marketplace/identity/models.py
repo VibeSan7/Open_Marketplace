@@ -111,6 +111,51 @@ class Account(AbstractBaseUser):
         super().save(*args, **kwargs)
 
 
+class SecurityThrottle(models.Model):
+    class Scope(models.TextChoices):
+        LOGIN = "login", "Login"
+        REGISTRATION_EMAIL = "registration_email", "Registration email"
+        PASSWORD_RESET_EMAIL = "password_reset_email", "Password reset email"
+        STAFF_INVITATION_EMAIL = "staff_invitation_email", "Staff invitation email"
+
+    class KeyKind(models.TextChoices):
+        ACCOUNT = "account", "Account"
+        SOURCE = "source", "Source"
+
+    scope = models.CharField(max_length=32, choices=Scope.choices)
+    key_kind = models.CharField(max_length=8, choices=KeyKind.choices)
+    key_hash = models.CharField(max_length=64)
+    window_started_at = models.DateTimeField()
+    allowed_attempt_count = models.PositiveIntegerField(default=0)
+    blocked_until = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "identity_security_throttle"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("scope", "key_kind", "key_hash"),
+                name="identity_unique_throttle_scope_kind_hash",
+            ),
+            models.CheckConstraint(
+                condition=Q(key_hash__regex=r"^[0-9a-f]{64}$"),
+                name="identity_throttle_key_hash_format",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(blocked_until__isnull=True)
+                    | Q(blocked_until__gt=F("window_started_at"))
+                ),
+                name="identity_throttle_block_after_window_start",
+            ),
+        )
+        indexes = (
+            models.Index(
+                fields=("scope", "window_started_at"),
+                name="identity_throttle_expiry_idx",
+            ),
+        )
+
+
 class OneTimeToken(models.Model):
     class Purpose(models.TextChoices):
         EMAIL_VERIFICATION = "email_verification", "Email verification"

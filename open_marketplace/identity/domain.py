@@ -24,6 +24,12 @@ SessionRevocationReason: TypeAlias = Literal[
     "role_changed",
     "compromised",
 ]
+ThrottleScope: TypeAlias = Literal[
+    "login",
+    "registration_email",
+    "password_reset_email",
+    "staff_invitation_email",
+]
 
 
 def canonicalize_email(value: str) -> str:
@@ -35,6 +41,12 @@ def canonicalize_email(value: str) -> str:
 @dataclass(frozen=True, slots=True)
 class NeutralAccepted:
     accepted: Literal[True]
+
+
+@dataclass(frozen=True, slots=True)
+class ThrottleDecision:
+    allowed: bool
+    retry_after_seconds: int
 
 
 @dataclass(frozen=True, slots=True)

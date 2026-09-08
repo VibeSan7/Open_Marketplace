@@ -30,13 +30,19 @@ class PasswordOperationTests(TestCase):
             self.assertTrue(hasattr(public, name), f"{name} must be public.")
         return public
 
-    def anonymous_context(self, *, now=None, request_id=None):
+    def anonymous_context(
+        self,
+        *,
+        now=None,
+        request_id=None,
+        source_address="203.0.113.10",
+    ):
         return OperationContext(
             actor_account_id=None,
             session_id=None,
             request_id=request_id or uuid4(),
             source="html",
-            source_address="203.0.113.10",
+            source_address=source_address,
             now=now or self.now,
         )
 
@@ -246,12 +252,21 @@ class PasswordOperationTests(TestCase):
             self.create_account(kind=Account.Kind.SERVICE, state=Account.State.BLOCKED),
         )
 
+        emails = (
+            "unknown@example.com",
+            pending_ordinary.email,
+            pending_service.email,
+            *(account.email for account in eligible),
+        )
         results = [
-            self.request_reset("unknown@example.com"),
-            self.request_reset(pending_ordinary.email),
-            self.request_reset(pending_service.email),
+            self.request_reset(
+                email,
+                context=self.anonymous_context(
+                    source_address=f"203.0.113.{index + 11}"
+                ),
+            )
+            for index, email in enumerate(emails)
         ]
-        results.extend(self.request_reset(account.email) for account in eligible)
 
         self.assertTrue(all(result == public.NeutralAccepted(accepted=True) for result in results))
         self.assertEqual(
