@@ -43,7 +43,7 @@ OutboxMessageType = Literal[
     "seller_onboarding.admission_change",
 ]
 
-MAX_AUTOMATIC_ATTEMPTS = 5
+MAX_AUTOMATIC_ATTEMPTS = settings.OUTBOX_MAX_ATTEMPTS
 MAX_LEASE_SECONDS = 300
 MAX_QUERY_LIMIT = 100
 MAX_ENCRYPTED_DELIVERY_BYTES = 8192
