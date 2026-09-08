@@ -32,11 +32,13 @@ from open_marketplace.common.errors import (
     InputRejected,
     InvalidState,
     PermissionDenied,
+    RateLimited,
 )
 from open_marketplace.common.types import AuthorizationDecision, OperationContext
 from open_marketplace.identity.public import (
     AccountQuery,
     add_totp_requirement,
+    check_email_throttle,
     enable_invited_service_totp,
     get_account_snapshot,
     remove_totp_requirement,
@@ -48,6 +50,7 @@ from open_marketplace.identity.public import (
 from open_marketplace.outbox.public import enqueue_outbox_message
 
 ROLE_REASON_MAX_LENGTH = 1024
+_RATE_LIMITED_MESSAGE = "Too many requests. Try again later."
 
 _PERMISSION_CODES = (
     "seller_application.read",
@@ -307,42 +310,64 @@ def invite_staff_member(*, email: str, role: StaffRole, context: OperationContex
     if role not in RoleAssignment.Role.values:
         _reject("role is invalid.")
     _validate_context(context)
+    throttled = False
+    invitation_id = None
     with transaction.atomic():
         decision = authorize(context=context, permission="staff.invite")
-        _acquire_advisory_xact_lock("access.staff_invitation", email, role)
-        accounts = query_accounts(
-            query=AccountQuery(
-                kind=None,
-                state=None,
-                canonical_email=email,
-                limit=1,
-                cursor=None,
-            ),
-            context=context,
-            authorize=authorize,
-        )
-        if accounts and accounts[0].kind != "service":
-            raise InvalidState("Staff invitations cannot target ordinary accounts.")
-        if accounts and (accounts[0].state != "active" or accounts[0].email_verified_at is None):
-            raise InvalidState("The service account is unavailable.")
-        if accounts and RoleAssignment.objects.filter(
-            account_id=accounts[0].id,
-            role=role,
-            state=RoleAssignment.State.ACTIVE,
-        ).exists():
-            raise InvalidState("The staff role is already active.")
-        live = StaffInvitation.objects.filter(
+        throttle = check_email_throttle(
+            scope="staff_invitation_email",
             email=email,
-            role=role,
-            accepted_at__isnull=True,
-            revoked_at__isnull=True,
-            expires_at__gt=context.now,
-        ).first()
-        if live is not None:
-            return live.id
-        return _create_staff_invitation(
-            email=email, role=role, created_by_id=decision.account_id, context=context
+            source_address=context.source_address,
+            now=context.now,
         )
+        if not throttle.allowed:
+            throttled = True
+        else:
+            _acquire_advisory_xact_lock("access.staff_invitation", email, role)
+            accounts = query_accounts(
+                query=AccountQuery(
+                    kind=None,
+                    state=None,
+                    canonical_email=email,
+                    limit=1,
+                    cursor=None,
+                ),
+                context=context,
+                authorize=authorize,
+            )
+            if accounts and accounts[0].kind != "service":
+                raise InvalidState("Staff invitations cannot target ordinary accounts.")
+            if accounts and (
+                accounts[0].state != "active"
+                or accounts[0].email_verified_at is None
+            ):
+                raise InvalidState("The service account is unavailable.")
+            if accounts and RoleAssignment.objects.filter(
+                account_id=accounts[0].id,
+                role=role,
+                state=RoleAssignment.State.ACTIVE,
+            ).exists():
+                raise InvalidState("The staff role is already active.")
+            live = StaffInvitation.objects.filter(
+                email=email,
+                role=role,
+                accepted_at__isnull=True,
+                revoked_at__isnull=True,
+                expires_at__gt=context.now,
+            ).first()
+            invitation_id = (
+                live.id
+                if live is not None
+                else _create_staff_invitation(
+                    email=email,
+                    role=role,
+                    created_by_id=decision.account_id,
+                    context=context,
+                )
+            )
+    if throttled:
+        raise RateLimited(_RATE_LIMITED_MESSAGE)
+    return invitation_id
 
 
 def begin_staff_invitation_acceptance(
