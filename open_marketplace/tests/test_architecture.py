@@ -152,6 +152,22 @@ class EnvironmentValidationTests(TestCase):
             with self.subTest(case=case):
                 self.assert_rejected_without_value("APP_BASE_URL", value=value)
 
+    def test_bounded_numeric_settings_reject_invalid_values(self):
+        maximums = {
+            "EMAIL_PORT": 65535,
+            "EMAIL_TIMEOUT": 300,
+            "OUTBOX_BATCH_SIZE": 100,
+            "OUTBOX_LEASE_SECONDS": 300,
+            "OUTBOX_POLL_SECONDS": 300,
+        }
+        for name, maximum in maximums.items():
+            for value in ("not-an-integer", "0", str(maximum + 1)):
+                with self.subTest(name=name, value=value):
+                    result = self.run_settings_import(overrides={name: value})
+                    output = result.stdout + result.stderr
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(name, output)
+
 
 class ProjectSmokeTests(SimpleTestCase):
     def test_postgresql_is_the_only_database_engine(self):

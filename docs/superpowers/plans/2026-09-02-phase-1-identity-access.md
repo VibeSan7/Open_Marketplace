@@ -1568,20 +1568,21 @@ git commit -m "feat: add PostgreSQL security throttling"
 **Objective:** Реализовать реальную фоновую SMTP-доставку с короткими lease transactions, bounded retry and safe failure evidence.
 
 **Files:**
+- Create: `open_marketplace/outbox/mail_delivery.py`
 - Create: `open_marketplace/outbox/management/commands/run_outbox_worker.py`
 - Create: `open_marketplace/outbox/tests/test_worker.py`, `test_mail_delivery.py`
-- Modify: `open_marketplace/config/settings.py`, `compose.yaml`
+- Modify: `open_marketplace/outbox/application.py`, `open_marketplace/config/settings.py`, `open_marketplace/tests/test_architecture.py`, `compose.yaml`, `compose.test.yaml`
 
 **Interfaces:**
 - `run_outbox_worker --once` claims one bounded batch and exits; default mode polls with bounded sleep and handles SIGTERM between deliveries.
 - The adapter decrypts only `encrypted_delivery`, sends through Django SMTP, never logs recipient token/content, and erases delivery ciphertext only after terminal success.
 - A closed handler registry maps the exact `(message_type, format_version)` pairs: confirmation, password reset, staff invitation, seller decision and protected-account-change notifications use SMTP; the seller-created/admission-changed internal event uses an idempotent local handler that validates the safe payload and completes no domain transition. Unknown type/version is never guessed and moves to `manual_review` with a bounded safe error.
 
-- [ ] **Step 1: Write RED worker tests**
+- [x] **Step 1: Write RED worker tests**
 
 Cover every registered type/version, successful SMTP delivery, local internal-event completion without a subject-module call, unknown-version → `manual_review`, `--once`, process crash after send/before success, expired lease reclaim, retry without a second domain token, exponential bounded delay, bounded/redacted safe error, maximum attempts → `manual_review`, and authorized retry resuming the same outbox message/idempotency key.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml up -d postgres-test mailpit
@@ -1589,11 +1590,11 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
   python manage.py test open_marketplace.outbox.tests.test_worker open_marketplace.outbox.tests.test_mail_delivery -v 2
 ```
 
-- [ ] **Step 3: Implement worker/SMTP adapter**
+- [x] **Step 3: Implement worker/SMTP adapter**
 
 Each claim and final state update uses its own short transaction; SMTP runs outside them. A send with unknown outcome may be delivered again, as required by at-least-once semantics, but it never creates a second account/domain token. The Mailpit test uses a unique non-secret recipient and its HTTP API to verify received subject/type without recording tokenized links.
 
-- [ ] **Step 4: Run GREEN, inspect logs and commit**
+- [x] **Step 4: Run GREEN, inspect logs and commit**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml up -d postgres-test mailpit
@@ -1606,7 +1607,7 @@ docker compose -f compose.yaml -f compose.test.yaml logs --no-color mailpit > ar
 Expected: tests pass. `test_mail_delivery.py` uses sentinel secret values plus captured worker logs to prove no token, password, TOTP secret, `OUTBOX_ENCRYPTION_KEY`, `LINK_EXCHANGE_ENCRYPTION_KEY` or raw delivery ciphertext was logged; the Mailpit service log contains no message body.
 
 ```bash
-git add open_marketplace/outbox open_marketplace/config/settings.py compose.yaml
+git add compose.yaml compose.test.yaml docs/superpowers/plans/2026-09-02-phase-1-identity-access.md open_marketplace/config/settings.py open_marketplace/outbox open_marketplace/tests/test_architecture.py
 git commit -m "feat: add background email delivery"
 ```
 

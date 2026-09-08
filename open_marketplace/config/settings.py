@@ -68,6 +68,17 @@ def _origin(name):
     return value
 
 
+def _bounded_int(name, default, *, minimum, maximum):
+    raw_value = os.environ.get(name, str(default))
+    try:
+        value = int(raw_value)
+    except ValueError:
+        raise RuntimeError(f"{name} is invalid") from None
+    if not minimum <= value <= maximum:
+        raise RuntimeError(f"{name} is invalid")
+    return value
+
+
 SECRET_KEY = _required("DJANGO_SECRET_KEY")
 _database_password = _required("DATABASE_PASSWORD")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
@@ -162,14 +173,33 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.environ["EMAIL_HOST"]
-EMAIL_PORT = int(os.environ["EMAIL_PORT"])
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "mailpit")
+EMAIL_PORT = _bounded_int("EMAIL_PORT", 1025, minimum=1, maximum=65535)
+EMAIL_TIMEOUT = _bounded_int("EMAIL_TIMEOUT", 10, minimum=1, maximum=300)
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    "no-reply@open-marketplace.local",
+)
 APP_BASE_URL = _origin("APP_BASE_URL")
 
 TOTP_ENCRYPTION_KEY = _fernet_key("TOTP_ENCRYPTION_KEY")
 OUTBOX_ENCRYPTION_KEY = _fernet_key("OUTBOX_ENCRYPTION_KEY")
 LINK_EXCHANGE_ENCRYPTION_KEY = _fernet_key("LINK_EXCHANGE_ENCRYPTION_KEY")
 THROTTLE_HASH_KEY = _hmac_key("THROTTLE_HASH_KEY")
+OUTBOX_BATCH_SIZE = _bounded_int("OUTBOX_BATCH_SIZE", 50, minimum=1, maximum=100)
+OUTBOX_LEASE_SECONDS = _bounded_int(
+    "OUTBOX_LEASE_SECONDS",
+    60,
+    minimum=1,
+    maximum=300,
+)
+OUTBOX_POLL_SECONDS = _bounded_int(
+    "OUTBOX_POLL_SECONDS",
+    5,
+    minimum=1,
+    maximum=300,
+)
+OUTBOX_MAX_ATTEMPTS = 5
 
 _secure_cookies = os.environ.get("DJANGO_SECURE_COOKIES", "false").lower() == "true"
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
