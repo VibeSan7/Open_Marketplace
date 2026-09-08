@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | Open Marketplace staff{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">Open Marketplace staff</a></div>
+{% endblock %}
+
+{% block usertools %}
+{% if has_permission %}
+<a href="{% url 'admin:password_change' %}">Change password</a>
+<form action="{% url 'admin:logout' %}" method="post" style="display:inline">
+  {% csrf_token %}
+  <button type="submit">Log out</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}
+<nav aria-label="Staff operations">
+  {% for label, url in nav_links %}
+    <a href="{{ url }}">{{ label }}</a>{% if not forloop.last %} | {% endif %}
+  {% endfor %}
+</nav>
+{% endblock %}

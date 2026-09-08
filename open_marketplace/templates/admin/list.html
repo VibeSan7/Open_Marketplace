@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if invitation_create_url %}
+<section>
+  <h2>Invite staff member</h2>
+  <form method="post" action="{{ invitation_create_url }}">
+    {% csrf_token %}
+    <label>Email <input type="email" name="email" required></label>
+    <label>Role
+      <select name="role" required>
+        <option value="seller_reviewer">Seller reviewer</option>
+        <option value="security_admin">Security admin</option>
+      </select>
+    </label>
+    <button type="submit">Invite</button>
+  </form>
+</section>
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      {% for header in headers %}<th scope="col">{{ header }}</th>{% endfor %}
+      <th scope="col">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+      <tr>
+        {% for value in row.values %}
+          <td>
+            {% if forloop.first and row.detail_url %}<a href="{{ row.detail_url }}">{{ value }}</a>{% else %}{{ value|default:"—" }}{% endif %}
+          </td>
+        {% endfor %}
+        <td>
+          {% for label, url, needs_reason in row.actions %}
+            <form method="post" action="{{ url }}">
+              {% csrf_token %}
+              {% if needs_reason %}<label>Reason <input name="reason" required></label>{% endif %}
+              <button type="submit">{{ label }}</button>
+            </form>
+          {% empty %}—{% endfor %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="99">No records.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
