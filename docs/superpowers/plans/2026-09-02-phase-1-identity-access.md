@@ -1767,7 +1767,7 @@ git commit -m "test: verify PostgreSQL backup restoration"
 - Security review records severity, evidence, owner and state for every finding; critical/high must have zero unresolved entries.
 - If an acceptance/security/migration test reveals an implementation defect, stop the gate, add the minimal regression test to the responsible module, make the surgical fix, rerun that focused suite plus affected contracts, and commit the fix separately before restarting the complete gate. The final documentation commit never hides product-code fixes.
 
-- [ ] **Step 1: Write RED tests for all 17 spec-level end-to-end scenarios**
+- [x] **Step 1: Write RED tests for all 17 spec-level end-to-end scenarios**
 
 Implement exactly this acceptance matrix:
 
@@ -1789,7 +1789,7 @@ Implement exactly this acceptance matrix:
 16. Account block revokes sessions.
 17. The test database is really restored into a separate database.
 
-- [ ] **Step 2: Write migration compatibility tests**
+- [x] **Step 2: Write migration compatibility tests**
 
 Use Django `MigrationExecutor` on PostgreSQL. For every non-initial project migration, migrate its app to the immediate predecessor, create the smallest valid predecessor-state rows, migrate to that app's current leaf, and verify preserved identifiers, relationships, defaults and constraints through current public snapshots. Test a clean migration graph separately. The test restores the leaf schema in teardown even after failure and never uses SQLite.
 
@@ -1806,7 +1806,7 @@ bash ops/verify_restore.sh
 
 Expected: no pending migration, Import Linter contracts kept, zero failed tests, restore exit 0. `check --deploy` warnings caused only by local HTTP settings must be documented and production settings tests must prove secure cookie/HTTPS flags switch on; other warnings are failures.
 
-- [ ] **Step 4: Verify repository/image secrecy and scope**
+- [x] **Step 4: Verify repository/image secrecy and scope**
 
 Run:
 
@@ -1816,7 +1816,7 @@ if git grep -n -I -E "BEGIN (RSA|OPENSSH|PRIVATE) KEY" -- .; then
   exit 1
 fi
 for name in DJANGO_SECRET_KEY DATABASE_PASSWORD TOTP_ENCRYPTION_KEY OUTBOX_ENCRYPTION_KEY LINK_EXCHANGE_ENCRYPTION_KEY THROTTLE_HASH_KEY; do
-  if git grep -n -I -E "${name}=.+" -- . ':!*.example'; then
+  if git grep -n -I -E "${name}=[[:space:]]*[^[:space:]]" -- . ':!*.example'; then
     echo "tracked non-empty secret assignment found: ${name}" >&2
     exit 1
   fi
@@ -1831,7 +1831,7 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 `test_scope_boundaries.py` parses `pyproject.toml` with `tomllib` and enforces the exact approved direct-dependency allowlist after normalizing package names; verifies forbidden apps are absent from `INSTALLED_APPS`; rejects a project `/api` namespace and inspects project-owned URL callbacks (excluding Django's own Admin internals) for JSON/DRF handlers; inspects registered project-model metadata to reject catalog, inventory, order, payment, KYC models and every `FileField`/document-upload field; and scans any tracked fixture files structurally to reject password/token/TOTP/recovery/encryption-key values. Expected: secret scan has no hit, `.env` is ignored and untracked, runtime/test images lack build-context secrets, and the scope test passes. The structured test is authoritative; searching production source for words such as `redis` is not used because security/scope tests must legitimately contain the forbidden names they assert against.
 
-- [ ] **Step 5: Perform manual working-result demonstration**
+- [x] **Step 5: Perform manual working-result demonstration**
 
 After `.env` generation, use the one documented local-start command:
 
@@ -1843,7 +1843,7 @@ Then demonstrate in a local browser and documented CLI: bootstrap creates one se
 
 Record only non-secret screenshots/command summaries in `docs/security/phase-1-review.md`.
 
-- [ ] **Step 6: Write completion documentation**
+- [x] **Step 6: Write completion documentation**
 
 `README.md` links the approved spec, repeats the exact migrate-then-up command above plus test/restore commands, module map and explicit non-goals. Runbooks explain `.env` generation without exposing values, initial bootstrap, Mailpit, failure recovery and clean shutdown.
 

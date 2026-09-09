@@ -14,6 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 
 import open_marketplace.access.public as access_public
+import open_marketplace.audit.public as audit_public
 from open_marketplace.common.errors import ApplicationError, InputRejected, PermissionDenied
 from open_marketplace.common.types import OperationContext
 
@@ -92,6 +93,22 @@ def action_response(site, request, operation, success_url):
     try:
         operation()
     except PermissionDenied:
+        context = operation_context(request)
+        if not audit_public.audit_entry_exists(
+            request_id=context.request_id,
+            action="access.permission_denied",
+        ):
+            audit_public.append_audit_entry(
+                context=context,
+                action="access.permission_denied",
+                object_type="account",
+                object_id=str(context.actor_account_id or context.request_id),
+                result="denied",
+                reason="permission_denied",
+                before={},
+                after={},
+                effective_role=None,
+            )
         return forbidden_response()
     except (ApplicationError, ObjectDoesNotExist, ValueError):
         return expected_error_response(site, request)

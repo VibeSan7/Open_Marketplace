@@ -228,6 +228,13 @@ def append_audit_entry(
     return entry.id
 
 
+def audit_entry_exists(*, request_id: UUID, action: str) -> bool:
+    if not isinstance(request_id, UUID):
+        _reject("request_id must be a UUID.")
+    _validate_text(action, name="action", max_length=ACTION_MAX_LENGTH)
+    return AuditEntry.objects.filter(request_id=request_id, action=action).exists()
+
+
 def _validate_query(query):
     if not isinstance(query, AuditQuery):
         _reject("query must be an AuditQuery.")
