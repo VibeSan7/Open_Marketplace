@@ -29,6 +29,7 @@ from open_marketplace.seller_onboarding.domain import (
     SellerDraftData,
     SellerProfileQuery,
     SellerProfileView,
+    SellerReviewDecisionView,
     SellerReviewQuery,
 )
 from open_marketplace.seller_onboarding.models import (
@@ -187,6 +188,18 @@ def _version_view(version):
             test_data_attested=version.test_data_attested,
         ),
         submitted_at=version.submitted_at,
+    )
+
+
+def _decision_view(decision):
+    return SellerReviewDecisionView(
+        id=decision.id,
+        application_id=decision.application_id,
+        version_number=decision.version_number,
+        decision=decision.decision,
+        reviewer_id=decision.reviewer_id,
+        occurred_at=decision.occurred_at,
+        request_id=decision.request_id,
     )
 
 
@@ -390,6 +403,24 @@ def get_own_seller_application(
         application_id=application.id
     ).order_by("version_number", "id")
     return _application_view(application), tuple(_version_view(version) for version in versions)
+
+
+def get_own_seller_review_decision(
+    *,
+    application_id: UUID,
+    version_number: int,
+    context: OperationContext,
+) -> SellerReviewDecisionView | None:
+    _require_ordinary_account(context)
+    _validate_application_id(application_id)
+    if not isinstance(version_number, int) or isinstance(version_number, bool) or version_number < 1:
+        _reject("version_number must be a positive integer.")
+    application = _owned_application(application_id=application_id, context=context)
+    decision = SellerReviewDecision.objects.filter(
+        application_id=application.id,
+        version_number=version_number,
+    ).first()
+    return _decision_view(decision) if decision is not None else None
 
 
 def get_own_seller_application_draft(

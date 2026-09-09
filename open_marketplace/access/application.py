@@ -545,19 +545,20 @@ def bootstrap_security_admin(*, email: str, context: OperationContext) -> UUID:
         )
 
 
-def _deny(*, context, permission):
-    object_id = str(context.actor_account_id or context.request_id)
-    append_audit_entry(
-        context=context,
-        action="access.permission_denied",
-        object_type="account",
-        object_id=object_id,
-        result="denied",
-        reason="permission_denied",
-        before={},
-        after={},
-        effective_role=None,
-    )
+def _deny(*, context, permission, audit_denial):
+    if audit_denial:
+        object_id = str(context.actor_account_id or context.request_id)
+        append_audit_entry(
+            context=context,
+            action="access.permission_denied",
+            object_type="account",
+            object_id=object_id,
+            result="denied",
+            reason="permission_denied",
+            before={},
+            after={},
+            effective_role=None,
+        )
     raise PermissionDenied("Permission denied.")
 
 
@@ -574,25 +575,27 @@ def _scopes_for(permission, granting_roles):
     return tuple(scopes)
 
 
-def authorize(
+def _authorize(
     *,
     context: OperationContext,
     permission: PermissionCode,
+    audit_denial: bool,
 ) -> AuthorizationDecision:
     _validate_context(context)
     _validate_permission(permission)
     if context.actor_account_id is None or context.session_id is None:
-        _deny(context=context, permission=permission)
+        _deny(context=context, permission=permission, audit_denial=audit_denial)
 
     try:
         with transaction.atomic():
+            assignments = RoleAssignment.objects
+            if audit_denial:
+                assignments = assignments.select_for_update()
             active_roles = set(
-                RoleAssignment.objects.select_for_update()
-                .filter(
+                assignments.filter(
                     account_id=context.actor_account_id,
                     state=RoleAssignment.State.ACTIVE,
-                )
-                .values_list("role", flat=True)
+                ).values_list("role", flat=True)
             )
             account = get_account_snapshot(context.actor_account_id)
             session = require_live_session_security_snapshot(
@@ -601,7 +604,7 @@ def authorize(
                 now=context.now,
             )
     except (AuthenticationDenied, ObjectDoesNotExist):
-        _deny(context=context, permission=permission)
+        _deny(context=context, permission=permission, audit_denial=audit_denial)
 
     if (
         account.kind != "service"
@@ -609,7 +612,7 @@ def authorize(
         or account.email_verified_at is None
         or not account.totp_enabled
     ):
-        _deny(context=context, permission=permission)
+        _deny(context=context, permission=permission, audit_denial=audit_denial)
 
     granting_roles = tuple(
         role
@@ -617,7 +620,7 @@ def authorize(
         if role in active_roles and permission in _ROLE_PERMISSIONS[role]
     )
     if not granting_roles:
-        _deny(context=context, permission=permission)
+        _deny(context=context, permission=permission, audit_denial=audit_denial)
 
     if permission in _SENSITIVE_PERMISSIONS:
         cutoff = context.now - settings.SENSITIVE_ACTION_REAUTH_TTL
@@ -626,7 +629,7 @@ def authorize(
             or session.reauthenticated_at <= cutoff
             or session.reauthenticated_at > context.now
         ):
-            _deny(context=context, permission=permission)
+            _deny(context=context, permission=permission, audit_denial=audit_denial)
 
     return AuthorizationDecision(
         account_id=account.id,
@@ -635,6 +638,22 @@ def authorize(
         scopes=_scopes_for(permission, granting_roles),
         reauthenticated_at=session.reauthenticated_at,
     )
+
+
+def authorize(
+    *,
+    context: OperationContext,
+    permission: PermissionCode,
+) -> AuthorizationDecision:
+    return _authorize(context=context, permission=permission, audit_denial=True)
+
+
+def authorize_read_only(
+    *,
+    context: OperationContext,
+    permission: PermissionCode,
+) -> AuthorizationDecision:
+    return _authorize(context=context, permission=permission, audit_denial=False)
 
 
 def check_permission(
