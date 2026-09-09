@@ -1831,7 +1831,9 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 `test_scope_boundaries.py` parses `pyproject.toml` with `tomllib` and enforces the exact approved direct-dependency allowlist after normalizing package names; verifies forbidden apps are absent from `INSTALLED_APPS`; rejects a project `/api` namespace and inspects project-owned URL callbacks (excluding Django's own Admin internals) for JSON/DRF handlers; inspects registered project-model metadata to reject catalog, inventory, order, payment, KYC models and every `FileField`/document-upload field; and scans any tracked fixture files structurally to reject password/token/TOTP/recovery/encryption-key values. Expected: secret scan has no hit, `.env` is ignored and untracked, runtime/test images lack build-context secrets, and the scope test passes. The structured test is authoritative; searching production source for words such as `redis` is not used because security/scope tests must legitimately contain the forbidden names they assert against.
 
-- [x] **Step 5: Perform manual working-result demonstration**
+- [ ] **Step 5: Perform manual working-result demonstration**
+
+Status: the Django test Client demonstration against persistent local PostgreSQL and SMTP/Mailpit passed. The required manual local-browser demonstration remains unverified; the CUA attempt did not reach the local application. Do not count the integration harness as completion of this manual step.
 
 After `.env` generation, use the one documented local-start command:
 

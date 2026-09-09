@@ -75,7 +75,7 @@ The scope test rejects unapproved direct dependencies, forbidden apps, JSON/DRF 
 
 ## Local working-result evidence
 
-The local stack was started with PostgreSQL, web, worker and Mailpit. The non-secret demonstration used real HTML and custom Admin view boundaries against the running local database:
+The local stack was started with PostgreSQL, web, worker and Mailpit. A temporary Django test Client harness exercised the HTML and custom Admin view boundaries in-process against the persistent local PostgreSQL database, using real SMTP delivery to Mailpit. It did not drive an authenticated browser or send its application requests through the running web server. The following results are integration evidence, not completion of the manual browser demonstration:
 
 - security-admin, reviewer and ordinary owner completed the invitation/registration flows;
 - each TOTP setup returned 10 recovery codes once; values were discarded in memory;
@@ -97,8 +97,13 @@ The CUA browser window available on the workstation was an unrelated, timed-out 
 | SEC-002 | Info | Restore proof is disposable test evidence, not a production backup policy. | `docs/runbooks/test-and-restore.md`. | Resolved/documented; production RPO/RTO, retention and key custody remain a separate gate. | Operations owner |
 | SEC-003 | Info | Recovery codes and one-time secrets must never be retained by the demo operator. | HTML flow, audit secrecy assertions and runbook. | Resolved/documented; values were discarded. | Application owner |
 
-Critical/high unresolved findings: **0**.
+The implementer's automated checks did not report an unresolved critical/high code finding. This is not an independent security sign-off.
 
 ## Phase 1 disposition
 
-Implementation and evidence gates are complete in this worktree. Final disposition remains subject to the independent reviewer approval, final documentation-aware quality rerun and the separate Task 20 commit/PR. No claim of merged or deployed status is made by this document.
+**Task 20 remains incomplete and is not approved for merge.**
+
+- Independent review invocation `task20-independent-review-1` returned only `HTTP 403: Access denied by security policy`. The launcher envelope reported `ok: true`, but contained neither a code review nor an `APPROVE` verdict. The source and cause of the HTTP denial are not established. No replacement reviewer or security-policy bypass has been used.
+- The manual local-browser demonstration required by Task 20 Step 5 is still unverified. The successful Django test Client run is retained as integration evidence only.
+- The implementation, tests and initial documentation were committed together as `b48ea7fbe59daa593c8860b7874d1fb122a5b62b` and pushed before independent approval. This did not follow the plan's separate-fix-before-documentation commit sequence. The published history has not been rewritten; it must not be presented as evidence of approval.
+- A draft pull request may collect the work, but readiness and merge must wait for the outstanding acceptance checks and a valid independent review. No merged or deployed status is claimed.

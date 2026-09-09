@@ -4,7 +4,7 @@ This runbook is for the isolated local Docker Compose environment. It does not u
 
 ## 1. Prepare `.env` safely
 
-Copy `.env.example` and generate the six secret values locally using the procedure in [README.md](../../README.md). The generator writes `.env` but prints no secret. Confirm only its Git state:
+For first-time setup only, generate `.env` and its six secret values locally using the procedure in [README.md](../../README.md). The generator prints no secret and refuses to overwrite an existing `.env`. Keep existing keys when reusing a database; do not copy `.env.example` over them. Confirm only the file's Git state:
 
 ```bash
 git check-ignore .env
@@ -95,7 +95,7 @@ Use disposable addresses and do not record their credentials.
 9. As security-admin, open the seller detail and suspend, then restore, admission.
 10. Open the Admin audit page and verify the application action chain. Mailpit must contain the invitation, verification and decision messages.
 
-The Task 20 demonstration executed this sequence against the live local Compose PostgreSQL and Mailpit services. It recorded only counts, statuses and UUIDs; recovery-code and token values were not written to the repository or output.
+The automated Task 20 demonstration exercised this sequence through Django's in-process test Client against local Compose PostgreSQL and Mailpit. It recorded only counts, statuses and UUIDs; recovery-code and token values were not written to the repository or output. This does not replace manual browser acceptance: the required browser demonstration remains pending.
 
 ## 5. Failure recovery
 

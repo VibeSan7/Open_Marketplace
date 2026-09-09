@@ -14,16 +14,16 @@ Phase 1 covers identity, access, seller onboarding, audit and the outbox worker.
 
 - Docker Desktop with Compose and WSL integration enabled;
 - Git Bash, WSL or another POSIX-compatible shell for the commands below;
-- no host Python installation is required for the canonical project commands.
+- Python 3 for the one-time, standard-library-only `.env` generator below; the application and canonical tests run in Docker, not host Python.
 
 ## Create the local environment file
 
-Secrets belong only in the untracked `.env` file. Do not paste their values into a command, log, issue or pull request. From the repository root, copy the safe variable-name template and generate values locally without printing them:
+Secrets belong only in the untracked `.env` file. Do not paste their values into a command, log, issue or pull request. From the repository root, generate a new `.env` from the safe variable-name template without printing values. This is for first-time setup only: an existing `.env` must be kept, not regenerated while its database or encrypted records are in use. Exclusive file creation makes the command fail rather than overwrite existing keys.
 
 ```bash
-cp .env.example .env
 python - <<'PY'
 import base64
+import os
 import secrets
 from pathlib import Path
 
@@ -40,7 +40,9 @@ rendered = []
 for line in source:
     name, separator, _ = line.partition("=")
     rendered.append(f"{name}={keys[name]}" if separator and name in keys else line)
-Path(".env").write_text("\n".join(rendered) + "\n", encoding="utf-8")
+descriptor = os.open(".env", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
+    output.write("\n".join(rendered) + "\n")
 PY
 
 git check-ignore .env
