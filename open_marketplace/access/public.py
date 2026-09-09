@@ -1,6 +1,7 @@
 from open_marketplace.access.application import (
     accept_staff_invitation,
     authorize,
+    authorize_read_only,
     begin_staff_invitation_acceptance,
     bootstrap_security_admin,
     check_permission,
@@ -32,6 +33,7 @@ __all__ = (
     "StaffRole",
     "accept_staff_invitation",
     "authorize",
+    "authorize_read_only",
     "begin_staff_invitation_acceptance",
     "bootstrap_security_admin",
     "check_permission",

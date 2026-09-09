@@ -623,6 +623,12 @@ def _to_view(message):
     )
 
 
+def get_outbox_message_snapshot(*, idempotency_key: str) -> OutboxMessageView | None:
+    _validate_identifier(idempotency_key, name="idempotency_key")
+    message = OutboxMessage.objects.filter(idempotency_key=idempotency_key).first()
+    return _to_view(message) if message is not None else None
+
+
 def query_manual_review_messages(
     *,
     query: OutboxQuery,

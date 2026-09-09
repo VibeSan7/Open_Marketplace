@@ -94,6 +94,7 @@ INSTALLED_APPS = [
     "open_marketplace.seller_onboarding.apps.SellerOnboardingConfig",
     "open_marketplace.audit.apps.AuditConfig",
     "open_marketplace.outbox.apps.OutboxConfig",
+    "open_marketplace.verification.apps.VerificationConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

@@ -1620,22 +1620,26 @@ git commit -m "feat: add background email delivery"
 **Files:**
 - Create: `ops/verify_restore.sh`
 - Create: `open_marketplace/verification/apps.py`
+- Create: `open_marketplace/verification/_probe.py`
 - Create: `open_marketplace/verification/management/commands/seed_restore_probe.py`
 - Create: `open_marketplace/verification/management/commands/verify_restore_probe.py`
 - Create: `open_marketplace/verification/tests/test_restore_commands.py`
 - Create: `docs/runbooks/test-and-restore.md`
-- Modify: `open_marketplace/config/settings.py`, `.gitignore`, `compose.test.yaml`
+- Modify: `open_marketplace/config/settings.py`, `open_marketplace/access/application.py`, `open_marketplace/access/public.py`, `open_marketplace/outbox/application.py`, `open_marketplace/outbox/public.py`, `open_marketplace/seller_onboarding/application.py`, `open_marketplace/seller_onboarding/domain.py`, `open_marketplace/seller_onboarding/public.py`
+- Verify existing isolation/ignore settings: `.gitignore`, `compose.test.yaml`
 
 **Interfaces:**
 - `seed_restore_probe --marker RESTORE_MARKER` creates deterministic linked rows through public application interfaces for account, role, seller application/version/decision/profile, audit and outbox.
+- `seed_restore_probe` refuses to run before its first write unless the active host is exactly `postgres-test` and the database name starts with `test_` or `restore_source_`.
 - `verify_restore_probe --marker RESTORE_MARKER` is read-only, consumes public query/snapshot interfaces, fails non-zero when a row, relationship, terminal state or migration is absent, and prints only row kinds, safe identifiers and migration leaf names.
+- Restore verification uses the same authorization policy without writing a permission-denial audit entry, including when restored roles or sessions are missing.
 - `ops/verify_restore.sh` uses only `postgres-test` with its `tmpfs`; it creates unique source and target databases, restores the source custom dump into the target, runs `migrate --check` and `verify_restore_probe` against the target, drops both databases, deletes the dump and preserves only `artifacts/restore-result.txt`.
 
-- [ ] **Step 1: Write RED restore probe**
+- [x] **Step 1: Write RED restore probe**
 
 Write command tests proving: an empty database fails verification; a complete seeded graph passes; deleting each required relationship or row causes a bounded `CommandError`; output contains no email, token, password, TOTP secret, encryption key or database password.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
@@ -1644,7 +1648,7 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 Expected RED: the `seed_restore_probe` and `verify_restore_probe` commands do not exist.
 
-- [ ] **Step 3: Implement commands and run GREEN**
+- [x] **Step 3: Implement commands and run GREEN**
 
 Register `open_marketplace.verification` as an adapter app. It may import only module `public.py` interfaces; it must not import protected models. Then run:
 
@@ -1656,7 +1660,7 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test lint-i
 
 Expected GREEN: command tests pass and module contracts remain intact.
 
-- [ ] **Step 4: Implement the exact isolated shell workflow**
+- [x] **Step 4: Implement the exact isolated shell workflow**
 
 `ops/verify_restore.sh` contains this complete workflow:
 
@@ -1679,44 +1683,52 @@ source_db="restore_source_${run_id}"
 target_db="restore_target_${run_id}"
 dump_path="artifacts/phase1_${run_id}.dump"
 result_tmp="artifacts/restore-result_${run_id}.txt"
+result_path="artifacts/restore-result.txt"
+rm -f -- "$result_path"
 
 cleanup() {
   status=$?
   trap - EXIT
   set +e
-  "${compose[@]}" exec -T postgres-test dropdb --if-exists --username "$DATABASE_USER" "$target_db" >/dev/null 2>&1
-  "${compose[@]}" exec -T postgres-test dropdb --if-exists --username "$DATABASE_USER" "$source_db" >/dev/null 2>&1
-  rm -f -- "$dump_path"
+  cleanup_failed=0
+  "${compose[@]}" exec -T postgres-test dropdb --if-exists --maintenance-db=postgres --username "$DATABASE_USER" "$target_db" >/dev/null 2>&1 || cleanup_failed=1
+  "${compose[@]}" exec -T postgres-test dropdb --if-exists --maintenance-db=postgres --username "$DATABASE_USER" "$source_db" >/dev/null 2>&1 || cleanup_failed=1
+  rm -f -- "$dump_path" || cleanup_failed=1
   if [[ -n "$result_tmp" ]]; then
-    rm -f -- "$result_tmp"
+    rm -f -- "$result_tmp" || cleanup_failed=1
+  fi
+  if [[ "$cleanup_failed" -ne 0 ]]; then
+    rm -f -- "$result_path"
+    status=1
   fi
   exit "$status"
 }
 
 "${compose[@]}" up -d postgres-test
 trap cleanup EXIT
-"${compose[@]}" exec -T postgres-test createdb --username "$DATABASE_USER" "$source_db"
-"${compose[@]}" run --rm --build -e DATABASE_NAME="$source_db" test python manage.py migrate --noinput
-"${compose[@]}" run --rm --build -e DATABASE_NAME="$source_db" test python manage.py seed_restore_probe --marker "$run_id"
+"${compose[@]}" build test
+"${compose[@]}" exec -T postgres-test createdb --maintenance-db=postgres --username "$DATABASE_USER" "$source_db"
+"${compose[@]}" run --rm -e DATABASE_NAME="$source_db" test python manage.py migrate --noinput
+"${compose[@]}" run --rm -e DATABASE_NAME="$source_db" test python manage.py seed_restore_probe --marker "$run_id"
 {
   printf 'database=source\n'
-  "${compose[@]}" run --rm --build -e DATABASE_NAME="$source_db" test python manage.py verify_restore_probe --marker "$run_id"
+  "${compose[@]}" run --rm -e DATABASE_NAME="$source_db" -e PGOPTIONS="-c default_transaction_read_only=on" test python manage.py verify_restore_probe --marker "$run_id"
 } > "$result_tmp"
 "${compose[@]}" exec -T postgres-test pg_dump --username "$DATABASE_USER" --format=custom --dbname "$source_db" > "$dump_path"
-"${compose[@]}" exec -T postgres-test createdb --username "$DATABASE_USER" "$target_db"
+"${compose[@]}" exec -T postgres-test createdb --maintenance-db=postgres --username "$DATABASE_USER" "$target_db"
 "${compose[@]}" exec -T postgres-test pg_restore --username "$DATABASE_USER" --exit-on-error --no-owner --dbname "$target_db" < "$dump_path"
 {
   printf 'database=target\n'
-  "${compose[@]}" run --rm --build -e DATABASE_NAME="$target_db" test python manage.py migrate --check
-  "${compose[@]}" run --rm --build -e DATABASE_NAME="$target_db" test python manage.py verify_restore_probe --marker "$run_id"
+  "${compose[@]}" run --rm -e DATABASE_NAME="$target_db" test python manage.py migrate --check
+  "${compose[@]}" run --rm -e DATABASE_NAME="$target_db" -e PGOPTIONS="-c default_transaction_read_only=on" test python manage.py verify_restore_probe --marker "$run_id"
 } >> "$result_tmp"
-mv -- "$result_tmp" artifacts/restore-result.txt
+mv -- "$result_tmp" "$result_path"
 result_tmp=""
 ```
 
 The verification command itself emits only allowlisted row kinds, safe identifiers, invariant results and migration leaves. Therefore the published file contains no Compose environment dump or credentials. The workflow never attaches `postgres_data`, never invokes `manage.py test` against the restored database and leaves the `postgres-test` service available for later test commands while deleting both temporary databases.
 
-- [ ] **Step 5: Execute the real restore**
+- [x] **Step 5: Execute the real restore**
 
 ```bash
 bash -n ops/verify_restore.sh
@@ -1725,10 +1737,17 @@ bash ops/verify_restore.sh
 
 Expected: shell syntax exits 0; restore exits 0; no `artifacts/phase1_*.dump` or result temp remains afterward; the atomically published redacted summary reports source/target migration leaves and every probe invariant as passed; both temporary databases are absent.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
-git add ops/verify_restore.sh open_marketplace/verification open_marketplace/config/settings.py docs/runbooks/test-and-restore.md .gitignore compose.test.yaml
+git add docs/superpowers/plans/2026-09-02-phase-1-identity-access.md \
+  docs/runbooks/test-and-restore.md ops/verify_restore.sh \
+  open_marketplace/config/settings.py open_marketplace/verification \
+  open_marketplace/access/application.py open_marketplace/access/public.py \
+  open_marketplace/outbox/application.py open_marketplace/outbox/public.py \
+  open_marketplace/seller_onboarding/application.py \
+  open_marketplace/seller_onboarding/domain.py \
+  open_marketplace/seller_onboarding/public.py
 git commit -m "test: verify PostgreSQL backup restoration"
 ```
 

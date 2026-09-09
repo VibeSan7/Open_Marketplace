@@ -59,6 +59,17 @@ class SellerApplicationVersionView:
 
 
 @dataclass(frozen=True, slots=True)
+class SellerReviewDecisionView:
+    id: UUID
+    application_id: UUID
+    version_number: int
+    decision: SellerReviewDecisionValue
+    reviewer_id: UUID
+    occurred_at: datetime
+    request_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
 class SellerReviewQuery:
     states: tuple[SellerApplicationState, ...]
     reviewer_id: UUID | None
