@@ -12,6 +12,10 @@ This review covers Task 20 in the isolated `task20-phase1-completion` worktree:
 
 The review is evidence-based. It does not claim a production deployment review, external penetration test or production backup policy.
 
+Latest completed local checkpoint: [verification after VAL-001 on 2026-09-14](phase-1-local-validation-2026-09-14-after-val-001.md) passed **411/411 application tests** with a newly generated environment from the corrected README. It includes all 17 acceptance scenarios, eight migration checks and five scope checks, plus a separate 5/5 scope run and a **real PostgreSQL dump/restore**. Images, migrations, 11 import contracts and bounded secrecy checks passed. **VAL-001 is resolved and the agreed local gate is green.** Only one README generator line was corrected; application code, validation policy and existing working keys were unchanged. Only the new isolated project was stopped; all 14 pre-existing containers were preserved. The [earlier interrupted checkpoint](phase-1-local-validation-2026-09-14.md) remains the historical record of the actual failure.
+
+The [2026-09-13 full gate](phase-1-local-validation-2026-09-13.md), [owner-driven Chrome acceptance](phase-1-browser-acceptance-2026-09-13.md) and [ordinary persistent-database startup](phase-1-ordinary-startup-2026-09-13.md) remain separate historical proofs. A later owner-authorized independent static review did return `APPROVE` with remarks before the three scoped fixes; it was not rerun. No new paid review, final commit, merge or deployment is authorized by this checkpoint.
+
 ## Acceptance matrix
 
 `open_marketplace/tests/test_full_flows.py` contains exactly 17 scenarios:
@@ -34,7 +38,7 @@ The review is evidence-based. It does not claim a production deployment review, 
 16. `test_account_block_revokes_sessions` — account block/session revocation;
 17. `test_restore_verification_command_contract_is_safe` — safe restore-verification command contract.
 
-The combined acceptance/audit/staff-admin run passed 70/70. The final project run after migration and scope tests passed 394/394.
+The earlier combined acceptance/audit/staff-admin run passed 70/70, followed by a 394/394 project checkpoint. The 2026-09-13 project run passed 407/407; the post-R-01/R-03/R-05 run passed 411/411 on 2026-09-14, with all 17 scenarios present and successful. The later post-VAL-001 run again passed 411/411, this time with the freshly generated environment. Scenario 17 checks the restore command contract; the separate real restore was also executed successfully in the latest checkpoint.
 
 ## Migration evidence
 
@@ -55,21 +59,21 @@ The regression suite verifies nine forbidden Admin actions, 403 responses and ex
 
 ## Security and secrecy gates
 
-Fresh evidence:
+Fresh 2026-09-14 evidence after the authorized VAL-001 correction (the agreed local gate is complete):
 
 - `makemigrations --check --dry-run` — passed;
 - `migrate --noinput` — passed;
 - `check --deploy` — four expected warnings only for local HTTP (`SECURE_SSL_REDIRECT`, secure session cookie, secure CSRF cookie and HSTS); `test_cookie_security_defaults_and_secure_mode` proves the HTTPS settings switch on with `DJANGO_SECURE_COOKIES=true`;
 - Import Linter — 11 contracts, 0 violations;
-- full `open_marketplace` suite — 394/394;
+- full `open_marketplace` suite with a newly generated README environment — 411/411 in 191.294 seconds, no failures, errors or skips;
 - `git diff --check` — passed;
 - shell syntax `bash -n ops/verify_restore.sh` — passed;
-- real PostgreSQL dump/restore — exit 0; temporary databases and dump files removed;
-- tracked private-key scan — 0 hits;
-- tracked non-empty secret-assignment scan — 0 hits;
+- real PostgreSQL dump/restore — exit 0 after R-01/R-03/R-05/VAL-001, nine named invariants and nine migration leaves in both databases; source/target results matched, and cleanup was independently checked before PostgreSQL stopped;
+- bounded private-key and six-variable non-empty secret-assignment scans across 203 tracked/new nonignored snapshot files — 0 hits; not a universal secret-detection guarantee;
 - `.env` — ignored and untracked;
-- runtime and test images — no `/app/.env` and no `/app/.git`;
-- `test_scope_boundaries.py` — 5/5.
+- runtime and test images — no `/app/.env` or `/app/.git`, non-root UID 10001, all 203 snapshot file hashes matched;
+- `test_scope_boundaries.py` — 5/5 within the 411-test suite and 5/5 in the additional standalone run;
+- corrected README first-time `.env` generation followed by the real runtime check — **passed**, exit 0, only documented local-HTTP warnings; an existing generated `.env` was not overwritten on a repeat invocation.
 
 The scope test rejects unapproved direct dependencies, forbidden apps, JSON/DRF handlers, future-domain models, file/document uploads and secret-bearing fixtures. It is authoritative; production-source word searches are not used as a substitute.
 
@@ -91,19 +95,43 @@ The CUA browser window available on the workstation was an unrelated, timed-out 
 
 ## Findings
 
+### Historical manual-browser checkpoint (2026-09-13)
+
+The owner completed registration/invitations, TOTP, session revocation, seller submission/approval, admission suspension/restoration and the scoped application Audit page in real Chrome. Final read-only verification found the application approved and seller admission active without an owner-account block. Five application audit entries, three admission entries and nine actual current-run Mailpit receipts were matched against the database; all thirteen scoped outbox messages succeeded. The earlier unsuccessful browser-tool attempt does not negate this later owner-driven result. See the linked browser report for evidence and explicit limitations. Ordinary startup and the fresh quality gate were subsequently verified separately; the linked 2026-09-13 reports do not claim a repeated manual flow in the new database.
+
 | ID | Severity | Finding | Evidence | State | Owner |
 |---|---|---|---|---|---|
 | SEC-001 | Info | Local HTTP profile emits four `check --deploy` warnings. | Fresh `check --deploy`; secure-mode test. | Resolved/documented; production must use `DJANGO_SECURE_COOKIES=true` behind HTTPS. | Deployment owner |
 | SEC-002 | Info | Restore proof is disposable test evidence, not a production backup policy. | `docs/runbooks/test-and-restore.md`. | Resolved/documented; production RPO/RTO, retention and key custody remain a separate gate. | Operations owner |
 | SEC-003 | Info | Recovery codes and one-time secrets must never be retained by the demo operator. | HTML flow, audit secrecy assertions and runbook. | Resolved/documented; values were discarded. | Application owner |
 
-The implementer's automated checks did not report an unresolved critical/high code finding. This is not an independent security sign-off.
+The earlier implementer and independent static findings do not establish absence of defects. VAL-001 was subsequently reproduced, corrected with separate authorization and verified by actual execution; the agreed local gate is now complete, not a production security sign-off.
+
+## Independent review and scoped follow-up
+
+The owner-authorized invocation `omp-phase1-review-20260913t102350z` returned `VERDICT: APPROVE` with six remarks and two hypotheses. This was a bounded static review, not an exhaustive audit or execution of the setup recipe. The original report and the lead agent's source-checked dispositions are retained under the local ignored `artifacts/independent-review-20260913T102350Z/` directory. It predates R-01/R-03/R-05 and was not repeated.
+
+- **R-01 — resolved in the approved scope:** neutral sign-out guidance on rejected invitations for an already signed-in user; no automatic logout or permission change. Local evidence: `artifacts/r01-invitation-guidance-20260913T113511Z/result.md`.
+- **R-03 — resolved in the approved scope:** conditional guidance only for a live retry of an unfinished new-service-account TOTP setup; no key redisclosure or security-policy change. Local evidence: `artifacts/r03-totp-retry-guidance-20260913T212517Z/result.md`.
+- **R-05 — resolved in the approved scope:** real POST Origin/HTTPS Referer coverage for one form, two test methods and eight request variants; production protection was not changed. Local evidence: `artifacts/r05-csrf-form-tests-20260913T203202Z/result.md`.
+- **R-02/R-06 — rejected as stated** after source/log verification. Their original historical dispositions are preserved, not silently accepted as defects.
+- **R-04 — cosmetic only, not changed.**
+- **H-1 — limited login path observed, privilege bypass not demonstrated. H-2 — concurrency hypothesis not reproduced.** Neither is presented as a confirmed vulnerability or automatically fixed.
+
+### VAL-001 — first-time environment recipe failure (RESOLVED)
+
+**Severity at discovery:** medium, functional first-run blocker, not a demonstrated security bypass. **Owner:** project maintainer. **State:** resolved in the separately authorized one-line scope.
+
+The historical unmodified Python block at `README.md:24–46` created a file rejected by the actual runtime: exit 1, `THROTTLE_HASH_KEY is invalid`. Its former line 36 used `secrets.token_urlsafe(32)`, producing 43 characters without Base64 padding. The strict decoder at `open_marketplace/config/settings.py:18–24,34–38,189` rejected that value. The original failure report and log are preserved; no key value was printed.
+
+After explicit approval, only the README expression for this key was changed to `base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii")`. The complete corrected block ran in an empty directory with `.env.example`; the generated file passed the actual rebuilt runtime check with network disabled. The key decoded strictly to 32 bytes, and a second generator invocation refused to overwrite the existing file. That same fresh environment then passed all 411 application tests, the standalone scope suite and the real PostgreSQL restore. Application validation and existing database keys were not changed. See [the completed post-fix checkpoint](phase-1-local-validation-2026-09-14-after-val-001.md).
 
 ## Phase 1 disposition
 
-**Task 20 remains incomplete and is not approved for merge.**
+**Agreed local verification is complete. The owner has separately authorized local commits only. Task 20 Step 7 and final owner acceptance remain open; push, merge and publication are not authorized.**
 
-- Independent review invocation `task20-independent-review-1` returned only `HTTP 403: Access denied by security policy`. The launcher envelope reported `ok: true`, but contained neither a code review nor an `APPROVE` verdict. The source and cause of the HTTP denial are not established. No replacement reviewer or security-policy bypass has been used.
-- The manual local-browser demonstration required by Task 20 Step 5 is still unverified. The successful Django test Client run is retained as integration evidence only.
+- Independent review invocation `task20-independent-review-1` returned only `HTTP 403: Access denied by security policy`. The launcher envelope reported `ok: true`, but contained neither a code review nor an `APPROVE` verdict. The source and cause of that historical HTTP denial were not established. It was not treated as approval or bypassed. The later separately authorized static review described above did produce a valid report.
+- The ten-item manual browser flow and ordinary persistent-database startup have separate historical proofs. The authorized static review predates the subsequent fixes and was not repeated. The latest local gate after R-01/R-03/R-05/VAL-001 is complete, including clean environment generation and real restore. The earlier Django test Client result remains integration evidence only.
 - The implementation, tests and initial documentation were committed together as `b48ea7fbe59daa593c8860b7874d1fb122a5b62b` and pushed before independent approval. This did not follow the plan's separate-fix-before-documentation commit sequence. The published history has not been rewritten; it must not be presented as evidence of approval.
-- A draft pull request may collect the work, but readiness and merge must wait for the outstanding acceptance checks and a valid independent review. No merged or deployed status is claimed.
+- After separate owner approval on 2026-09-14, the tested application/tests, loopback binding and README correction were recorded in local commits `9270e94`, `40bc1ec` and `9a3dc2a`, respectively. Documentation is committed separately. No application or test bytes were changed during Git recording; the 411-test result belongs to the linked completed run, not a new test invocation. No server startup, new paid review, push, merge, deployment or Phase 1 closure was authorized. Task 20 Step 7 and final owner acceptance stay open.
+- The pre-existing newline-only difference in `open_marketplace/audit/public.py` is deliberately left uncommitted and unchanged. This checkpoint does not claim a clean working tree or close the cosmetic R-04 remark.

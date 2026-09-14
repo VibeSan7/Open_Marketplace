@@ -91,11 +91,13 @@ Use disposable addresses and do not record their credentials.
 5. Register an ordinary account through `/register/`, follow its email link in Mailpit, and log in.
 6. Open `/sessions/` to verify session management.
 7. Create, edit and submit the seller application through the HTML pages.
-8. As reviewer, open the custom Admin seller queue, start review and approve the application.
+8. For the active/suspend/restore demonstration, first enable TOTP for the ordinary owner using that owner's separate Authenticator entry. As reviewer, open the custom Admin seller queue, start review and approve the application.
 9. As security-admin, open the seller detail and suspend, then restore, admission.
-10. Open the Admin audit page and verify the application action chain. Mailpit must contain the invitation, verification and decision messages.
+10. As reviewer, open the Admin audit page and verify the application action chain. The security-admin's audit scope covers seller admission and security operations, not seller applications; use that role for admission history. Mailpit must contain the invitation, verification and decision messages.
 
-The automated Task 20 demonstration exercised this sequence through Django's in-process test Client against local Compose PostgreSQL and Mailpit. It recorded only counts, statuses and UUIDs; recovery-code and token values were not written to the repository or output. This does not replace manual browser acceptance: the required browser demonstration remains pending.
+For sensitive actions, confirm the current account password and second factor through `/security/reauthenticate/` (or complete a fresh login), then perform the action in the same uninterrupted manual sequence. A confirmation checked before a pause in the conversation may expire before the user clicks the action. Do not weaken timeouts or change permissions to complete the demonstration.
+
+The earlier automated Task 20 demonstration used Django's in-process test Client; it remains integration evidence only. The [owner-driven Chrome demonstration completed on 2026-09-13](../security/phase-1-browser-acceptance-2026-09-13.md) passed all ten browser-checklist items with read-only database checks and actual Mailpit receipts. It used a separate `postgres-test` Compose stack. The [ordinary persistent-database start command was subsequently verified](../security/phase-1-ordinary-startup-2026-09-13.md) in an owner-approved isolated source copy using alternate loopback ports to preserve the existing demo. Together these proofs complete Task 20 Step 5. The [fresh local quality gate also passed](../security/phase-1-local-validation-2026-09-13.md); only the verification copy was stopped afterwards. That was the pre-review checkpoint. A later owner-authorized independent static review returned APPROVE with remarks, followed by the separately approved R-01/R-03/R-05 changes. The [earlier 2026-09-14 post-review check](../security/phase-1-local-validation-2026-09-14.md) exposed the first-time README environment-generation failure VAL-001 despite 411 passing application tests. After a separately approved one-line correction, [the fresh local gate completed](../security/phase-1-local-validation-2026-09-14-after-val-001.md): clean environment generation and its overwrite guard, 411 application tests, standalone scope checks and real database restore all passed. Existing working keys must still never be regenerated or overwritten. Final owner acceptance and Git actions remain separately gated.
 
 ## 5. Failure recovery
 
@@ -109,6 +111,8 @@ docker compose up --build -d
 ```
 
 If the test database is left by an interrupted Django test run, do not remove the application database. Restart the disposable `postgres-test` service and rerun the focused test command. The test suite uses PostgreSQL, not SQLite.
+
+If a new service-account invitation's TOTP setup expires before confirmation, reopen the original invitation link and enter the same password again. Only a still-pending invitation can replace the expired setup; an active setup is not rotated on retry, and the old secret cannot be used. Repeated wrong-password attempts use the shared login throttle and return the neutral error page when blocked.
 
 If an outbox message is in retry state, inspect only its safe state/error fields through the Admin outbox page and run the bounded worker command. Never decrypt or print delivery payloads. An expired lease is reclaimed by the worker; the domain operation is protected by its idempotency key.
 

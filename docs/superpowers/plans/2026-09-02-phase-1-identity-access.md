@@ -1793,7 +1793,15 @@ Implement exactly this acceptance matrix:
 
 Use Django `MigrationExecutor` on PostgreSQL. For every non-initial project migration, migrate its app to the immediate predecessor, create the smallest valid predecessor-state rows, migrate to that app's current leaf, and verify preserved identifiers, relationships, defaults and constraints through current public snapshots. Test a clean migration graph separately. The test restores the leaf schema in teardown even after failure and never uses SQLite.
 
-- [ ] **Step 3: Run the complete GREEN quality gate**
+- [x] **Step 3: Run the complete GREEN quality gate**
+
+Local-only checkpoint 2026-09-11: rebuilt images, 407 passing tests (including all 17 acceptance scenarios), migrations, 11 import contracts, expected local-HTTP warnings only, image/repository secrecy checks and real isolated restore passed. See `docs/security/phase-1-local-validation-2026-09-11.md`. This does not complete browser acceptance or independent approval.
+
+Fresh local checkpoint 2026-09-13: after the ordinary-startup documentation updates, the isolated copy passed 407 tests with all 17 scenarios, 11 import contracts, migrations, expected local-HTTP warnings only, secrecy checks and real restore. The separate scope run passed 5/5. See `docs/security/phase-1-local-validation-2026-09-13.md`. Only final evidence documents were updated afterwards; application code remained unchanged. The original demo was preserved and only the copy was stopped. Independent approval is still outstanding.
+
+Post-review checkpoint 2026-09-14: after separately approved R-01/R-03/R-05, the full application suite passed 411/411, including all 17 scenarios, 8 migration checks and 5 scope checks. A later authorized independent static review had returned APPROVE with remarks before those fixes. The current close-out gate is nevertheless incomplete: the unchanged README first-time environment generator failed with `THROTTLE_HASH_KEY is invalid` (VAL-001); the real restore and extra standalone scope run were not executed after that failure. See `docs/security/phase-1-local-validation-2026-09-14.md` and the current summary in `docs/security/phase-1-review.md`. Earlier completed checkboxes and pending-review statements describe their dated historical checkpoints; they do not close the new failure. Step 7 remains open; no README/product fix or Git action is authorized by this result.
+
+Subsequent authorized VAL-001 checkpoint 2026-09-14: one README generator line was corrected without changing application validation or existing keys. The complete corrected generator ran in an empty directory, the actual rebuilt runtime accepted its output, and an existing generated .env was protected from overwrite. With that same fresh environment, the full suite passed 411/411 (17 scenarios, 8 migration checks, 5 scope checks), the standalone scope run passed 5/5, 11 import contracts were kept, and the real pg_dump/pg_restore passed with source/target parity and independently verified cleanup before stopping PostgreSQL. The agreed local gate is complete; see `docs/security/phase-1-local-validation-2026-09-14-after-val-001.md`. The preceding failure checkpoint is historical, not the current status. Final owner acceptance and Git actions remain unapproved; Step 7 stays open.
 
 ```bash
 docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations --check --dry-run
@@ -1831,9 +1839,9 @@ docker compose -f compose.yaml -f compose.test.yaml run --rm --build test \
 
 `test_scope_boundaries.py` parses `pyproject.toml` with `tomllib` and enforces the exact approved direct-dependency allowlist after normalizing package names; verifies forbidden apps are absent from `INSTALLED_APPS`; rejects a project `/api` namespace and inspects project-owned URL callbacks (excluding Django's own Admin internals) for JSON/DRF handlers; inspects registered project-model metadata to reject catalog, inventory, order, payment, KYC models and every `FileField`/document-upload field; and scans any tracked fixture files structurally to reject password/token/TOTP/recovery/encryption-key values. Expected: secret scan has no hit, `.env` is ignored and untracked, runtime/test images lack build-context secrets, and the scope test passes. The structured test is authoritative; searching production source for words such as `redis` is not used because security/scope tests must legitimately contain the forbidden names they assert against.
 
-- [ ] **Step 5: Perform manual working-result demonstration**
+- [x] **Step 5: Perform manual working-result demonstration**
 
-Status: the Django test Client demonstration against persistent local PostgreSQL and SMTP/Mailpit passed. The required manual local-browser demonstration remains unverified; the CUA attempt did not reach the local application. Do not count the integration harness as completion of this manual step.
+Status: the owner-driven real Chrome flow passed all ten browser-checklist items on 2026-09-13, including the scoped application Audit page and matched Mailpit receipts; see `docs/security/phase-1-browser-acceptance-2026-09-13.md`. The remaining ordinary migrate-then-up command was subsequently verified in an owner-approved isolated copy with the ordinary persistent `postgres` service and alternate loopback ports; see `docs/security/phase-1-ordinary-startup-2026-09-13.md`. These are separate browser and startup proofs; the earlier Django test Client result remains integration evidence only. Step 5 and the fresh local quality gate are complete; valid independent approval and final commit are still outstanding.
 
 After `.env` generation, use the one documented local-start command:
 
