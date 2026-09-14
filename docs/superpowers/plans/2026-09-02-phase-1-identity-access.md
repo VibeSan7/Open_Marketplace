@@ -1857,7 +1857,9 @@ Record only non-secret screenshots/command summaries in `docs/security/phase-1-r
 
 `README.md` links the approved spec, repeats the exact migrate-then-up command above plus test/restore commands, module map and explicit non-goals. Runbooks explain `.env` generation without exposing values, initial bootstrap, Mailpit, failure recovery and clean shutdown.
 
-- [ ] **Step 7: Final review and commit**
+- [x] **Step 7: Final review and commit**
+
+Owner completion checkpoint 2026-09-14: Phase 1 and Task 20 were explicitly accepted, and publication plus merge of PR #21 were authorized after the completed 411-test local gate, real restore and separate local commits. The previous pending-acceptance notes are dated historical checkpoints, not the current decision. The pre-existing audit/public.py newline-only difference was preserved outside the published tree, without loss. This status-only record adds no application changes and claims no new full test run; exact-head GitHub checks and the actual merge must be verified before reporting integration complete. Production deployment and the next phase remain outside scope.
 
 Run the full quality gate again after documentation changes. Then:
 
