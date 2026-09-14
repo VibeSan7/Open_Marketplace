@@ -45,6 +45,7 @@ from open_marketplace.identity.public import (
     require_live_session_security_snapshot,
     revoke_sessions_for_security_event,
     provision_service_account_for_invitation,
+    restart_expired_invited_service_totp,
     query_accounts,
 )
 from open_marketplace.outbox.public import enqueue_outbox_message
@@ -375,6 +376,7 @@ def begin_staff_invitation_acceptance(
 ) -> StaffAcceptanceSetup:
     token_digest = _validated_invitation_token(raw_token)
     _validate_context(context)
+    deferred_error = None
     with transaction.atomic():
         invitation = StaffInvitation.objects.select_for_update().filter(
             token_digest=token_digest
@@ -388,31 +390,50 @@ def begin_staff_invitation_acceptance(
             invalidated_at__isnull=True,
         ).first()
         if pending is not None:
-            return StaffAcceptanceSetup(
-                acceptance_id=pending.id,
-                account_id=pending.account_id,
-                mode=("new_service_account" if pending.totp_setup_id is not None else "existing_service_account"),
-                totp_setup=None,
+            totp_setup = None
+            if pending.totp_setup_id is not None:
+                try:
+                    totp_setup = restart_expired_invited_service_totp(
+                        account_id=pending.account_id,
+                        setup_id=pending.totp_setup_id,
+                        password=password,
+                        context=context,
+                    )
+                except (AuthenticationDenied, RateLimited) as error:
+                    deferred_error = error
+                else:
+                    if totp_setup is not None:
+                        pending.totp_setup_id = totp_setup.setup_id
+                        pending.save(update_fields={"totp_setup_id"})
+            if deferred_error is None:
+                return StaffAcceptanceSetup(
+                    acceptance_id=pending.id,
+                    account_id=pending.account_id,
+                    mode=("new_service_account" if pending.totp_setup_id is not None else "existing_service_account"),
+                    totp_setup=totp_setup,
+                )
+        if pending is None:
+            account_id, totp_setup = provision_service_account_for_invitation(
+                email=invitation.email,
+                password=password,
+                invitation_id=invitation.id,
+                context=context,
             )
-        account_id, totp_setup = provision_service_account_for_invitation(
-            email=invitation.email,
-            password=password,
-            invitation_id=invitation.id,
-            context=context,
-        )
-        acceptance = StaffInvitationAcceptance.objects.create(
-            invitation=invitation,
-            token_digest=token_digest,
-            account_id=account_id,
-            totp_setup_id=totp_setup.setup_id if totp_setup is not None else None,
-            created_at=context.now,
-        )
-        return StaffAcceptanceSetup(
-            acceptance_id=acceptance.id,
-            account_id=account_id,
-            mode=("new_service_account" if totp_setup is not None else "existing_service_account"),
-            totp_setup=totp_setup,
-        )
+            acceptance = StaffInvitationAcceptance.objects.create(
+                invitation=invitation,
+                token_digest=token_digest,
+                account_id=account_id,
+                totp_setup_id=totp_setup.setup_id if totp_setup is not None else None,
+                created_at=context.now,
+            )
+            return StaffAcceptanceSetup(
+                acceptance_id=acceptance.id,
+                account_id=account_id,
+                mode=("new_service_account" if totp_setup is not None else "existing_service_account"),
+                totp_setup=totp_setup,
+            )
+    if deferred_error is not None:
+        raise deferred_error
 
 
 def accept_staff_invitation(

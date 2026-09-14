@@ -23,9 +23,11 @@ class SensitiveLinkTests(TestCase):
     def setUp(self):
         self.client = Client(enforce_csrf_checks=True)
 
-    def _account(self, *, state=Account.State.PENDING_EMAIL_VERIFICATION):
+    def _account(
+        self, *, state=Account.State.PENDING_EMAIL_VERIFICATION, email="person@example.com"
+    ):
         account = Account(
-            email="person@example.com",
+            email=email,
             kind=Account.Kind.ORDINARY,
             state=state,
             email_verified_at=(timezone.now() if state == Account.State.ACTIVE else None),
@@ -46,14 +48,16 @@ class SensitiveLinkTests(TestCase):
         )
         return raw_token, token
 
-    def _csrf_post(self, name, data=None):
+    def _csrf_post(self, name, data=None, *, secure=False, headers=None):
         url = reverse(name)
-        get_response = self.client.get(url)
+        get_response = self.client.get(url, secure=secure)
         self.assertEqual(get_response.status_code, 200)
         csrf = self.client.cookies["csrftoken"].value
         return self.client.post(
             url,
             {"csrfmiddlewaretoken": csrf, **(data or {})},
+            secure=secure,
+            headers=headers,
         )
 
     def test_sensitive_entry_routes_exchange_token_for_clean_url_without_mutation(self):
@@ -82,7 +86,7 @@ class SensitiveLinkTests(TestCase):
                 self.assertEqual(response.status_code, 303)
                 self.assertEqual(response["Location"], reverse(clean_name))
                 self.assertEqual(response["Cache-Control"], "no-store")
-                self.assertEqual(response["Referrer-Policy"], "no-referrer")
+                self.assertEqual(response["Referrer-Policy"], "same-origin")
                 self.assertNotIn(sentinel, response.content.decode())
                 self.assertNotIn(sentinel, response["Location"])
                 self.assertNotIn(sentinel, str(response.headers))
@@ -185,7 +189,84 @@ class SensitiveLinkTests(TestCase):
         token.refresh_from_db()
         self.assertIsNone(token.used_at)
 
-    def test_clean_sensitive_forms_are_no_store_no_referrer_and_csrf_protected(self):
+    def test_email_verification_accepts_same_origin_posts(self):
+        cases = (
+            ("http-origin", False, {"origin": "http://testserver"}),
+            ("https-origin", True, {"origin": "https://testserver"}),
+            (
+                "https-referer",
+                True,
+                {"referer": "https://testserver" + reverse("verify-email-complete")},
+            ),
+        )
+        for case, secure, headers in cases:
+            with self.subTest(case=case):
+                self.client = Client(enforce_csrf_checks=True)
+                account = self._account(email=f"{case}@example.com")
+                raw_token, token = self._token(account, OneTimeToken.Purpose.EMAIL_VERIFICATION)
+                self.client.get(
+                    reverse("verify-email-entry", kwargs={"raw_token": raw_token}),
+                    secure=secure,
+                )
+
+                response = self._csrf_post(
+                    "verify-email-complete", secure=secure, headers=headers
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["Referrer-Policy"], "same-origin")
+                self.assertNotContains(response, raw_token)
+                account.refresh_from_db()
+                token.refresh_from_db()
+                self.assertEqual(account.state, Account.State.ACTIVE)
+                self.assertIsNotNone(account.email_verified_at)
+                self.assertIsNotNone(token.used_at)
+
+    def test_email_verification_rejects_untrusted_post_sources_without_mutation(self):
+        cases = (
+            ("foreign-http-origin", False, {"origin": "http://foreign.example"}),
+            (
+                "foreign-https-origin",
+                True,
+                {
+                    "origin": "https://foreign.example",
+                    "referer": "https://testserver" + reverse("verify-email-complete"),
+                },
+            ),
+            ("foreign-https-referer", True, {"referer": "https://foreign.example/"}),
+            ("insecure-https-referer", True, {"referer": "http://testserver/"}),
+            ("missing-https-source", True, {}),
+        )
+        for case, secure, headers in cases:
+            with self.subTest(case=case):
+                self.client = Client(enforce_csrf_checks=True)
+                account = self._account(email=f"{case}@example.com")
+                raw_token, token = self._token(account, OneTimeToken.Purpose.EMAIL_VERIFICATION)
+                self.client.get(
+                    reverse("verify-email-entry", kwargs={"raw_token": raw_token}),
+                    secure=secure,
+                )
+                version = account.version
+                session_before = dict(self.client.session)
+
+                response = self._csrf_post(
+                    "verify-email-complete", secure=secure, headers=headers
+                )
+
+                self.assertEqual(response.status_code, 403)
+                self.assertEqual(response["Cache-Control"], "no-store")
+                self.assertEqual(response["Referrer-Policy"], "same-origin")
+                self.assertNotIn(raw_token, response.content.decode())
+                account.refresh_from_db()
+                token.refresh_from_db()
+                self.assertEqual(account.state, Account.State.PENDING_EMAIL_VERIFICATION)
+                self.assertIsNone(account.email_verified_at)
+                self.assertEqual(account.version, version)
+                self.assertIsNone(token.used_at)
+                self.assertIsNone(token.revoked_at)
+                self.assertEqual(dict(self.client.session), session_before)
+
+    def test_clean_sensitive_forms_are_no_store_same_origin_and_csrf_protected(self):
         account = self._account()
         raw_token, token = self._token(account, OneTimeToken.Purpose.EMAIL_VERIFICATION)
         self.client.get(reverse("verify-email-entry", kwargs={"raw_token": raw_token}))
@@ -194,10 +275,10 @@ class SensitiveLinkTests(TestCase):
         missing_csrf = self.client.post(reverse("verify-email-complete"))
 
         self.assertEqual(clean["Cache-Control"], "no-store")
-        self.assertEqual(clean["Referrer-Policy"], "no-referrer")
+        self.assertEqual(clean["Referrer-Policy"], "same-origin")
         self.assertEqual(missing_csrf.status_code, 403)
         self.assertEqual(missing_csrf["Cache-Control"], "no-store")
-        self.assertEqual(missing_csrf["Referrer-Policy"], "no-referrer")
+        self.assertEqual(missing_csrf["Referrer-Policy"], "same-origin")
         token.refresh_from_db()
         self.assertIsNone(token.used_at)
 

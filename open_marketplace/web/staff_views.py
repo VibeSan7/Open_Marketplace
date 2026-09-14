@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from django.conf import settings
 from django.views.decorators.http import require_http_methods
 
 from open_marketplace.access import public as access_public
@@ -71,12 +72,22 @@ def staff_invitation_accept(request):
                     "staff/invitation_accept.html",
                     {
                         "setup": setup.totp_setup,
+                        "show_setup_retry_guidance": (
+                            setup.mode == "new_service_account"
+                            and setup.totp_setup is None
+                        ),
+                        "setup_lifetime_minutes": int(settings.TOTP_SETUP_TTL.total_seconds() / 60),
                         "form": StaffInvitationCompleteForm(),
                         "message": None,
                     },
                 )
         else:
             message = EXPECTED_ERROR_MESSAGE
+    if message and getattr(request.user, "is_authenticated", False):
+        message = (
+            f"{message} You are signed in. If this invitation is for another "
+            "account, sign out and reopen the invitation link."
+        )
     return secure_render(
         request,
         "staff/invitation_accept.html",

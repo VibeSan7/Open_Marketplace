@@ -21,5 +21,5 @@ class RequestIdMiddleware:
         response[self.header_name] = str(request.request_id)
         if request.path.startswith(_SENSITIVE_PATH_PREFIXES):
             response["Cache-Control"] = "no-store"
-            response["Referrer-Policy"] = "no-referrer"
+            response["Referrer-Policy"] = "same-origin"
         return response

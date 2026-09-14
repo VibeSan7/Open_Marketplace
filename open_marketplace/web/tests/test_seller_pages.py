@@ -114,7 +114,7 @@ class SellerPageTests(TestCase):
 
     def _assert_secure(self, response):
         self.assertEqual(response["Cache-Control"], "no-store")
-        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+        self.assertEqual(response["Referrer-Policy"], "same-origin")
 
     def test_named_routes_exist_and_anonymous_access_redirects_to_login(self):
         application_id = uuid4()

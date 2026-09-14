@@ -203,7 +203,9 @@ class StaffAdminSitePermissionTests(StaffAdminTestCase):
         )
 
     def test_reviewer_and_security_admin_have_exact_action_separation(self):
+        AuditEntry = apps.get_model("audit", "AuditEntry")
         target = "00000000-0000-0000-0000-000000000001"
+        denial_count = 0
         self.authenticate_staff("seller_reviewer")
         reviewer_denied = (
             ("admin:staff-invitation-create", None, {"email": "staff@example.com", "role": "security_admin"}),
@@ -217,6 +219,11 @@ class StaffAdminSitePermissionTests(StaffAdminTestCase):
         for name, kwargs, data in reviewer_denied:
             with self.subTest(role="reviewer", name=name):
                 self.assertEqual(self.csrf_post(name, data, kwargs=kwargs).status_code, 403)
+                denial_count += 1
+                self.assertEqual(
+                    AuditEntry.objects.filter(action="access.permission_denied").count(),
+                    denial_count,
+                )
 
         self.reset_client()
         self.authenticate_staff("security_admin")
@@ -233,6 +240,11 @@ class StaffAdminSitePermissionTests(StaffAdminTestCase):
                         kwargs={"application_id": target},
                     ).status_code,
                     403,
+                )
+                denial_count += 1
+                self.assertEqual(
+                    AuditEntry.objects.filter(action="access.permission_denied").count(),
+                    denial_count,
                 )
 
     def test_account_detail_links_to_role_revocation_flow(self):
