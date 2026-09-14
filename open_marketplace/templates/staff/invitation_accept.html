@@ -7,6 +7,11 @@
 <p>Manual secret: <code>{{ setup.manual_secret }}</code></p>
 <p>Provisioning URI: <code>{{ setup.provisioning_uri }}</code></p>
 {% endif %}
+{% if show_setup_retry_guidance %}
+<p>Authenticator setup has already started.</p>
+<p>If you added this account to your authenticator app, enter a code from it.</p>
+<p>If you did not add it, wait for the current setup to expire ({{ setup_lifetime_minutes }} minutes after it started). Then sign out if you are signed in, reopen the invitation link and enter the same password. If the invitation is still valid, a new setup key will be shown.</p>
+{% endif %}
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}

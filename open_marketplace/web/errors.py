@@ -7,7 +7,7 @@ NEUTRAL_EMAIL_MESSAGE = "If the details are eligible, check your email."
 
 def secure_response(response):
     response["Cache-Control"] = "no-store"
-    response["Referrer-Policy"] = "no-referrer"
+    response["Referrer-Policy"] = "same-origin"
     return response
 
 

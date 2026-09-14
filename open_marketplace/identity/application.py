@@ -622,6 +622,29 @@ def _failed_authentication_audit(*, canonical_email, context):
     )
 
 
+def _failed_invited_service_totp_restart_audit(*, canonical_email, context):
+    append_audit_entry(
+        context=context,
+        action="identity.invited_service_totp_restart_failed",
+        object_type="authentication_attempt",
+        object_id=str(context.request_id),
+        result="failed",
+        reason="invited_service_totp_restart_failed",
+        before={},
+        after={
+            "subject_fingerprint": _fingerprint(
+                "login-subject",
+                canonical_email,
+            ),
+            "source_fingerprint": _fingerprint(
+                "login-source",
+                context.source_address,
+            ),
+        },
+        effective_role=None,
+    )
+
+
 def _failed_mandatory_totp_recovery_audit(*, canonical_email, context):
     append_audit_entry(
         context=context,
@@ -1863,6 +1886,27 @@ def _totp_setup_view(*, setup, account, secret):
     )
 
 
+def _create_invited_service_totp_setup(*, account, now):
+    secret = pyotp.random_base32(length=32)
+    _, setup_token_digest = generate_one_time_token()
+    setup_token = OneTimeToken.objects.create(
+        account=account,
+        purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
+        token_digest=setup_token_digest,
+        created_at=now,
+        expires_at=now + settings.TOTP_SETUP_TTL,
+    )
+    setup = TotpSetup.objects.create(
+        account=account,
+        session=None,
+        recovery_token=setup_token,
+        encrypted_secret=_encrypt_totp_secret(secret),
+        created_at=now,
+        expires_at=now + settings.TOTP_SETUP_TTL,
+    )
+    return setup, secret
+
+
 def begin_mandatory_totp_recovery(
     *,
     raw_token: str,
@@ -2368,24 +2412,126 @@ def provision_service_account_for_invitation(
         )
         account.password = encoded_password
         account.save(force_insert=True)
-        secret = pyotp.random_base32(length=32)
-        _, setup_token_digest = generate_one_time_token()
-        setup_token = OneTimeToken.objects.create(
+        setup, secret = _create_invited_service_totp_setup(
             account=account,
-            purpose=OneTimeToken.Purpose.MANDATORY_TOTP_RECOVERY,
-            token_digest=setup_token_digest,
-            created_at=context.now,
-            expires_at=context.now + settings.TOTP_SETUP_TTL,
-        )
-        setup = TotpSetup.objects.create(
-            account=account,
-            session=None,
-            recovery_token=setup_token,
-            encrypted_secret=_encrypt_totp_secret(secret),
-            created_at=context.now,
-            expires_at=context.now + settings.TOTP_SETUP_TTL,
+            now=context.now,
         )
         return account.id, _totp_setup_view(setup=setup, account=account, secret=secret)
+
+
+def restart_expired_invited_service_totp(
+    *,
+    account_id: UUID,
+    setup_id: UUID,
+    password: str,
+    context: OperationContext,
+) -> TotpSetupView | None:
+    if not isinstance(account_id, UUID):
+        _reject("account_id must be a UUID.")
+    if not isinstance(setup_id, UUID):
+        _reject("setup_id must be a UUID.")
+    if not isinstance(context, OperationContext):
+        _reject("context must be an OperationContext.")
+    if context.actor_account_id is None and context.session_id is None:
+        _validate_anonymous_context(context)
+    else:
+        _validate_authenticated_context(context)
+    failure = None
+    result = None
+    with transaction.atomic():
+        account = Account.objects.select_for_update().filter(pk=account_id).first()
+        if (
+            account is None
+            or account.kind != Account.Kind.SERVICE
+            or account.state != Account.State.ACTIVE
+            or account.email_verified_at is None
+        ):
+            _authentication_denied()
+        if _active_totp_credential(account) is not None:
+            _authentication_denied()
+        setup = TotpSetup.objects.select_for_update().filter(
+            pk=setup_id,
+            account=account,
+            session__isnull=True,
+            recovery_token__isnull=False,
+        ).first()
+        if (
+            setup is None
+            or setup.consumed_at is not None
+            or setup.invalidated_at is not None
+        ):
+            _authentication_denied()
+        if context.now < setup.expires_at:
+            return None
+        _validate_anonymous_context(context)
+        canonical_email = _canonical_login_email(account.email)
+        source_address = _validated_source_address(context.source_address)
+        account_key_hash = _throttle_key_hash(
+            SecurityThrottle.Scope.LOGIN,
+            "account",
+            canonical_email or "invalid",
+        )
+        source_key_hash = _throttle_key_hash(
+            SecurityThrottle.Scope.LOGIN,
+            "source",
+            source_address,
+        )
+        throttle = _inspect_throttle(
+            scope=SecurityThrottle.Scope.LOGIN,
+            account_key_hash=account_key_hash,
+            source_key_hash=source_key_hash,
+            now=context.now,
+        )
+        if not throttle.allowed:
+            failure = RateLimited(_RATE_LIMITED_MESSAGE)
+        else:
+            try:
+                _verify_current_password(account, password)
+            except AuthenticationDenied:
+                _failed_invited_service_totp_restart_audit(
+                    canonical_email=canonical_email,
+                    context=context,
+                )
+                throttle = check_throttle(
+                    scope=SecurityThrottle.Scope.LOGIN,
+                    account_key_hash=account_key_hash,
+                    source_key_hash=source_key_hash,
+                    now=context.now,
+                )
+                failure = (
+                    RateLimited(_RATE_LIMITED_MESSAGE)
+                    if not throttle.allowed
+                    else AuthenticationDenied("Authentication failed.")
+                )
+            else:
+                setup.invalidated_at = context.now
+                setup.save(update_fields={"invalidated_at"})
+                new_setup, secret = _create_invited_service_totp_setup(
+                    account=account,
+                    now=context.now,
+                )
+                append_audit_entry(
+                    context=context,
+                    action="identity.invited_service_totp_restarted",
+                    object_type="account",
+                    object_id=str(account.id),
+                    result="succeeded",
+                    reason=None,
+                    before={"totp_enabled": False},
+                    after={
+                        "totp_enabled": False,
+                        "expires_at": new_setup.expires_at.isoformat(),
+                    },
+                    effective_role=None,
+                )
+                result = _totp_setup_view(
+                    setup=new_setup,
+                    account=account,
+                    secret=secret,
+                )
+    if failure is not None:
+        raise failure
+    return result
 
 
 def enable_invited_service_totp(
