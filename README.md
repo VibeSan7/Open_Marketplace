@@ -33,7 +33,7 @@ keys = {
     "TOTP_ENCRYPTION_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
     "OUTBOX_ENCRYPTION_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
     "LINK_EXCHANGE_ENCRYPTION_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
-    "THROTTLE_HASH_KEY": secrets.token_urlsafe(32),
+    "THROTTLE_HASH_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
 }
 source = Path(".env.example").read_text(encoding="utf-8").splitlines()
 rendered = []
