@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ product.title }} — каталог{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">
+<article class="product-page" data-product data-share-url="{{ share_url }}">
+  <p><a href="{{ back_url }}">← Вернуться к результатам</a></p>
+  <button type="button" data-share>Поделиться ссылкой</button>
+  <h1>{{ product.title }}</h1>
+  <p class="description">{{ product.description }}</p>
+  <p>Категория: {{ product.category }} · Единица: {{ product.unit_label }}</p>
+  {% if product.cover_id %}
+    <figure><img src="{% url 'catalog-photo' photo_id=product.cover_id %}" alt="Общее фото товара" data-photo><figcaption>Общее фото товара</figcaption><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
+  {% endif %}
+  {% if product.selection_message %}<p class="notice">{{ product.selection_message }}</p>{% endif %}
+  <nav aria-label="Варианты">
+    {% for variant in product.variants %}
+      <a class="{% if variant.id == product.selected_variant_id %}selected{% endif %}" href="{{ variant.url }}">{{ variant.label }}{% if not variant.in_stock %} — Нет в наличии{% endif %}</a>
+    {% endfor %}
+  </nav>
+  {% if product.selected_variant %}
+    <section class="variant-detail">
+      <h2>{{ product.selected_variant.label }}</h2>
+      <dl>
+        {% for key, value in product.selected_variant.attributes.items %}<dt>{{ key }}</dt><dd>{{ value }}</dd>{% endfor %}
+      </dl>
+      {% if product.selected_variant.photo_ids %}
+        <div class="gallery">
+          {% for photo_id in product.selected_variant.photo_ids %}
+            <figure><img src="{% url 'catalog-photo' photo_id=photo_id %}" alt="{{ product.selected_variant.label }}" loading="lazy" data-photo><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>Для этого варианта нет доступных фотографий</p>
+      {% endif %}
+      <p>{% if product.selected_variant.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>
+      <p>{{ product.selected_variant.price_label }} / {{ product.unit_label }}</p>
+      {% if product.selected_variant.in_stock and product.selected_variant.offers %}
+        <h3>Предложения</h3>
+        <ul>
+          {% for offer in product.selected_variant.offers %}
+            <li>{{ offer.seller_name }} — {% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %} — Доставка ещё не рассчитана</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  {% endif %}
+  <section>
+    <h2>Другие варианты</h2>
+    <ul>{% for variant in product.variants %}<li>{{ variant.label }} — {% if variant.in_stock %}{{ variant.price_label }}{% else %}Нет в наличии{% endif %}</li>{% endfor %}</ul>
+  </section>
+</article>
+<script src="{% static 'catalog/catalog.js' %}" defer></script>
+{% endblock %}

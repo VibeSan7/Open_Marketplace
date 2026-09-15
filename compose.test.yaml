@@ -1,4 +1,7 @@
 services:
+  mailpit:
+    ports: !reset []
+
   postgres-test:
     image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
     environment:
@@ -14,6 +17,9 @@ services:
       retries: 15
 
   test:
+    volumes:
+      - catalog_model_cache:/app/model-cache
+      - catalog_test_media:/app/private-media
     build:
       context: .
       target: test
@@ -21,8 +27,12 @@ services:
       - .env
     environment:
       DATABASE_HOST: postgres-test
+      HF_HUB_DISABLE_XET: "1"
     depends_on:
       postgres-test:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+
+volumes:
+  catalog_test_media:

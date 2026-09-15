@@ -6,6 +6,11 @@ and command output never contains emails, tokens, passwords or secret names.
 """
 
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from django.conf import settings
+from django.test import override_settings
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -14,6 +19,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
 from django.db.migrations.recorder import MigrationRecorder
+from django.db.migrations.loader import MigrationLoader
 from django.test import TestCase
 
 RoleAssignment = apps.get_model("access", "RoleAssignment")
@@ -43,6 +49,11 @@ class RestoreProbeTests(TestCase):
     def setUp(self):
         self.marker = f"t{uuid4().hex[:12]}"
         self.out = StringIO()
+        media = TemporaryDirectory()
+        self.addCleanup(media.cleanup)
+        media_settings = override_settings(CATALOG_MEDIA_ROOT=media.name)
+        media_settings.enable()
+        self.addCleanup(media_settings.disable)
 
     def seed(self):
         call_command("seed_restore_probe", "--marker", self.marker, stdout=self.out)
@@ -51,6 +62,18 @@ class RestoreProbeTests(TestCase):
         return call_command(
             "verify_restore_probe", "--marker", self.marker, stdout=self.out
         )
+
+    def test_catalogue_content_and_photo_are_required_for_restore(self):
+        self.seed()
+        products = apps.get_model("catalog", "Product").objects.all()
+        self.assertEqual(products.count(), 1)
+        self.assertIsNotNone(products.get().published)
+        self.verify()
+        self.assertIn("row_kind=catalog_photo ok=yes", self.out.getvalue())
+        for photo in Path(settings.CATALOG_MEDIA_ROOT).glob("*.png"):
+            photo.unlink()
+        with self.assertRaises(CommandError):
+            self.verify()
 
     def test_empty_database_fails_verification(self):
         with self.assertRaises(CommandError) as raised:
@@ -77,7 +100,9 @@ class RestoreProbeTests(TestCase):
         self.assertIn("migration_leaf", output)
         for secret in SECRET_SUBSTRINGS:
             self.assertNotIn(secret, output)
-        self.assertNotRegex(output, r"[A-Za-z0-9_-]{40,}")
+        known_migrations = {f"migration_leaf app={app} name={name}" for app, name in MigrationLoader(connection).graph.leaf_nodes()}
+        non_schema_output = "\n".join(line for line in output.splitlines() if line not in known_migrations)
+        self.assertNotRegex(non_schema_output, r"[A-Za-z0-9_-]{40,}")
 
     def test_deleted_staff_session_fails_verification(self):
         self.seed()

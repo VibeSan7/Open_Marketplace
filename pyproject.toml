@@ -1,17 +1,21 @@
 [project]
 name = "open-marketplace"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = "==3.13.15"
 dependencies = [
   "Django==5.2.17",
   "psycopg[binary]==3.3.5",
   "cryptography==50.0.1",
   "PyOTP==2.10.0",
+  "pillow==12.3.0",
+  "fastembed==0.8.0",
+  "whitenoise==6.12.0",
 ]
 
 [dependency-groups]
 dev = [
   "import-linter==2.14",
+  "playwright==1.63.0",
 ]
 
 [tool.uv]
@@ -26,6 +30,7 @@ name = "Common primitives are domain-independent"
 type = "forbidden"
 source_modules = ["open_marketplace.common"]
 forbidden_modules = [
+  "open_marketplace.catalog",
   "open_marketplace.identity",
   "open_marketplace.access",
   "open_marketplace.seller_onboarding",
@@ -37,19 +42,20 @@ forbidden_modules = [
 name = "Identity does not depend on access or seller onboarding"
 type = "forbidden"
 source_modules = ["open_marketplace.identity"]
-forbidden_modules = ["open_marketplace.access", "open_marketplace.seller_onboarding"]
+forbidden_modules = ["open_marketplace.access", "open_marketplace.seller_onboarding", "open_marketplace.catalog"]
 
 [[tool.importlinter.contracts]]
 name = "Access does not depend on seller onboarding"
 type = "forbidden"
 source_modules = ["open_marketplace.access"]
-forbidden_modules = ["open_marketplace.seller_onboarding"]
+forbidden_modules = ["open_marketplace.seller_onboarding", "open_marketplace.catalog"]
 
 [[tool.importlinter.contracts]]
 name = "Audit and outbox do not call subject modules"
 type = "forbidden"
 source_modules = ["open_marketplace.audit", "open_marketplace.outbox"]
 forbidden_modules = [
+  "open_marketplace.catalog",
   "open_marketplace.identity",
   "open_marketplace.access",
   "open_marketplace.seller_onboarding",
@@ -72,6 +78,7 @@ source_modules = [
   "open_marketplace.identity",
   "open_marketplace.access",
   "open_marketplace.seller_onboarding",
+  "open_marketplace.catalog",
 ]
 forbidden_modules = [
   "open_marketplace.workflows",
@@ -129,3 +136,19 @@ protected_modules = [
   "open_marketplace.outbox.models",
 ]
 allowed_importers = ["open_marketplace.outbox"]
+
+[[tool.importlinter.contracts]]
+name = "Catalog internals are protected"
+type = "protected"
+protected_modules = [
+  "open_marketplace.catalog.application",
+  "open_marketplace.catalog.models",
+  "open_marketplace.catalog.policy",
+  "open_marketplace.catalog.queries",
+  "open_marketplace.catalog.search",
+  "open_marketplace.catalog.common_cards",
+  "open_marketplace.catalog.photos",
+  "open_marketplace.catalog.domain",
+  "open_marketplace.catalog.semantic",
+]
+allowed_importers = ["open_marketplace.catalog"]

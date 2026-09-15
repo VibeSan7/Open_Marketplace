@@ -20,12 +20,15 @@ ALLOWED_RUNTIME_PACKAGES = {
     "django",
     "psycopg",
     "pyotp",
+    "pillow",
+    "fastembed",
+    "whitenoise",
 }
-ALLOWED_DEV_PACKAGES = {"import-linter"}
+ALLOWED_DEV_PACKAGES = {"import-linter", "playwright"}
 FORBIDDEN_APP_MARKERS = (
     "rest_framework",
     "api",
-    "catalog",
+
     "inventory",
     "order",
     "payment",
@@ -44,7 +47,7 @@ FORBIDDEN_APP_MARKERS = (
     "s3",
 )
 FORBIDDEN_MODEL_MARKERS = (
-    "catalog",
+
     "inventory",
     "order",
     "payment",
@@ -210,7 +213,7 @@ def xml_secret_paths(path):
 
 
 class ScopeBoundaryTests(SimpleTestCase):
-    def test_runtime_and_dev_dependencies_match_phase_one_allowlists_and_lock(self):
+    def test_runtime_and_dev_dependencies_match_catalog_release_allowlists_and_lock(self):
         with (PROJECT_ROOT / "pyproject.toml").open("rb") as stream:
             project = tomllib.load(stream)
         with (PROJECT_ROOT / "uv.lock").open("rb") as stream:
@@ -243,7 +246,7 @@ class ScopeBoundaryTests(SimpleTestCase):
         self.assertEqual(locked_runtime, ALLOWED_RUNTIME_PACKAGES)
         self.assertEqual(locked_dev, ALLOWED_DEV_PACKAGES)
 
-    def test_installed_apps_exclude_phase_one_non_goals(self):
+    def test_installed_apps_exclude_future_non_goals(self):
         app_values = [str(value).casefold() for value in settings.INSTALLED_APPS]
         app_values.extend(
             f"{config.name} {config.label}".casefold()

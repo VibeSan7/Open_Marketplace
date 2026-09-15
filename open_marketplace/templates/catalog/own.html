@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Мои карточки{% endblock %}
+{% block content %}
+<h1>Мои карточки</h1>
+<p><a href="{% url 'catalog-own-new' %}">Создать карточку</a></p>
+<ul>{% for product in products %}<li><a href="{% url 'catalog-own-product' product_id=product.id %}">{{ product.title }}</a> — {{ product.kind }} — {{ product.unit }}{% if product.blocked %} — Заблокирована{% endif %}</li>{% empty %}<li>Карточек пока нет.</li>{% endfor %}</ul>
+{% if request.user.kind != "service" %}
+<h2>Мои запросы сопоставления</h2>
+<ul>{% for item in matches %}<li>{{ item.source_title }} ↔ {{ item.target_title }} — {% if item.state == "pending" %}На проверке{% elif item.state == "approved" %}Подтверждено{% elif item.state == "rejected" %}Отклонено{% else %}Нужен новый запрос{% endif %}{% if item.source_changed or item.target_changed %} — содержание изменилось, требуется новая проверка{% endif %}{% if item.review_reason %}: {{ item.review_reason }}{% endif %}</li>{% empty %}<li>Запросов пока нет.</li>{% endfor %}</ul>
+<h2>Мои предложения изменений</h2>
+<ul>{% for item in suggestions %}<li>{{ item.text }} — {% if item.reviewed %}{{ item.response }}{% else %}На проверке{% endif %}</li>{% empty %}<li>Предложений пока нет.</li>{% endfor %}</ul>
+{% endif %}
+{% endblock %}

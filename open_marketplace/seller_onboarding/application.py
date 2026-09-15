@@ -776,6 +776,23 @@ def get_seller_application_for_review(*, application_id, context):
     )
 
 
+def get_public_sellers(*, seller_ids):
+    if not isinstance(seller_ids, tuple) or any(not isinstance(value, UUID) for value in seller_ids):
+        _reject("seller_ids must be a tuple of UUID values.")
+    result = []
+    for profile in SellerProfile.objects.filter(id__in=seller_ids, state=SellerProfile.State.ACTIVE):
+        try:
+            account = get_account_snapshot(profile.owner_id)
+        except ObjectDoesNotExist:
+            continue
+        if account.kind != "ordinary" or account.state != "active" or account.email_verified_at is None or not account.totp_enabled:
+            continue
+        approved = SellerApplicationVersion.objects.filter(application_id=profile.application_id, version_number=profile.approved_version).first()
+        if approved is not None:
+            result.append({"id": str(profile.id), "display_name": approved.display_name})
+    return tuple(result)
+
+
 def get_seller_profile_for_owner(*, context):
     _validate_context(context)
     if context.actor_account_id is None:

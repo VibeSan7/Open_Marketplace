@@ -1,6 +1,10 @@
 .env
 .git/
 .venv/
+private-media/
+backups/
+model-cache/
+staticfiles/
 .model-launcher-runtime/
 artifacts/
 *.dump

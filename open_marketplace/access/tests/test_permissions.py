@@ -30,6 +30,8 @@ PERMISSION_CODES = (
     "seller.revoke",
     "audit.read",
     "outbox.manual_retry",
+    "catalog.read",
+    "catalog.manage",
 )
 SELLER_REVIEWER_PERMISSIONS = {
     "seller_application.read",
@@ -50,6 +52,8 @@ SECURITY_ADMIN_PERMISSIONS = {
     "seller.revoke",
     "audit.read",
     "outbox.manual_retry",
+    "catalog.read",
+    "catalog.manage",
 }
 SENSITIVE_PERMISSIONS = {
     "seller_application.review",
@@ -63,12 +67,14 @@ SENSITIVE_PERMISSIONS = {
     "seller.restore",
     "seller.revoke",
     "outbox.manual_retry",
+    "catalog.manage",
 }
 READ_ONLY_PERMISSIONS = {
     "seller_application.read",
     "account.read",
     "seller.read",
     "audit.read",
+    "catalog.read",
 }
 REVIEWER_AUDIT_SCOPES = (
     "audit:object_type:seller_application",
@@ -82,6 +88,11 @@ SECURITY_AUDIT_SCOPES = (
     "audit:object_type:role_assignment",
     "audit:object_type:seller_profile",
     "audit:object_type:outbox_message",
+    "audit:object_type:catalog_product",
+    "audit:object_type:catalog_variant",
+    "audit:object_type:catalog_stock",
+    "audit:object_type:catalog_category",
+    "audit:object_type:catalog_participant",
 )
 
 
@@ -112,10 +123,10 @@ class ExactPermissionMatrixTests(AccessTestCase):
         )
         return account, registry, self.context(registry)
 
-    def test_permission_code_is_the_exact_closed_phase_one_literal(self):
+    def test_permission_code_is_the_exact_closed_catalog_release_literal(self):
         public = self.public_module()
         self.assertEqual(tuple(get_args(public.PermissionCode)), PERMISSION_CODES)
-        self.assertEqual(len(PERMISSION_CODES), 15)
+        self.assertEqual(len(PERMISSION_CODES), 17)
 
     def test_each_role_and_dual_role_receive_only_the_exact_permission_matrix(self):
         _, _, reviewer_context = self.role_context("seller_reviewer")

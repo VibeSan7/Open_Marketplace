@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     "open_marketplace.audit.apps.AuditConfig",
     "open_marketplace.outbox.apps.OutboxConfig",
     "open_marketplace.verification.apps.VerificationConfig",
+    "open_marketplace.catalog.apps.CatalogConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -107,6 +108,7 @@ AUTH_USER_MODEL = "identity.Account"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "open_marketplace.web.middleware.RequestIdMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -171,6 +173,9 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+CATALOG_MEDIA_ROOT = Path(os.environ.get("CATALOG_MEDIA_ROOT", BASE_DIR / "private-media"))
+CATALOG_MODEL_CACHE = Path(os.environ.get("CATALOG_MODEL_CACHE", BASE_DIR / "model-cache"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

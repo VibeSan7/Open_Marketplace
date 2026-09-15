@@ -22,6 +22,11 @@ services:
       - "127.0.0.1:1025:1025"
 
   web:
+    volumes:
+      - catalog_media:/app/private-media
+      - catalog_model_cache:/app/model-cache
+    environment:
+      HF_HUB_DISABLE_XET: "1"
     build:
       context: .
       target: runtime
@@ -51,3 +56,5 @@ services:
 
 volumes:
   postgres_data:
+  catalog_media:
+  catalog_model_cache:

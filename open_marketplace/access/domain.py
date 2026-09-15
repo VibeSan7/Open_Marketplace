@@ -25,6 +25,8 @@ PermissionCode: TypeAlias = Literal[
     "seller.revoke",
     "audit.read",
     "outbox.manual_retry",
+    "catalog.read",
+    "catalog.manage",
 ]
 
 

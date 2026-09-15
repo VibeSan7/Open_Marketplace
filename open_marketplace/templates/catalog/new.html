@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Новая карточка{% endblock %}
+{% block content %}
+<h1>Новая карточка</h1>
+<p>Цифровые товары сохраняются только как непубличные черновики: доставка файлов не входит в этот пилот.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Создать</button></form>
+{% endblock %}
