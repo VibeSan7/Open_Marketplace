@@ -261,7 +261,7 @@ class SellerPageTests(TestCase):
             ),
         )
         body = response.content.decode().casefold()
-        for forbidden in ("upload", "document", "payment", "kyc", "catalog", "production approval"):
+        for forbidden in ("upload", "document", "payment", "kyc", "production approval"):
             self.assertNotIn(forbidden, body)
 
     def test_draft_can_be_saved_reopened_submitted_and_then_not_edited(self):

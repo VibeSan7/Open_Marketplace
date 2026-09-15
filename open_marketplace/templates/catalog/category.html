@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Категория{% endblock %}
+{% block content %}
+<h1>Редактирование категории</h1>
+{% if message %}<p class="error">{{ message }}</p>{% endif %}
+<form method="post" data-formset>{% csrf_token %}{{ form.as_p }}{{ attribute_formset.management_form }}<div data-formset-rows>{% for row in attribute_formset %}<fieldset data-formset-row>{{ row.as_p }}<button type="button" data-remove-row>Удалить характеристику</button></fieldset>{% endfor %}</div><button type="button" data-add-row>Добавить характеристику</button><button type="submit">Сохранить категорию</button></form>
+<p><a href="{{ reauth_url }}">Повторно подтвердить личность</a></p>
+<script src="{% static 'catalog/catalog.js' %}" defer></script>
+{% endblock %}

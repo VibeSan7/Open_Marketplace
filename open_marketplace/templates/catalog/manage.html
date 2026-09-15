@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Управление каталогом{% endblock %}
+{% block content %}
+<h1>Управление каталогом</h1>
+{% if message %}<p class="error">{{ message }}</p>{% endif %}
+<p><a href="{{ reauth_url }}">Повторно подтвердить личность перед чувствительной операцией</a></p>
+<section>
+  <h2>Участники каталога</h2>
+  <ul>{% for participant in participants %}<li>{{ participant.email }} — {% if participant.allowed %}доступ разрешён{% else %}доступ отозван{% endif %}</li>{% endfor %}</ul>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="participant">{{ participant_form.as_p }}<button type="submit">Сохранить допуск</button></form>
+</section>
+<section>
+  <h2>Новая категория</h2>
+  <form method="post" data-formset>{% csrf_token %}<input type="hidden" name="action" value="create_category">{{ category_form.as_p }}{{ attribute_formset.management_form }}<div data-formset-rows>{% for form in attribute_formset %}<fieldset data-formset-row>{{ form.as_p }}<button type="button" data-remove-row>Удалить характеристику</button></fieldset>{% endfor %}</div><button type="button" data-add-row>Добавить характеристику</button><button type="submit">Создать категорию</button></form>
+  <ul>{% for category in categories %}<li><a href="{% url 'catalog-manage-category' category_id=category.id %}">{{ category.name }}</a>{% if not category.active %} — неактивна{% endif %}</li>{% endfor %}</ul>
+</section>
+<section>
+  <h2>Опубликованные карточки и блокировки</h2>
+  <p><a href="{% url 'catalog-own' %}">Создать или изменить общую карточку, включая черновики</a></p>
+  {% for product in product_details %}
+    <article><h3>{{ product.title }}</h3><p>ID карточки: {{ product.id }}</p><p>{{ product.description }}</p>
+      {% if product.kind == "common" %}<a href="{% url 'catalog-own-product' product_id=product.id %}">Изменить общую карточку</a>{% endif %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="{% if product.blocked %}unblock_product{% else %}block_product{% endif %}"><input type="hidden" name="object_id" value="{{ product.id }}"><label>Причина <input name="reason" maxlength="1024" required></label><button type="submit">{% if product.blocked %}Разблокировать{% else %}Заблокировать{% endif %}</button></form>
+      {% for variant in product.variants %}<p>{{ variant.label }} — {{ variant.state }}{% if variant.blocked %} — заблокирован{% endif %} — {{ variant.attributes }}
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="{% if variant.blocked %}unblock_variant{% else %}block_variant{% endif %}"><input type="hidden" name="object_id" value="{{ variant.id }}"><label>Причина <input name="reason" maxlength="1024" required></label><button type="submit">{% if variant.blocked %}Разблокировать{% else %}Заблокировать{% endif %}</button></form>
+      </p>{% endfor %}
+    </article>
+  {% empty %}<p>Общих карточек нет.</p>{% endfor %}
+</section>
+<section>
+  <h2>Запросы сопоставления</h2>
+  {% for item in match_requests %}<article><p>{{ item.source_title }} ({{ item.source_unit }}) ↔ {{ item.target_title }} ({{ item.target_unit }})</p><p>{{ item.reason }}</p><p>Модель и характеристики: {{ item.source_attributes }} ↔ {{ item.target_attributes }}</p><form method="post">{% csrf_token %}<input type="hidden" name="action" value="review_match"><input type="hidden" name="request_id" value="{{ item.id }}"><label><input type="checkbox" name="approve"> Одобрить</label><label><input type="checkbox" name="identity_confirmed"> Подтверждаю проверку идентичности</label><label>Решение <textarea name="reason" required></textarea></label><button type="submit">Сохранить решение</button></form></article>{% empty %}<p>Запросов нет.</p>{% endfor %}
+</section>
+<section>
+  <h2>Предложения изменений</h2>
+  {% for item in suggestions %}<article><p>{{ item.kind }}{% if item.target_id %} — {{ item.target_id }}{% endif %}: {{ item.text }}</p>{% if not item.reviewed %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="review_suggestion"><input type="hidden" name="suggestion_id" value="{{ item.id }}"><label>Ответ <textarea name="response" required></textarea></label><button type="submit">Ответить</button></form>{% else %}<p>Ответ: {{ item.response }}</p>{% endif %}</article>{% empty %}<p>Предложений нет.</p>{% endfor %}
+</section>
+<script src="{% static 'catalog/catalog.js' %}" defer></script>
+{% endblock %}

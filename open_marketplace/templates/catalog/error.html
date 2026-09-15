@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Каталог — ошибка{% endblock %}
+{% block content %}
+  <h1>Не удалось открыть каталог</h1>
+  <p class="error">{{ message }}</p>
+  {% if conditions %}
+    <p>Условия сохранены. Исправьте значение или удалите только ненужное условие. Поиск по сокращённым условиям сам не запускается.</p>
+    <form method="get" action="{{ request.path }}">
+      {% for condition in conditions %}
+        <p><label>{{ condition.name }} <input name="{{ condition.name }}" value="{{ condition.value }}"></label>
+        <a href="{{ condition.remove_url }}">Удалить это условие</a></p>
+      {% endfor %}
+      <button type="submit">Применить исправленные условия</button>
+    </form>
+  {% endif %}
+  <p><a href="{% url 'catalog-search' %}">Сбросить все условия и открыть каталог</a></p>
+  {% if reauth_url %}<p><a href="{{ reauth_url }}">Повторно подтвердить личность</a></p>{% endif %}
+{% endblock %}

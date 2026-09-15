@@ -9,6 +9,7 @@ from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 
 from open_marketplace.audit.public import AuditQuery, query_audit_entries
+from open_marketplace.catalog import public as catalog
 from open_marketplace.identity.public import AccountQuery, get_account_snapshot, query_accounts
 from open_marketplace.outbox.public import get_outbox_message_snapshot
 from open_marketplace.seller_onboarding.public import (
@@ -174,6 +175,15 @@ class Command(BaseCommand):
                 )
                 if profile is not None:
                     self.stdout.write(f"row_kind=seller_profile id={profile.id}")
+            products = [row for row in catalog.list_own_products(context=admin_context) if row["title"] == f"Restore {marker}"]
+            record(name="catalog_product", ok=len(products) == 1)
+            if products:
+                product = catalog.get_own_product(product_id=products[0]["id"], context=admin_context)
+                record(name="catalog_variant", ok=product["published"] is not None and len(product["variants"]) == 1 and product["variants"][0]["state"] == "published")
+                photos = product["variants"][0]["published"]["photo_ids"]
+                with catalog.get_photo(photo_id=photos[0], context=admin_context) as photo:
+                    record(name="catalog_photo", ok=photo.read(8) == b"\x89PNG\r\n\x1a\n")
+                record(name="catalog_participant", ok=any(row["id"] == str(owner_snapshot.id) and row["allowed"] for row in catalog.list_participants(context=admin_context)))
         except CommandError:
             raise
         except Exception:  # noqa: BLE001 - emit only a bounded safe failure code

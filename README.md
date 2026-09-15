@@ -1,24 +1,46 @@
-# Open Marketplace — Phase 1
+# Open Marketplace — каталог товаров
 
-Phase 1 covers identity, access, seller onboarding, audit and the outbox worker. This worktree contains the Task 20 acceptance, migration-compatibility, scope and secrecy evidence. The implementation remains deliberately limited to the Phase 1 non-goals listed below.
+**Версия v0.2.0.** [Скачать выпуск](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.2.0) · [Что входит](docs/releases/v0.2.0.md) · [Результаты проверки](docs/security/phase-2-local-validation.md)
 
-## Source documents
+Проект запускается на вашем компьютере через Docker и открывается в браузере. Продавец ведёт карточки, фотографии, варианты, цены и остатки. Покупатель ищет товары и сравнивает подтверждённые предложения продавцов.
 
-- [Phase 1 design](docs/superpowers/specs/2026-09-02-phase-1-identity-access-design.md)
-- [Phase 1 implementation plan](docs/superpowers/plans/2026-09-02-phase-1-identity-access.md)
-- [Phase 1 security review](docs/security/phase-1-review.md)
-- [Local development runbook](docs/runbooks/local-development.md)
-- [Test and restore runbook](docs/runbooks/test-and-restore.md)
+**Это каталог без корзины, заказов и оплаты.** Цифровые товары пока можно сохранять только в непубличных черновиках. Локальный запуск не публикует сайт в интернете.
 
-## Prerequisites
+## Что работает
 
-- Docker Desktop with Compose and WSL integration enabled;
-- Git Bash, WSL or another POSIX-compatible shell for the commands below;
-- Python 3 for the one-time, standard-library-only `.env` generator below; the application and canonical tests run in Docker, not host Python.
+- Регистрация, подтверждение почты, вход, двухэтапная защита, управление сессиями и роли сотрудников.
+- Отдельный допуск участников и проверка продавцов владельцем каждой установки.
+- Черновики карточек: изменения содержания становятся видны только после публикации. Цена и остаток сохраняются отдельно, без потери более новых изменений.
+- Варианты товара, фотографии, места хранения, штуки / килограммы / метры, цены в рублях, бесплатные товары.
+- Общие карточки и сравнение идентичных предложений после подтверждения сотрудником.
+- Поиск по словам, опечаткам и смыслу, фильтры, автоматическая подгрузка и ссылки на выбранные варианты.
+- Фотографии и база сохраняются в отдельных постоянных хранилищах Docker. Частные фотографии не раздаются как общедоступные файлы.
 
-## Create the local environment file
+## 1. Что установить
 
-Secrets belong only in the untracked `.env` file. Do not paste their values into a command, log, issue or pull request. From the repository root, generate a new `.env` from the safe variable-name template without printing values. This is for first-time setup only: an existing `.env` must be kept, not regenerated while its database or encrypted records are in use. Exclusive file creation makes the command fail rather than overwrite existing keys.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) с поддержкой Linux-контейнеров. Запустите Docker Desktop перед дальнейшими командами.
+- [Git for Windows](https://git-scm.com/downloads/win): команды ниже выполняются в **Git Bash**, не в PowerShell. На Linux/macOS подходит обычный Bash.
+- [Python 3](https://www.python.org/downloads/) для однократного создания файла настроек. Само приложение, его библиотеки и тесты работают внутри Docker.
+
+Первый запуск скачивает образы и локальную модель поиска. Нужны интернет и свободное место для Docker; повторный запуск уже использует сохранённые данные. Для проверок используйте современный Docker Compose, поддерживающий `!reset` (2.24.4 или новее).
+
+## 2. Скачать проект
+
+Скачайте исходники выбранного выпуска на [странице Releases](https://github.com/VibeSan7/Open_Marketplace/releases) и распакуйте архив. Либо клонируйте репозиторий:
+
+```bash
+git clone https://github.com/VibeSan7/Open_Marketplace.git
+```
+
+```bash
+cd Open_Marketplace
+```
+
+Если скачали ZIP, перейдите в распакованную папку, где лежит `compose.yaml`. Команды выполняются именно из неё. Доступ к закрытому репозиторию требует приглашения владельца; эта инструкция не меняет его видимость.
+
+## 3. Создать настройки — только при первом запуске
+
+Следующая команда создаёт `.env` с новыми случайными ключами и паролем базы. Значения не выводятся. **Существующий `.env` не перезаписывается. Не удаляйте его и не создавайте заново для уже работающей базы.**
 
 ```bash
 python - <<'PY'
@@ -44,99 +66,125 @@ descriptor = os.open(".env", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
 with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
     output.write("\n".join(rendered) + "\n")
 PY
-
-git check-ignore .env
-test -z "$(git ls-files -- .env)"
 ```
 
-The last two commands must succeed. Never use `cat .env` in a log or chat.
+`.env` исключён из Git и Docker-образа. Не отправляйте его в чат, GitHub или журнал ошибок. Если получена ошибка `FileExistsError`, файл уже существует: сохраните его и продолжите, а не удаляйте ключи.
 
-## Start the local stack
+## 4. Запустить
 
-The documented local-start command is intentionally one command: migrate first, then start the web app, worker, PostgreSQL and Mailpit.
+Создать и обновить таблицы базы:
 
 ```bash
-docker compose run --rm --build web python manage.py migrate --noinput && docker compose up --build
+docker compose run --rm --build web python manage.py migrate --noinput
 ```
 
-Open these local surfaces:
+Однократно скачать и проверить локальную модель смыслового поиска:
 
-- application: <http://127.0.0.1:8000/login/>;
-- Mailpit UI: <http://127.0.0.1:8025/>;
-- custom staff Admin: <http://127.0.0.1:8000/admin/>.
+```bash
+docker compose run --rm web python manage.py prepare_catalog_search
+```
 
-The local profile uses HTTP only. Production HTTPS behavior is enabled by setting `DJANGO_SECURE_COOKIES=true`; the security test proves that this turns on secure cookies, redirect and HSTS settings.
+Запустить приложение и доставку писем в фоне:
 
-## Bootstrap the first administrator
+```bash
+docker compose up --build -d
+```
 
-Run this once after migrations:
+Проверить состояние:
+
+```bash
+docker compose ps
+```
+
+Откройте:
+
+- **Сайт:** <http://127.0.0.1:8000/catalog/>
+- **Местная почта:** <http://127.0.0.1:8025/> — здесь письма регистрации и приглашения. Это Mailpit: почтовый ящик для локальной установки, не настоящая отправка на внешний email.
+- **Панель сотрудников:** <http://127.0.0.1:8000/admin/>
+
+Запуск пустой установки не создаёт фиктивных товаров или готовых паролей. Чтобы увидеть товары, сначала настройте администратора и продавца по следующему разделу.
+
+## 5. Настроить администратора и добавить первый товар
+
+[Пошаговая инструкция для владельца, продавца и покупателя](docs/runbooks/catalog-quickstart-ru.md).
+
+Коротко:
+
+1. Создайте первого администратора командой ниже. Адрес `admin@example.test` предназначен для локальной демонстрации: письмо придёт в Mailpit.
+2. Откройте приглашение в Mailpit, задайте пароль и настройте приложение-аутентификатор. Оно генерирует одноразовый код для второго шага входа. Резервные коды сохраните отдельно, не в репозитории.
+3. Создайте сотрудника с ролью проверки продавцов. Затем зарегистрируйте отдельный личный аккаунт продавца: служебный аккаунт не используется для торговли.
+4. Продавец подтверждает почту, включает двухэтапную защиту, отправляет заявку. Сотрудник проверяет и одобряет её.
+5. Администратор открывает `/catalog/manage/`, разрешает участие по email и создаёт категорию с характеристиками.
+6. Продавец открывает «Мои карточки», создаёт карточку, добавляет варианты, настоящие фотографии, цену и остаток, затем нажимает «Опубликовать».
 
 ```bash
 docker compose run --rm web python manage.py bootstrap_security_admin --email admin@example.test
 ```
 
-The command prints only an invitation UUID. The recipient completes the one-time invitation, sets TOTP and receives recovery codes once. Do not copy recovery-code values into notes or logs.
+Повторное создание первого администратора не предусмотрено. Не сбрасывайте базу ради повторного приглашения. Если приглашение истекло или письмо не приходит, используйте [инструкцию диагностики](docs/runbooks/local-development.md).
 
-The background `worker` delivers outbox messages to Mailpit. For a bounded local retry/diagnostic pass, use:
+## Остановить и снова запустить
 
-```bash
-docker compose run --rm web python manage.py run_outbox_worker --once
-```
-
-## Verification commands
-
-Focused Phase 1 acceptance and migration suites:
-
-```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace.tests.test_full_flows open_marketplace.tests.test_migrations open_marketplace.tests.test_scope_boundaries -v 2
-```
-
-Complete quality gate:
-
-```bash
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py makemigrations --check --dry-run
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py migrate --noinput
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py check --deploy
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test lint-imports --no-cache
-docker compose -f compose.yaml -f compose.test.yaml run --rm --build test python manage.py test open_marketplace -v 2
-bash ops/verify_restore.sh
-```
-
-`check --deploy` reports four expected warnings in the HTTP-only local profile. Any other warning is a failure until investigated. The restore proof uses the disposable `postgres-test` service and never the application `postgres_data` volume.
-
-## Operations
-
-Expired throttles can be purged in bounded batches:
-
-```bash
-docker compose run --rm web python manage.py purge_security_throttles
-```
-
-Stop containers while retaining the local PostgreSQL volume:
+Обычная остановка **сохраняет базу, фотографии и модель**:
 
 ```bash
 docker compose down
 ```
 
-Remove the local demo database and containers only when the data is disposable and a clean demo is intended:
+Повторный запуск:
 
 ```bash
-docker compose down -v
+docker compose up -d
 ```
 
-## Module map
+**Не добавляйте `-v` к остановке:** этот флаг удаляет постоянные хранилища вместе с данными. Перед обновлением сохраняйте `.env`, базу и фотографии — [обновление и резервная копия](docs/runbooks/catalog-quickstart-ru.md#резервная-копия-и-обновление).
 
-- `identity` — accounts, sessions, email verification, password/TOTP/recovery flows;
-- `access` — roles, permissions and one-time staff invitations;
-- `seller_onboarding` — drafts, versions, review decisions and seller admission;
-- `audit` — validated, scoped audit append/query boundary;
-- `outbox` — encrypted delivery payloads, retry/lease handling and Mailpit SMTP delivery;
-- `web` — ordinary HTML forms and sensitive-link exchange;
-- `staff_admin` — custom Django Admin adapters;
-- `verification` — disposable PostgreSQL restore-probe commands.
+## Автоматическая проверка
 
-Application code crosses module boundaries through `public.py` contracts. Historical migration models are used only by `test_migrations.py` as required by Django's migration executor.
+Тесты работают в отдельной временной базе и отдельном проекте Docker. Не направляйте их на рабочую установку: проверка доставки писем очищает тестовый Mailpit.
 
-## Explicit non-goals
+Сборка тестовой среды включает настоящий браузер Chromium:
 
-Phase 1 does not implement catalog, inventory, orders, payments, KYC/document uploads, cloud resources, a JSON API, DRF, Redis or a production backup-retention policy. The restore script is a local PostgreSQL restoration proof; production RPO/RTO, retention, key custody and off-site storage require a separate design and review.
+```bash
+docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml build test
+```
+
+```bash
+docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml run --rm test python manage.py prepare_catalog_search
+```
+
+```bash
+docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml run --rm test python manage.py test open_marketplace --noinput --verbosity 1
+```
+
+```bash
+docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml run --rm test lint-imports --no-cache
+```
+
+```bash
+docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml run --rm test python manage.py makemigrations --check --dry-run
+```
+
+Восстановление контрольной базы проверяется отдельно; рабочая база в нём не участвует:
+
+```bash
+COMPOSE_PROJECT_NAME=open-marketplace-tests bash ops/verify_restore.sh
+```
+
+Результаты конкретной проверки выпуска, ограничения и первоисточники: [отчёт проверки](docs/security/phase-2-local-validation.md). Тесты не являются обещанием безошибочности любой установки или заменой настройки внешнего сервера.
+
+## Ограничения
+
+- По умолчанию сайт доступен только на этом компьютере. Внешний сервер, домен, HTTPS, настоящая доставка email и эксплуатационное резервирование в этот выпуск не входят. Встроенный локальный сервер Django не предназначен для открытого интернет-сервиса.
+- Для локального HTTP предусмотрены обычные cookies. Настройки защищённого HTTPS-режима существуют, но не включайте их без настроенного HTTPS: браузер не сможет войти по обычному HTTP.
+- Приблизительный поиск действительно использует локальную многоязычную модель, но может ошибаться в релевантности. Он не объединяет товары автоматически и не ослабляет фильтры, остатки или права.
+- Подтверждение загрузчиком подлинности фотографии не является автоматической проверкой её происхождения.
+- Нет покупки, резервирования товара, расчёта доставки или выдачи цифровых файлов.
+
+## Документы и модули
+
+- [Согласованные правила каталога](docs/superpowers/specs/2026-09-14-phase-2-catalog-design.md).
+- [План реализации](docs/superpowers/plans/2026-09-15-phase-2-catalog-implementation.md).
+- [Завершённая первая фаза: вход и права](docs/security/phase-1-review.md).
+
+Предметные модули `identity`, `access`, `seller_onboarding`, `catalog`, `audit`, `outbox` взаимодействуют через `public.py`. `web` и `staff_admin` отвечают за страницы, `verification` — за проверку восстановления тестовой базы.

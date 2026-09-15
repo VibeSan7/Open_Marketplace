@@ -1,6 +1,6 @@
 # Test and restore runbook
 
-This runbook proves that a PostgreSQL custom-format backup can be restored into a separate disposable database and that the restored Phase 1 graph remains internally consistent.
+This runbook proves that a PostgreSQL custom-format backup can be restored into a separate disposable database and that the identity, access, seller and catalog graph remains internally consistent. Photos are archived separately and restored into a different temporary directory, not read from the original source directory.
 
 It is a **test-environment proof**, not a production backup policy. It does not establish production RPO (maximum acceptable data loss), RTO (maximum acceptable recovery time), retention, encryption-key escrow, or off-site storage.
 
@@ -15,7 +15,7 @@ The workflow:
 - never mounts or connects to `postgres_data`;
 - never runs Django's test runner against the restored database;
 - runs source and target verification with PostgreSQL `default_transaction_read_only=on`;
-- deletes the temporary databases and dump on success or failure;
+- deletes the temporary databases, database dump, photo archive and both temporary photo directories on success or failure;
 - removes any previous `restore-result.txt` before starting a new proof;
 - fails and removes the published result if cleanup cannot delete a temporary database or file;
 - saves only `artifacts/restore-result.txt`;
@@ -47,8 +47,9 @@ The script performs these steps:
 5. creates a custom-format dump with `pg_dump`;
 6. restores the dump into a separate unique target database using `pg_restore --exit-on-error`;
 7. checks that no migration is missing and verifies the restored graph;
-8. atomically publishes the safe result file;
-9. deletes source database, target database, and temporary dump.
+8. verifies that the restored database fails its catalog photo check before photos are restored, then extracts the photo archive into a separate directory and verifies the complete target again;
+9. atomically publishes the safe result file;
+10. deletes source database, target database, temporary archives and temporary photo directories.
 
 ## Expected result
 
@@ -65,12 +66,13 @@ database=source
 database=target
 ```
 
-Each required invariant appears with `ok=yes`, including account, staff role/session, seller application/version/decision, audit, outbox, seller profile, and migration leaves.
+Each required invariant appears with `ok=yes`, including account, staff role/session, seller application/version/decision, audit, outbox, seller profile, catalog product/variant/photo/participant, and migration leaves. The result ends with `media=restored_from_archive` only after successful verification against the separate restored photo directory.
 
 No file matching these temporary patterns may remain:
 
 ```text
 artifacts/phase1_*.dump
+artifacts/phase2_*.tar.gz
 artifacts/restore-result_*.txt
 ```
 

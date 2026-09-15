@@ -69,6 +69,8 @@ _PERMISSION_CODES = (
     "seller.revoke",
     "audit.read",
     "outbox.manual_retry",
+    "catalog.read",
+    "catalog.manage",
 )
 _ROLE_ORDER = ("seller_reviewer", "security_admin")
 _ROLE_PERMISSIONS = {
@@ -94,6 +96,8 @@ _ROLE_PERMISSIONS = {
             "seller.revoke",
             "audit.read",
             "outbox.manual_retry",
+            "catalog.read",
+            "catalog.manage",
         }
     ),
 }
@@ -110,6 +114,7 @@ _SENSITIVE_PERMISSIONS = frozenset(
         "seller.restore",
         "seller.revoke",
         "outbox.manual_retry",
+        "catalog.manage",
     }
 )
 _AUDIT_SCOPES = {
@@ -125,6 +130,11 @@ _AUDIT_SCOPES = {
         "audit:object_type:role_assignment",
         "audit:object_type:seller_profile",
         "audit:object_type:outbox_message",
+        "audit:object_type:catalog_product",
+        "audit:object_type:catalog_variant",
+        "audit:object_type:catalog_stock",
+        "audit:object_type:catalog_category",
+        "audit:object_type:catalog_participant",
     ),
 }
 _OPERATION_SOURCES = frozenset({"html", "admin", "command", "worker"})

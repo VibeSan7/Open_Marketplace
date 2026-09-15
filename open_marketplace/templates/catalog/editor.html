@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Редактор карточки{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">
+<h1>Редактор карточки</h1>
+{% if message %}<p class="error">{{ message }}</p>{% endif %}
+<p>Сохранение черновика не публикует изменения. Старое опубликованное содержание остаётся видимым до успешной публикации.</p>
+{% if product.kind == "digital" %}<p class="notice">Цифровой товар можно сохранить как черновик, но опубликовать его и доставлять файлы пока нельзя.</p>{% endif %}
+<section>
+  <h2>Основное содержание</h2>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_product">{{ product_form.as_p }}<button type="submit">Сохранить черновик</button></form>
+</section>
+<section>
+  <h2>Фотографии</h2>
+  <p>Фотографии доступны только после проверки доступа к карточке.</p>
+  <div class="photo-grid">{% for photo in product.photos %}<figure><img src="{% url 'catalog-photo' photo_id=photo.id %}" alt="Фото {{ forloop.counter }}" loading="lazy"><figcaption>Фото {{ forloop.counter }}</figcaption></figure>{% endfor %}</div>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="upload_photo">{{ photo_form.as_p }}<button type="submit">Загрузить фото</button></form>
+</section>
+<section>
+  <h2>Варианты</h2>
+  {% for row in variants %}
+    <article class="editor-variant">
+      <h3>{{ row.data.draft.label|default:"Новый вариант" }}{% if row.data.state == "withdrawn" %} — Снят{% endif %}{% if row.data.blocked %} — Заблокирован{% endif %}</h3>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_variant"><input type="hidden" name="variant_id" value="{{ row.data.id }}">{{ row.form.as_p }}<button type="submit">Сохранить вариант</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="withdraw_variant"><input type="hidden" name="variant_id" value="{{ row.data.id }}"><button type="submit">Снять вариант</button></form>
+      {% if product.kind != "common" %}
+        <p>Текущая цена: {{ row.data.price|default_if_none:"не указана" }} ₽</p>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="set_price"><input type="hidden" name="variant_id" value="{{ row.data.id }}">{{ row.price_form.as_p }}<button type="submit">Сохранить цену</button></form>
+        {% for stock, form in row.stocks %}
+          <p>{{ stock.location_name }} — текущий остаток: {{ stock.quantity|default_if_none:"не указан" }}</p>
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="set_stock"><input type="hidden" name="variant_id" value="{{ row.data.id }}">{{ form.as_p }}<button type="submit">Сохранить остаток</button></form>
+        {% endfor %}
+      {% else %}<p>В общей карточке цена и остаток задаются предложениями продавцов.</p>{% endif %}
+      {% if row.match_form.fields.target_variant_id.choices %}
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="request_match">{{ row.match_form.as_p }}<button type="submit">Предложить сопоставление</button></form>
+      {% endif %}
+    </article>
+  {% empty %}<p>Добавьте первый вариант.</p>{% endfor %}
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="add_variant">{{ new_variant_form.as_p }}<button type="submit">Добавить вариант</button></form>
+</section>
+{% if product.kind != "common" %}
+<section>
+  <h2>Места хранения</h2>
+  <ul>{% for location in product.locations %}<li>{{ location.name }}</li>{% empty %}<li>Мест хранения нет.</li>{% endfor %}</ul>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="create_location">{{ location_form.as_p }}<button type="submit">Добавить место</button></form>
+</section>
+{% endif %}
+<section class="actions">
+  <h2>Публикация</h2>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="publish"><input type="hidden" name="expected_version" value="{{ product.draft_version }}"><button type="submit">Опубликовать</button></form>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="withdraw_all"><button type="submit">Снять всю карточку</button></form>
+</section>
+{% if product.kind == "physical" %}
+<section>
+  <h2>Предложение исправления</h2>
+  <p>Предложение не меняет карточку автоматически и будет рассмотрено сотрудником.</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="suggest_change">{{ suggestion_form.as_p }}<button type="submit">Отправить предложение</button></form>
+</section>
+{% endif %}
+<p><a href="{{ reauth_url }}">Повторно подтвердить личность для чувствительных операций</a></p>
+<script src="{% static 'catalog/catalog.js' %}" defer></script>
+{% endblock %}

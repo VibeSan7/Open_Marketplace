@@ -1,0 +1,25 @@
+<section class="results" data-results aria-live="polite">
+  <p class="results-summary">Найдено: {{ search.total }}</p>
+  <div class="catalog-grid" data-items>
+    {% for item in search.items %}
+      <article class="catalog-card" data-item-id="{{ item.id }}">
+        {% if item.cover_id %}
+          <figure><img src="{% url 'catalog-photo' photo_id=item.cover_id %}" alt="{{ item.title }}" loading="lazy" data-photo><figcaption>Общее фото товара</figcaption>
+          <p class="image-fallback" data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
+        {% else %}
+          <p class="photo-empty">Общее фото товара</p>
+        {% endif %}
+        <h2><a href="{{ item.url }}">{{ item.title }}</a></h2>
+        <p>{{ item.price_label }} · {{ item.unit_label }}</p>
+        {% if item.approximate %}<p>Приблизительное совпадение</p>{% endif %}
+      </article>
+    {% empty %}
+      <p>Подходящих товаров не найдено. Измените запрос или снимите фильтр.</p>
+    {% endfor %}
+  </div>
+  <meta data-next-cursor content="{{ search.next_cursor|default:'' }}">
+  <meta data-total content="{{ search.total }}">
+  <p data-load-error hidden>Не удалось загрузить следующую страницу. <button type="button" data-retry>Повторить</button></p>
+  <p data-load-status></p>
+  {% if search.next_cursor %}<noscript><a href="{{ next_url }}">Следующая страница</a></noscript>{% endif %}
+</section>
