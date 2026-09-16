@@ -267,6 +267,8 @@ def set_offer(*, variant_id, field, value, expected_version, context, location_i
                 raise InputRejected("Место хранения недоступно.")
             row, _ = Stock.objects.get_or_create(variant=variant, location=location)
             _version(expected_version, row.version)
+            if number < row.reserved_quantity:
+                raise InputRejected("Остаток не может быть меньше количества в действующих резервах.")
             row.quantity = number
             row.version += 1
             row.save(update_fields=("quantity", "version"))

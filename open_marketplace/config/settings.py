@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     "open_marketplace.outbox.apps.OutboxConfig",
     "open_marketplace.verification.apps.VerificationConfig",
     "open_marketplace.catalog.apps.CatalogConfig",
+    "open_marketplace.commerce.apps.CommerceConfig",
     "open_marketplace.demo_orders.apps.DemoOrdersConfig",
     "django.contrib.admin",
     "django.contrib.auth",

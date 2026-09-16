@@ -1,6 +1,7 @@
 from open_marketplace.catalog.demo import get_demo_offer_snapshot, get_demo_participant
 from open_marketplace.catalog.demo_content import create_demo_catalog
 from open_marketplace.catalog.domain import UNITS, stock_value
+from open_marketplace.catalog.policy import buyer
 
 from open_marketplace.catalog.application import (
     add_variant,
@@ -41,8 +42,10 @@ from open_marketplace.catalog.common_cards import (
 )
 
 from open_marketplace.catalog.search import search_catalog
+from open_marketplace.catalog.reservations import commit_inventory, release_inventory, reserve_inventory
 
 __all__ = (
+    "reserve_inventory", "commit_inventory", "release_inventory", "buyer",
     "create_demo_catalog",
     "get_demo_offer_snapshot", "get_demo_participant", "UNITS", "stock_value",
     "search_catalog", "withdraw_product",
