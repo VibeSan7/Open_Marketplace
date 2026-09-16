@@ -2,13 +2,19 @@
 
 [Русский](README.md) | English
 
-**Version v0.2.0.** [Download the release](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.2.0) · [Release notes](docs/releases/v0.2.0.en.md) · [Validation report (Russian)](docs/security/phase-2-local-validation.md)
+**Current source with the refreshed interface:** [download the main branch ZIP](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) · [UI validation: 507 tests and 120 browser checks (Russian)](docs/security/ui-presentation-local-validation.md)
+
+[Archived release v0.2.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.2.0) remains unchanged and contains the earlier interface.
 
 Run the project on your computer with Docker and open it in a browser. Sellers manage product listings, photos, variants, prices, and stock. Buyers search the catalog and compare verified offers from sellers.
 
 **This is a catalog without a cart, orders, or payments.** Digital products can only be saved as unpublished drafts. Running the project locally does not publish a website on the internet.
 
 This guide is in English. The documentation update does not translate the application interface; Russian button labels are included below where needed.
+
+![Refreshed Open Marketplace catalog](docs/images/catalog-preview.png)
+
+The preview uses synthetic demonstration data. The demonstration database and its credentials are not distributed; a new installation starts without product listings.
 
 ## Features
 
@@ -30,7 +36,7 @@ The first run downloads container images and the local search model. You need an
 
 ## 2. Get the project
 
-Download the source archive for your chosen version from [Releases](https://github.com/VibeSan7/Open_Marketplace/releases) and extract it. Alternatively, clone the repository:
+Download the [current source ZIP with the refreshed interface](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) and extract it. Older versions remain available under [Releases](https://github.com/VibeSan7/Open_Marketplace/releases). Alternatively, clone the repository:
 
 ```bash
 git clone https://github.com/VibeSan7/Open_Marketplace.git
@@ -40,9 +46,9 @@ git clone https://github.com/VibeSan7/Open_Marketplace.git
 cd Open_Marketplace
 ```
 
-If you downloaded a ZIP file, open the extracted directory that contains `compose.yaml`. Run all commands from that directory. The repository is private, so you need access from its owner; these instructions do not change its visibility.
+If you downloaded a ZIP file, open the extracted directory that contains `compose.yaml`. Run all commands from that directory. Access to the source does not grant access to someone else's installation: configure accounts and permissions in your own copy.
 
-The original v0.2.0 archive predates the English documentation. You can follow this guide online with that archive, or clone the current `main` branch to get both languages. The documentation update does not change the application code.
+The original v0.2.0 archive predates both the English documentation and the refreshed interface. Download or clone the current `main` branch to get the updated interface and both documentation languages.
 
 ## 3. Create settings, first run only
 

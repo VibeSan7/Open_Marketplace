@@ -33,6 +33,50 @@ class CatalogBrowserTests(StaticLiveServerTestCase):
             finally:
                 browser.close()
 
+    def test_staff_pages_have_one_main_heading(self):
+        with self.browser(self.fixture.staff_registry) as page:
+            page.goto(self.live_server_url + "/admin/")
+            paths = page.locator('.staff-nav a[href^="/admin/"]').evaluate_all("links => links.map(link => link.getAttribute('href'))")
+            for path in dict.fromkeys(["/admin/", *paths]):
+                with self.subTest(path=path):
+                    response = page.goto(self.live_server_url + path)
+                    self.assertEqual(response.status, 200)
+                    expect(page.get_by_role("heading", level=1)).to_have_count(1)
+
+    def test_skip_link_moves_keyboard_focus_to_page_content(self):
+        with self.browser(self.fixture.buyer_registry) as page:
+            for path in ("/catalog/", "/security/", "/seller/applications/"):
+                with self.subTest(path=path):
+                    page.goto(self.live_server_url + path)
+                    page.keyboard.press("Tab")
+                    expect(page.get_by_role("link", name="К содержимому", exact=True)).to_be_focused()
+                    page.keyboard.press("Enter")
+                    expect(page.get_by_role("main")).to_be_focused()
+
+    def test_mobile_forms_keep_touch_targets_inside_the_viewport(self):
+        with self.browser(self.fixture.buyer_registry, width=360) as page:
+            page.context.clear_cookies()
+            for path in ("/login/", "/register/", "/identity/password-reset/"):
+                with self.subTest(path=path):
+                    page.goto(self.live_server_url + path)
+                    field = page.locator('main input:not([type="hidden"])').first.bounding_box()
+                    button = page.locator('main button[type="submit"]').first.bounding_box()
+                    self.assertGreaterEqual(field["height"], 44)
+                    self.assertGreaterEqual(button["height"], 44)
+                    self.assertGreaterEqual(field["x"], 0)
+                    self.assertLessEqual(field["x"] + field["width"], 360)
+                    self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
+
+    def test_desktop_results_remain_beside_filters(self):
+        self.fixture.product()
+        with self.browser(self.fixture.buyer_registry, width=1280) as page:
+            page.goto(self.live_server_url + "/catalog/")
+            filters = page.locator("[data-search-form]").bounding_box()
+            results = page.locator("[data-results]").bounding_box()
+            self.assertLessEqual(filters["x"] + filters["width"], results["x"])
+            self.assertGreater(results["width"], filters["width"])
+            expect(page.locator("[data-item-id]")).to_have_count(1)
+
     def test_text_waits_for_submit_and_filter_applies_typed_text_on_mobile(self):
         self.fixture.product()
         with self.browser(self.fixture.buyer_registry, width=390) as page:

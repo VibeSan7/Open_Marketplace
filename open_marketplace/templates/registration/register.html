@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Register{% endblock %}
+{% block page_class %}auth-page{% endblock %}
 {% block content %}
-<h1>Register</h1>
-{% if message %}<p>{{ message }}</p>{% endif %}
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Register</button>
-</form>
+{% include "registration/_intro.html" %}
+<section class="auth-panel">
+  <span class="eyebrow">Новый аккаунт</span>
+  <h1>Register</h1>
+  <p class="subtle">Начните с регистрации и подтверждения электронной почты.</p>
+  {% if message %}<p class="notice">{{ message }}</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Register</button>
+  </form>
+  <nav class="auth-links" aria-label="Вход в аккаунт"><a href="{% url 'login' %}">Уже есть аккаунт? Войти</a></nav>
+</section>
 {% endblock %}

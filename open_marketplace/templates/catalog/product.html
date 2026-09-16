@@ -1,51 +1,60 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ product.title }} — каталог{% endblock %}
+{% block page_class %}catalog-shell{% endblock %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">
 <article class="product-page" data-product data-share-url="{{ share_url }}">
-  <p><a href="{{ back_url }}">← Вернуться к результатам</a></p>
-  <button type="button" data-share>Поделиться ссылкой</button>
+  <div class="product-toolbar">
+    <a href="{{ back_url }}">← Вернуться к результатам</a>
+    <button class="button-secondary" type="button" data-share>Поделиться ссылкой</button>
+  </div>
   <h1>{{ product.title }}</h1>
-  <p class="description">{{ product.description }}</p>
-  <p>Категория: {{ product.category }} · Единица: {{ product.unit_label }}</p>
-  {% if product.cover_id %}
-    <figure><img src="{% url 'catalog-photo' photo_id=product.cover_id %}" alt="Общее фото товара" data-photo><figcaption>Общее фото товара</figcaption><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
-  {% endif %}
+  <p class="product-meta">Категория: {{ product.category }} · Единица: {{ product.unit_label }}</p>
   {% if product.selection_message %}<p class="notice">{{ product.selection_message }}</p>{% endif %}
-  <nav aria-label="Варианты">
+  <nav class="variant-tabs" aria-label="Варианты">
     {% for variant in product.variants %}
-      <a class="{% if variant.id == product.selected_variant_id %}selected{% endif %}" href="{{ variant.url }}">{{ variant.label }}{% if not variant.in_stock %} — Нет в наличии{% endif %}</a>
+      <a class="{% if variant.id == product.selected_variant_id %}selected{% endif %}" {% if variant.id == product.selected_variant_id %}aria-current="true"{% endif %} href="{{ variant.url }}">{{ variant.label }}{% if not variant.in_stock %} — Нет в наличии{% endif %}</a>
     {% endfor %}
   </nav>
-  {% if product.selected_variant %}
-    <section class="variant-detail">
-      <h2>{{ product.selected_variant.label }}</h2>
-      <dl>
-        {% for key, value in product.selected_variant.attributes.items %}<dt>{{ key }}</dt><dd>{{ value }}</dd>{% endfor %}
-      </dl>
-      {% if product.selected_variant.photo_ids %}
-        <div class="gallery">
-          {% for photo_id in product.selected_variant.photo_ids %}
-            <figure><img src="{% url 'catalog-photo' photo_id=photo_id %}" alt="{{ product.selected_variant.label }}" loading="lazy" data-photo><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p>Для этого варианта нет доступных фотографий</p>
+  <div class="product-layout">
+    <div class="product-overview">
+      {% if product.cover_id %}
+        <figure class="product-cover"><img src="{% url 'catalog-photo' photo_id=product.cover_id %}" alt="Общее фото товара" data-photo><figcaption>Общее фото товара</figcaption><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
       {% endif %}
-      <p>{% if product.selected_variant.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>
-      <p>{{ product.selected_variant.price_label }} / {{ product.unit_label }}</p>
-      {% if product.selected_variant.in_stock and product.selected_variant.offers %}
-        <h3>Предложения</h3>
-        <ul>
-          {% for offer in product.selected_variant.offers %}
-            <li>{{ offer.seller_name }} — {% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %} — Доставка ещё не рассчитана</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </section>
-  {% endif %}
-  <section>
+      <h2>О товаре</h2>
+      <p class="description">{{ product.description }}</p>
+    </div>
+    {% if product.selected_variant %}
+      <section class="variant-detail">
+        <span class="eyebrow">Выбранный вариант</span>
+        <h2>{{ product.selected_variant.label }}</h2>
+        <p class="stock-badge {% if not product.selected_variant.in_stock %}stock-empty{% endif %}">{% if product.selected_variant.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>
+        <p class="variant-price">{{ product.selected_variant.price_label }} <span>/ {{ product.unit_label }}</span></p>
+        <dl>
+          {% for key, value in product.selected_variant.attributes.items %}<dt>{{ key }}</dt><dd>{{ value }}</dd>{% endfor %}
+        </dl>
+        {% if product.selected_variant.photo_ids %}
+          <div class="gallery">
+            {% for photo_id in product.selected_variant.photo_ids %}
+              <figure><img src="{% url 'catalog-photo' photo_id=photo_id %}" alt="{{ product.selected_variant.label }}" loading="lazy" data-photo><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="subtle">Для этого варианта нет доступных фотографий</p>
+        {% endif %}
+        {% if product.selected_variant.in_stock and product.selected_variant.offers %}
+          <h3>Предложения</h3>
+          <ul class="offer-list">
+            {% for offer in product.selected_variant.offers %}
+              <li><strong>{{ offer.seller_name }}</strong><span class="offer-price">{% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %}</span><span class="offer-delivery">Доставка ещё не рассчитана</span></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+  <section class="other-variants">
     <h2>Другие варианты</h2>
     <ul>{% for variant in product.variants %}<li>{{ variant.label }} — {% if variant.in_stock %}{{ variant.price_label }}{% else %}Нет в наличии{% endif %}</li>{% endfor %}</ul>
   </section>
