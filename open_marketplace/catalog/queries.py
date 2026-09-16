@@ -6,19 +6,23 @@ from open_marketplace.catalog.common_cards import compose_common_cards
 from open_marketplace.catalog.domain import UNITS, price_label, price_limited_variant, price_range
 from open_marketplace.catalog.models import Category, Participant, Photo, Product, SavedProduct, StorageLocation, Variant
 from open_marketplace.catalog.photos import photo_path
-from open_marketplace.catalog.policy import UNAVAILABLE, identifier, manager, owned_product, participant, seller
+from open_marketplace.catalog.policy import (
+    UNAVAILABLE, browse_account, identifier, manager, owned_product, participant, private_catalog_access, seller,
+)
 from open_marketplace.common.errors import InputRejected, PermissionDenied
 from open_marketplace.identity.public import get_account_snapshot
 from open_marketplace.seller_onboarding.public import get_public_sellers
 
 
 def list_categories(*, context, include_inactive=False):
-    participant(context)
     query = Category.objects.prefetch_related("attributes")
     if include_inactive:
         manager(context, write=False)
-    else:
+    elif private_catalog_access(context):
         query = query.filter(active=True)
+    else:
+        visible_category_ids = {card["category_id"] for card in public_products(context)}
+        query = query.filter(active=True, id__in=visible_category_ids)
     return [{"id": str(category.id), "name": category.name, "active": category.active, "version": category.version,
              "attributes": [{"key": item.key, "label": item.label, "required": item.required, "values": item.values} for item in category.attributes.all()]}
             for category in query]
@@ -38,6 +42,7 @@ def get_own_product(*, product_id, context):
                 "version": stocks[location.id].version if location.id in stocks else 0} for location in locations]})
     return {"id": str(product.id), "kind": product.kind, "unit": product.unit, "unit_label": UNITS[product.unit], "unit_locked": product.unit_locked,
         "draft": deepcopy(product.draft), "published": deepcopy(product.published), "draft_version": product.draft_version, "published_version": product.published_version,
+        "public_listing": product.public_listing,
         "blocked": product.blocked, "block_reason": product.block_reason, "variants": variants,
         "locations": [{"id": str(row.id), "name": row.name} for row in locations],
         "photos": [{"id": str(row.id), "width": row.width, "height": row.height, "available": photo_path(row.id).is_file()} for row in product.photos.order_by("created_at", "id")]}
@@ -178,8 +183,11 @@ def _available_photos(product, ids):
 
 
 def public_products(context):
-    participant(context)
-    products = list(Product.objects.filter(published__isnull=False, blocked=False).exclude(kind="digital").prefetch_related("variants__stocks", "photos"))
+    private = private_catalog_access(context)
+    products_query = Product.objects.filter(published__isnull=False, blocked=False).exclude(kind="digital")
+    if not private:
+        products_query = products_query.filter(public_listing=True)
+    products = list(products_query.prefetch_related("variants__stocks", "photos"))
     seller_ids = tuple({row.seller_id for row in products if row.seller_id is not None})
     sellers = {row["id"]: row for row in get_public_sellers(seller_ids=seller_ids)}
     allowed_owners = set(Participant.objects.filter(allowed=True).values_list("account_id", flat=True))
@@ -279,12 +287,12 @@ def get_product(*, product_id, context, variant_id=None, filters=None, category_
 
 
 def get_photo(*, photo_id, context):
-    account = participant(context)
+    account = browse_account(context)
     photo = Photo.objects.select_related("product").filter(pk=identifier(photo_id)).first()
     if photo is None:
         raise PermissionDenied("Фото недоступно.")
     product = photo.product
-    if product.owner_id == account.id or (product.kind == "common" and account.kind == "service"):
+    if private_catalog_access(context) and (product.owner_id == account.id or (product.kind == "common" and account.kind == "service")):
         owned_product(product.id, context)
     else:
         view = get_product(product_id=product.id, context=context)

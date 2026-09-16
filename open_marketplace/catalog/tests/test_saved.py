@@ -65,14 +65,12 @@ class SavedProductsTests(CatalogTestCase):
             self.save(product)
         self.save(product, False)
 
-    def test_viewer_revocation_denies_all_saved_operations(self):
+    def test_viewer_revocation_removes_private_saved_visibility_without_suspending_account(self):
         product, _, _ = self.product()
         self.save(product)
         self.catalog.set_participant(account_id=self.buyer.id, allowed=False, context=self.staff_context)
-        with self.assertRaises(PermissionDenied):
-            self.saved()
-        with self.assertRaises(PermissionDenied):
-            self.save(product, False)
+        self.assertEqual(self.saved(), [])
+        self.save(product, False)
 
     def test_hidden_and_unknown_products_cannot_be_added(self):
         product, _, _ = self.product(publish=False)

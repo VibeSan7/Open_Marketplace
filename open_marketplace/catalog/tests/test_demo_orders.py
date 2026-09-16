@@ -130,7 +130,7 @@ class DemoOrdersPublicTests(CatalogTestCase):
         unknown = self.client_for(self.other_registry).get(f"/demo-orders/{uuid4()}/")
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.content, unknown.content)
-        self.assertNotContains(response, "<form", status_code=403)
+        self.assertNotContains(response, 'method="post"', status_code=403)
         self.assertNotContains(response, "csrfmiddlewaretoken", status_code=403)
 
     def test_create_page_has_csrf_and_action_without_csrf_is_rejected(self):

@@ -2,7 +2,7 @@
 
 This runbook applies to a new local Open Marketplace copy. It does not connect to someone else's installation, change the current demonstration, or replace settings for an existing database.
 
-After startup, open the [built-in read-only guide](http://127.0.0.1:8000/setup/) in your browser. It presents the same secure order and explains the boundaries of the local closed catalog.
+After startup, open the [built-in read-only guide](http://127.0.0.1:8000/setup/) in your browser. It presents the same secure order and explains the boundaries of public browsing and private data.
 
 ## 1. Get the source
 
@@ -40,6 +40,6 @@ Open the invitation in Mailpit, set a password, configure an authenticator app, 
 
 ## 5. Demonstration boundaries
 
-The catalog is closed by explicit participant admission. Registration and seller-application approval do not grant admission automatically: the administrator enables participation by email. Use synthetic test data and safe photos.
+Guests see only explicitly public published products. Saved items and demo orders for public products require an active personal account with verified email; private products additionally require admission. Selling and catalog management are not granted by registration: the administrator admits sellers separately. An [optional synthetic storefront](storefront-demo-en.md) is available.
 
 This version has no real orders, payments, reservations, delivery, or digital-file delivery. An optional [demo order journey](demo-orders-en.md) exercises simulated payment, hand-over and cancellation without real money. Local running is a demonstration on your computer, not a ready public service.

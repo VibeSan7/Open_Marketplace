@@ -1,0 +1,765 @@
+{
+  "key": "storefront-v1",
+  "sellers": [
+    {
+      "key": "tech",
+      "name": "Демо · Рабочее место"
+    },
+    {
+      "key": "home",
+      "name": "Демо · Уютный дом"
+    },
+    {
+      "key": "daily",
+      "name": "Демо · Каждый день"
+    }
+  ],
+  "categories": [
+    {
+      "key": "electronics",
+      "name": "Электроника · демо"
+    },
+    {
+      "key": "home",
+      "name": "Дом и уют · демо"
+    },
+    {
+      "key": "kitchen",
+      "name": "Кухня · демо"
+    },
+    {
+      "key": "outdoor",
+      "name": "Спорт и отдых · демо"
+    },
+    {
+      "key": "accessories",
+      "name": "Сумки и аксессуары · демо"
+    },
+    {
+      "key": "stationery",
+      "name": "Канцелярия · демо"
+    }
+  ],
+  "products": [
+    {
+      "key": "headphones",
+      "category": "electronics",
+      "seller": "tech",
+      "title": "Наушники для работы Everyday",
+      "description": "Для музыки, занятий и видеозвонков за рабочим столом. Полноразмерная форма закрывает уши; отдельный выбор комплектации позволяет увидеть, как меняется предложение.",
+      "purpose": "Работа и музыка",
+      "image": "headphones.jpg",
+      "image_sha256": "b098d562692a70ad074854bf5e44510ca99275d5b398144343bc0b2eba2708c0",
+      "credit": {
+        "author": "Sprinno",
+        "title": "File:Headphones on white background.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Headphones_on_white_background.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "2490.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "2640.00"
+        }
+      ]
+    },
+    {
+      "key": "mouse",
+      "category": "electronics",
+      "seller": "tech",
+      "title": "Беспроводная мышь Compact",
+      "description": "Компактная мышь для ноутбука и домашнего рабочего места. Учебная карточка помогает сравнить цену и выбрать комплектацию перед добавлением в корзину.",
+      "purpose": "Работа за компьютером",
+      "image": "mouse.jpg",
+      "image_sha256": "88f366816d39e09c80340337ff3093ce58565170bd4bdaf4ef28608bea056e98",
+      "credit": {
+        "author": "Pixloom",
+        "title": "File:A black wireless computer mouse.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:A_black_wireless_computer_mouse.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "990.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1140.00"
+        }
+      ]
+    },
+    {
+      "key": "speaker",
+      "category": "electronics",
+      "seller": "tech",
+      "title": "Портативная колонка Weekend",
+      "description": "Колонка для спокойного вечера дома или встречи с друзьями. На фотографии показан тип устройства; технические параметры конкретного бренда не заявляются.",
+      "purpose": "Музыка и отдых",
+      "image": "speaker.jpg",
+      "image_sha256": "83b6fe41797ea6736804370cf41c22c7d805e36e27d6d61ed70f13d001723f64",
+      "credit": {
+        "author": "Sinchen.Lin",
+        "title": "File:UE Boom speakers.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:UE_Boom_speakers.jpg",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "3490.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "3640.00"
+        }
+      ]
+    },
+    {
+      "key": "usb",
+      "category": "electronics",
+      "seller": "tech",
+      "title": "USB-накопитель Pocket",
+      "description": "Небольшой накопитель для переноса учебных файлов и документов. Объём памяти в этом демонстрационном предложении не сертифицируется; карточка показывает выбор комплектации.",
+      "purpose": "Документы и учёба",
+      "image": "usb.jpg",
+      "image_sha256": "9fd16b4b6b5f793bc4b1fb649c3ba713ef1c84cdbbea78011bd30c6564259492",
+      "credit": {
+        "author": "Dmitry Makeev",
+        "title": "File:Kingston Technology DataTraveler G4 USB flash drive USB 3.0 32 Gb.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Kingston_Technology_DataTraveler_G4_USB_flash_drive_USB_3.0_32_Gb.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "690.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "840.00"
+        }
+      ]
+    },
+    {
+      "key": "lamp",
+      "category": "home",
+      "seller": "home",
+      "title": "Настольная лампа Focus",
+      "description": "Лампа для чтения, заметок и вечерней работы. Подойдёт для учебной подборки «Рабочее место» рядом с блокнотом, ручкой и компьютерной мышью.",
+      "purpose": "Работа и чтение",
+      "image": "lamp.jpg",
+      "image_sha256": "900cae8dad252e14e1324caf2a2d6c207170ecc36fcb4f4cb67ab3451d5b3eaa",
+      "credit": {
+        "author": "AirbusA330772673",
+        "title": "File:A desk lamp.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:A_desk_lamp.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "2190.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "2340.00"
+        }
+      ]
+    },
+    {
+      "key": "clock",
+      "category": "home",
+      "seller": "home",
+      "title": "Настольный будильник Morning",
+      "description": "Часы с хорошо различимым циферблатом для прикроватной тумбы или полки. Демонстрационная цена нужна для проверки фильтра по бюджету, а не для настоящей продажи.",
+      "purpose": "Дом и распорядок дня",
+      "image": "clock.jpg",
+      "image_sha256": "94f2e9498ffd4605852990b91042c0f650cb22d8ce24a8089b77a32f8091d4d4",
+      "credit": {
+        "author": "Jacek Halicki",
+        "title": "File:2023 Budzik Perfect.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:2023_Budzik_Perfect.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1190.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1340.00"
+        }
+      ]
+    },
+    {
+      "key": "vase",
+      "category": "home",
+      "seller": "home",
+      "title": "Стеклянная ваза Clear",
+      "description": "Ваза для небольшой композиции из цветов и декоративных веток. Можно выбрать обычную или подарочную упаковку и положить несколько товаров в один учебный заказ.",
+      "purpose": "Украшение интерьера",
+      "image": "vase.jpg",
+      "image_sha256": "585ea7821f5ea098fb15335b26c63aed4149d548b65dd4766f4bd9ff45cb3800",
+      "credit": {
+        "author": "Lambtron",
+        "title": "File:A cut glass vase on white.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:A_cut_glass_vase_on_white.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1590.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1740.00"
+        }
+      ]
+    },
+    {
+      "key": "cushion",
+      "category": "home",
+      "seller": "home",
+      "title": "Декоративная подушка Soft",
+      "description": "Небольшой акцент для дивана или кресла. Фотография служит иллюстрацией категории; размеры и состав ткани не выдаются за проверенные сведения о реальном товаре.",
+      "purpose": "Дом и уют",
+      "image": "cushion.jpg",
+      "image_sha256": "f82b9d83082e5f5e57585cf68180feaf30da12d3eb6e441061619759252183bd",
+      "credit": {
+        "author": "Scrumshus",
+        "title": "File:Throw Pillow.JPG",
+        "source": "https://commons.wikimedia.org/wiki/File:Throw_Pillow.JPG",
+        "license": "Public domain",
+        "license_url": "",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "890.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1040.00"
+        }
+      ]
+    },
+    {
+      "key": "mug",
+      "category": "kitchen",
+      "seller": "home",
+      "title": "Керамическая кружка Daily",
+      "description": "Кружка для утреннего чая или кофе за рабочим столом. Добавьте её вместе с френч-прессом, чтобы проверить корзину с несколькими строками и общий итог.",
+      "purpose": "Чай и кофе",
+      "image": "mug.jpg",
+      "image_sha256": "cb8698e102ca6b25530e00e32e129a77117edafbbabcdecebecbc36d9372879e",
+      "credit": {
+        "author": "ArAr'Hani",
+        "title": "File:Ceramic a mug.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Ceramic_a_mug.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "590.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "740.00"
+        }
+      ]
+    },
+    {
+      "key": "kettle",
+      "category": "kitchen",
+      "seller": "home",
+      "title": "Электрический чайник Simple",
+      "description": "Чайник для домашней кухни. Это учебный товар: стоимость и комплектации условные, а характеристики электроприбора и условия гарантии не обещаются.",
+      "purpose": "Домашняя кухня",
+      "image": "kettle.jpg",
+      "image_sha256": "6e7dbb877a90852764f0c864b87ed5c8890c33078b7bb7cc2b297821dba3e974",
+      "credit": {
+        "author": "Baruzza",
+        "title": "File:Electric-kettle.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Electric-kettle.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "2790.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "2940.00"
+        }
+      ]
+    },
+    {
+      "key": "press",
+      "category": "kitchen",
+      "seller": "home",
+      "title": "Френч-пресс Slow Morning",
+      "description": "Простой способ собрать уголок для неторопливого завтрака. В учебной витрине сочетается с кружкой и бутылкой для воды; объём конкретного изделия не заявляется.",
+      "purpose": "Чай и кофе",
+      "image": "press.jpg",
+      "image_sha256": "33e4ed701ed69e5f56ca15cae7615d1de08bf3c1e5b04c80e4e49d8ba33083f5",
+      "credit": {
+        "author": "Leland (English Wikipedia)",
+        "title": "File:French press.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:French_press.jpg",
+        "license": "CC BY-SA 3.0",
+        "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1390.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1540.00"
+        }
+      ]
+    },
+    {
+      "key": "bottle",
+      "category": "kitchen",
+      "seller": "daily",
+      "title": "Бутылка для воды On The Go",
+      "description": "Многоразовая бутылка для прогулок, дороги и рабочего стола. На иллюстрации может присутствовать марка оригинального изделия — магазин не связан с её владельцем.",
+      "purpose": "Прогулки и вода",
+      "image": "bottle.jpg",
+      "image_sha256": "c1230a2f7abb8676d0db660e07bd251b7d9a8fd4d46491de21b0f57d496ed805",
+      "credit": {
+        "author": "Dirt Smurf",
+        "title": "File:Owala Water Bottle.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Owala_Water_Bottle.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1290.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1440.00"
+        }
+      ]
+    },
+    {
+      "key": "mat",
+      "category": "outdoor",
+      "seller": "daily",
+      "title": "Коврик для занятий Balance",
+      "description": "Коврик для знакомства с домашними занятиями и растяжкой. Фотография показывает использование; учебное предложение не является советом по упражнениям или нагрузке.",
+      "purpose": "Домашние занятия",
+      "image": "mat.jpg",
+      "image_sha256": "85a24e358ad20eee311c467793e6180a60fd05a605d9287fa4cc716dc121ffe9",
+      "credit": {
+        "author": "Femivaco",
+        "title": "File:Yoga mat and water bottle in a living room.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Yoga_mat_and_water_bottle_in_a_living_room.jpg",
+        "license": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1890.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "2040.00"
+        }
+      ]
+    },
+    {
+      "key": "dumbbell",
+      "category": "outdoor",
+      "seller": "daily",
+      "title": "Гантели для занятий Start",
+      "description": "Парный спортивный инвентарь для домашней подборки. Вес и допустимая нагрузка реального изделия здесь не подтверждаются; варианты относятся только к учебной упаковке.",
+      "purpose": "Домашние занятия",
+      "image": "dumbbell.jpg",
+      "image_sha256": "89fbd62227e2a1e7573ecac32b5ea970dd713810dcb29e7974dc7ebb7f2dd994",
+      "credit": {
+        "author": "GeorgeStepanek",
+        "title": "File:TwoDumbbells.JPG",
+        "source": "https://commons.wikimedia.org/wiki/File:TwoDumbbells.JPG",
+        "license": "CC BY-SA 3.0",
+        "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "2290.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "2440.00"
+        }
+      ]
+    },
+    {
+      "key": "ball",
+      "category": "outdoor",
+      "seller": "daily",
+      "title": "Футбольный мяч Yard",
+      "description": "Мяч для подборки вещей на выходные. Вариант можно сохранить в избранном, добавить в корзину и оформить без настоящего списания денег.",
+      "purpose": "Игры на свежем воздухе",
+      "image": "ball.jpg",
+      "image_sha256": "55d53c4fa9438b29b25a3c8bd05bbe619fb6dfff584471d706da148ab1338028",
+      "credit": {
+        "author": "pixabay",
+        "title": "File:Football-ball-clip-sports-e7b66c.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Football-ball-clip-sports-e7b66c.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1490.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1640.00"
+        }
+      ]
+    },
+    {
+      "key": "tent",
+      "category": "outdoor",
+      "seller": "daily",
+      "title": "Туристическая палатка Camp",
+      "description": "Палатка как пример товара для прогулок и отдыха. Вместимость и водостойкость по фотографии не определяются; комплектация и цена в этой карточке условные.",
+      "purpose": "Отдых на природе",
+      "image": "tent.jpg",
+      "image_sha256": "4a5f51665714fef6f9847d8ed0940adb7440106c8c7bb5ea34558b7566f52104",
+      "credit": {
+        "author": "Eden Aviv",
+        "title": "File:Camping tent on tarp.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Camping_tent_on_tarp.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "6990.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "7140.00"
+        }
+      ]
+    },
+    {
+      "key": "backpack",
+      "category": "accessories",
+      "seller": "daily",
+      "title": "Городской рюкзак Route",
+      "description": "Рюкзак для учёбы, поездок и повседневных вещей. Иллюстрация не подтверждает размеры отделений или совместимость с конкретной моделью ноутбука.",
+      "purpose": "Город и поездки",
+      "image": "backpack.jpg",
+      "image_sha256": "4e7216ec28a8388abe1b90bf3d72c5fa0486ca55d23be45585eaa5d9f813cb3f",
+      "credit": {
+        "author": "Sir Tragedy",
+        "title": "File:Wenger backpack.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Wenger_backpack.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "3190.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "3340.00"
+        }
+      ]
+    },
+    {
+      "key": "tote",
+      "category": "accessories",
+      "seller": "daily",
+      "title": "Тканевая сумка Everyday",
+      "description": "Сумка для небольших покупок и повседневных вещей. В демонстрации можно изменить количество в корзине и сразу проверить пересчёт общей стоимости.",
+      "purpose": "Повседневные дела",
+      "image": "tote.jpg",
+      "image_sha256": "34e002283f067d35b2fd06076a01788c76d6b751c4786042507df124721ebf2f",
+      "credit": {
+        "author": "Ravindrarkg",
+        "title": "File:World with U Cloth Tote Bag.png",
+        "source": "https://commons.wikimedia.org/wiki/File:World_with_U_Cloth_Tote_Bag.png",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "790.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "940.00"
+        }
+      ]
+    },
+    {
+      "key": "wallet",
+      "category": "accessories",
+      "seller": "daily",
+      "title": "Кошелёк Pocket",
+      "description": "Компактный аксессуар для отдельной подборки. Материал и изготовитель показанного на фотографии изделия не выдаются за характеристики вымышленного предложения.",
+      "purpose": "Повседневные аксессуары",
+      "image": "wallet.jpg",
+      "image_sha256": "c6feb1ec72417a9f9bdeeeec0deb17bdef425579c2375dc091f8b4c30a2be43e",
+      "credit": {
+        "author": "Nafis Fuad Ayon",
+        "title": "File:Aarong leather wallet.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Aarong_leather_wallet.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1690.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1840.00"
+        }
+      ]
+    },
+    {
+      "key": "umbrella",
+      "category": "accessories",
+      "seller": "daily",
+      "title": "Зонт для прогулок City",
+      "description": "Зонт для городской подборки на переменчивую погоду. Условия доставки не выдуманы: этот товар существует только в демонстрационном каталоге.",
+      "purpose": "Город и прогулки",
+      "image": "umbrella.jpg",
+      "image_sha256": "d379bcedfd5d7bf5d8d306d3aa45413cfa14db62510370bab4f587bd11b27601",
+      "credit": {
+        "author": "Shixart1985",
+        "title": "File:Closeup of black umbrella in rain.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Closeup_of_black_umbrella_in_rain.jpg",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "1190.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "1340.00"
+        }
+      ]
+    },
+    {
+      "key": "notebook",
+      "category": "stationery",
+      "seller": "tech",
+      "title": "Блокнот для идей Notes",
+      "description": "Блокнот для планов, набросков и списков дел. Сочетается с ручкой и настольной лампой в подборке рабочего места; листность в учебной карточке не фиксируется.",
+      "purpose": "Заметки и учёба",
+      "image": "notebook.jpg",
+      "image_sha256": "f0bbc42076ccc87b3c2cacc45eb7343e9e5c5b465d0b12f347ce3bb1ec9b29d7",
+      "credit": {
+        "author": "utroja0",
+        "title": "File:Notebooks-rainbow.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Notebooks-rainbow.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "390.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "540.00"
+        }
+      ]
+    },
+    {
+      "key": "pen",
+      "category": "stationery",
+      "seller": "tech",
+      "title": "Ручка для заметок Write",
+      "description": "Ручка для рабочего стола и ежедневных записей. Невысокая демонстрационная цена позволяет проверить сортировку и ограничения бюджета в каталоге.",
+      "purpose": "Заметки и учёба",
+      "image": "pen.jpg",
+      "image_sha256": "99358d52f89451cc3653e0e21ce9e5e132c8268bc74ddc42cbc3a55fb49b18a2",
+      "credit": {
+        "author": "Kevin Brown",
+        "title": "File:Parker Vector Stainless Steel Ballpoint Pen.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Parker_Vector_Stainless_Steel_Ballpoint_Pen.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "290.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "440.00"
+        }
+      ]
+    },
+    {
+      "key": "stapler",
+      "category": "stationery",
+      "seller": "tech",
+      "title": "Настольный степлер Office",
+      "description": "Канцелярский инструмент для организации бумаг. Формат скоб и число сшиваемых листов по иллюстрации не заявляются: это не технический паспорт изделия.",
+      "purpose": "Организация рабочего места",
+      "image": "stapler.jpg",
+      "image_sha256": "08a7c10cca80d6ddca01bf785a3f85701ea7e0137625009f14dd9ede81fc7142",
+      "credit": {
+        "author": "DifrancoBarnes",
+        "title": "File:Black Stapler 2024.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Black_Stapler_2024.jpg",
+        "license": "CC0",
+        "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "490.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "640.00"
+        }
+      ]
+    },
+    {
+      "key": "pencils",
+      "category": "stationery",
+      "seller": "tech",
+      "title": "Цветные карандаши Sketch",
+      "description": "Карандаши для рисунков, схем и цветных заметок. Учебное предложение позволяет сравнить стандартную и подарочную упаковку; фотография показывает тип товара.",
+      "purpose": "Творчество и учёба",
+      "image": "pencils.jpg",
+      "image_sha256": "10a24cce873f3bd8f23e5ae30f41fe935a31f94cde0ff87c3b553072004a4550",
+      "credit": {
+        "author": "Martin Pettitt",
+        "title": "File:Coloured Pencils (53607571560).jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Coloured_Pencils_(53607571560).jpg",
+        "license": "CC BY 2.0",
+        "license_url": "https://creativecommons.org/licenses/by/2.0",
+        "changes": "Wikimedia thumbnail resized to at most 800px wide; converted to JPEG for bundled demo."
+      },
+      "variants": [
+        {
+          "key": "standard",
+          "label": "Стандарт",
+          "price": "690.00"
+        },
+        {
+          "key": "gift",
+          "label": "Подарочная упаковка",
+          "price": "840.00"
+        }
+      ]
+    }
+  ]
+}

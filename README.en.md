@@ -2,32 +2,32 @@
 
 [Русский](README.md) | English
 
-**Current source:** [download the main branch ZIP](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) · [Changes in v0.3.0](docs/releases/v0.3.0.en.md)
+**Current source:** [download the main branch ZIP](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) · [Changes in v0.4.0](docs/releases/v0.4.0.en.md)
 
 [Archived release v0.2.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.2.0) remains unchanged and contains the earlier interface.
 
 Run the project on your computer with Docker and open it in a browser. Sellers manage product listings, photos, variants, prices, and stock. Buyers search the catalog and compare verified offers from sellers.
 
-**This is a catalog with an optional, separately enabled order demonstration — no real payments.** Digital products can only be saved as unpublished drafts. Running the project locally does not publish a website on the internet.
+**An open storefront with an optional, separately enabled cart and order demonstration — no real payments.** Digital products can only be saved as unpublished drafts. Running the project locally does not publish a website on the internet.
 
-The current source can be downloaded as a public ZIP or cloned. That is access to source code, not to someone else's installation: the demonstration runs locally and the catalog is closed by participant admission.
+Guests can browse explicitly public products, photos, search and seller pages. Existing listings remain private after an upgrade: the owner explicitly enables guest visibility after publication. Saved products and demo orders require an active personal account with verified email; private-catalog admission and seller-management permissions remain separate.
 
 This guide is in English. The documentation update does not translate the application interface; Russian button labels are included below where needed.
 
-![Refreshed Open Marketplace catalog](docs/images/catalog-preview.png)
+![Open Marketplace public product storefront](docs/images/storefront-preview.png)
 
-The preview uses synthetic demonstration data. The demonstration database and its credentials are not distributed; a new installation starts without product listings.
+The preview uses synthetic data. A fresh installation is empty; an [optional command](docs/runbooks/storefront-demo-en.md) adds 24 illustrated products, 48 variants, 6 categories and 3 fictional stores. No preset passwords are distributed. [Image credits and licenses](docs/demo-image-credits.md).
 
 ## Features
 
 - Registration, email verification, sign-in, two-factor authentication, session management, and staff roles.
-- Separate catalog admission and seller approval, managed by the owner of each installation.
+- Public guest browsing, separate private-catalog admission and seller approval.
 - Product drafts: content changes become visible only after publication. Prices and stock are saved separately, without overwriting newer changes.
 - Product variants, photos, storage locations, units / kilograms / meters, prices in rubles, and free products.
 - Shared product listings and comparison of identical offers after staff approval.
 - Keyword, typo-tolerant and semantic search, price range and sorting, automatic loading, and links preserving search conditions. Semantic search matches meaning rather than just spelling.
 - Personal saved products, seller pages, clear listing status and private publication previews.
-- [Optional order demonstration](docs/runbooks/demo-orders-en.md): simulated approval/decline, handover, receipt and cancellation. Disabled by default; no real money or shipments.
+- [Optional order demonstration](docs/runbooks/demo-orders-en.md): multi-seller cart, quantities, totals, price reconfirmation, duplicate-safe checkout, simulated payment, handover, receipt and cancellation. Disabled by default; no real money or shipments.
 - Photos and the database are stored in separate persistent Docker volumes. Private photos are not served as public files.
 
 ## 1. Prerequisites
@@ -120,7 +120,7 @@ Open:
 - **Local email:** <http://127.0.0.1:8025/> for registration and invitation messages. Mailpit is an inbox for the local installation; it does not deliver these messages to an external email account.
 - **Staff panel:** <http://127.0.0.1:8000/admin/>
 
-A fresh installation does not create sample products or preset passwords. To see products, first set up an administrator and a seller as described below.
+A fresh installation does not create sample products or preset passwords. Use the [optional demo content](docs/runbooks/storefront-demo-en.md) to explore the storefront, or set up an administrator and seller for your own listings.
 
 ## 5. Set up the administrator and add a product
 
@@ -135,7 +135,7 @@ In brief:
 3. Invite a staff member with the seller review role. Then register a separate personal seller account: staff accounts are not used for trading.
 4. The seller verifies their email, enables two-factor authentication, and submits an application. The reviewer approves it after checking it.
 5. The administrator opens `/catalog/manage/`, grants participation by email, and creates a category with attributes.
-6. The seller opens "Мои карточки" (My listings), creates a listing, adds variants, real photos, a price and stock, then clicks "Опубликовать" (Publish).
+6. The seller opens "Мои карточки" (My listings), creates a listing, adds variants, real photos, a price and stock, then clicks "Опубликовать" (Publish). They separately choose "Открыть публичный показ" (Enable public visibility) for guest browsing. Disabling it restores private-only visibility.
 
 ```bash
 docker compose run --rm web python manage.py bootstrap_security_admin --email admin@example.test
@@ -196,7 +196,7 @@ The [release validation report (Russian)](docs/security/phase-2-local-validation
 ## Limitations
 
 - By default, the website is only accessible on the computer running it. This release does not provide a public server, domain, HTTPS setup, external email delivery, or production backup operations. Django's local development server is not suitable for a public internet service.
-- The catalog is a closed test demonstration: registration alone does not grant catalog access, selling requires a separate test journey, and the administrator explicitly controls admission.
+- Guests see only explicitly public listings. Private listings still require admission; seller approval, catalog management and staff permissions are not granted by registration.
 - Local HTTP uses non-secure cookies. Settings for secure HTTPS cookies exist, but do not enable them without HTTPS: the browser would be unable to sign in over plain HTTP.
 - Approximate search uses a local multilingual model, but relevance can be wrong. It does not merge products automatically or bypass filters, stock checks, or access rules.
 - A photo uploader's authenticity declaration is not an automated verification of the photo's origin.
@@ -209,4 +209,4 @@ The [release validation report (Russian)](docs/security/phase-2-local-validation
 - [Completed first phase: identity and access](docs/security/phase-1-review.md).
 - [Code-use and licence status](docs/code-use-status.md).
 
-The domain modules `identity`, `access`, `seller_onboarding`, `catalog`, `audit`, and `outbox` interact through `public.py`. `web` and `staff_admin` provide the pages; `verification` checks restoration of a test database.
+The domain modules `identity`, `access`, `seller_onboarding`, `catalog`, `audit`, and `outbox` interact through `public.py`. `web` and `staff_admin` provide the pages; `verification` checks test-database restoration and provides the separate synthetic-content import.

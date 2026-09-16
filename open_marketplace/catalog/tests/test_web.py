@@ -64,8 +64,8 @@ class CatalogWebTests(CatalogTestCase):
         self.catalog.set_participant(account_id=self.buyer.id, allowed=False, context=self.staff_context)
         client = self.client_for(self.buyer_registry)
         response = client.get("/catalog/")
-        self.assertEqual(response.status_code, 403)
-        self.assertNotContains(response, "Куртка", status_code=403)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Куртка")
         response = client.get(f"/catalog/photo/{photo}/")
         self.assertIn(response.status_code, (403, 404))
 

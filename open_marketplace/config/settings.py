@@ -83,6 +83,7 @@ SECRET_KEY = _required("DJANGO_SECRET_KEY")
 _database_password = _required("DATABASE_PASSWORD")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 DEMO_ORDERS_ENABLED = os.environ.get("DEMO_ORDERS_ENABLED", "false") == "true"
+DEMO_CONTENT_ENABLED = os.environ.get("DEMO_CONTENT_ENABLED", "false") == "true"
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("ALLOWED_HOSTS", "").split(",")

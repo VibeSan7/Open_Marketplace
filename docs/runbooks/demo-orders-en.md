@@ -18,12 +18,12 @@ docker compose run --rm --no-deps web python manage.py migrate --noinput
 docker compose up -d --no-deps web
 ```
 
-Any other value, including an unset variable, makes the HTTP routes return 404. The flow has no payment API, SMTP, delivery address, or real dispatch.
+Any other value, including an unset variable, makes `/demo-orders/` routes return 404. `/cart/` explains that the simulation is disabled and does not allow checkout. The flow has no payment API, SMTP, delivery address, or real dispatch.
 
 ## Flow
 
-1. Sign in with an ordinary, verified, admitted account.
-2. Open /demo-orders/ or the new-order link from the catalogue.
+1. Sign in with an active personal account and verified email. Admission is needed for private products, not public ones.
+2. Add chosen variants to `/cart/` and check out, or use single-item demo checkout from a product. Changed cart prices require confirmation by updating the line; multi-line checkout is atomic and duplicate-safe.
 3. Enter a quantity and submit the form. The server uses the client UUID intent_id, calculates the RUB total, and reserves a separate simulated inventory balance.
 4. Choose simulated payment success or decline. Decline keeps the order pending and allows a later success.
 5. The active owner of the offer can simulate hand-over; the buyer can complete. The buyer or active owner can cancel before hand-over.

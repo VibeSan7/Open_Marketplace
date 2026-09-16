@@ -5,11 +5,12 @@
 {% block page_class %}catalog-shell{% endblock %}
 {% block content %}
 <section class="catalog-page">
-  <h1>Избранное</h1>
+  <div class="page-heading"><div><span class="eyebrow">Личная подборка</span><h1>Избранное</h1><p>Сохранённые товары доступны только вашему аккаунту.</p></div><a class="button-secondary" href="{% url 'catalog-search' %}">Продолжить выбор</a></div>
   {% if products %}
     <ul class="product-list">
       {% for product in products %}
-        <li class="product-card">
+        <li class="product-card saved-card">
+          {% if product.cover_id %}<a href="{{ product.url }}"><img src="{% url 'catalog-photo' photo_id=product.cover_id %}" alt="{{ product.title }}" loading="lazy" data-photo></a>{% endif %}
           <a href="{{ product.url }}"><h2>{{ product.title }}</h2></a>
           <p>{{ product.category }} · {{ product.unit_label }}</p>
           <p>{{ product.price_label }} · {% if product.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>

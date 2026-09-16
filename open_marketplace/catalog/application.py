@@ -11,6 +11,7 @@ from open_marketplace.catalog.photos import normalize_photo, photo_path
 from open_marketplace.catalog.policy import UNAVAILABLE, identifier, manager, owned_product, seller
 from open_marketplace.common.errors import ConcurrentConflict, InputRejected, PermissionDenied
 from open_marketplace.identity.public import get_account_snapshot
+from open_marketplace.seller_onboarding.public import get_public_sellers
 
 
 def _text(value, maximum, *, required=False):
@@ -367,6 +368,32 @@ def publish_product(*, product_id, expected_version, context):
         product.unit_locked = True
         product.save(update_fields=("published", "published_at", "published_version", "unit_locked"))
         _audit(context, "publish", product.id, after={"version": product.published_version}, staff=product.kind == "common")
+
+
+def set_public_listing(*, product_id, enabled, context):
+    if type(enabled) is not bool:
+        raise InputRejected("Укажите, показывать ли карточку публично.")
+    with transaction.atomic():
+        product = owned_product(product_id, context, lock=True)
+        if enabled:
+            if product.kind == "digital" or product.published is None or product.blocked:
+                raise InputRejected("Публичной может быть только доступная опубликованная карточка.")
+            if not Category.objects.filter(pk=identifier(product.published.get("category_id")), active=True).exists():
+                raise InputRejected("Публичная карточка должна быть в действующей категории.")
+            variants = [variant for variant in product.variants.all()
+                        if variant.state == "published" and not variant.blocked and variant.published is not None]
+            if not variants:
+                raise InputRejected("Публичной может быть только карточка с доступным вариантом.")
+            photos = {str(photo_id) for photo_id in product.photos.values_list("id", flat=True)}
+            if any(not set(variant.published.get("photo_ids", [])).issubset(photos)
+                   or any(not photo_path(photo_id).is_file() for photo_id in variant.published.get("photo_ids", []))
+                   for variant in variants):
+                raise InputRejected("Публичной может быть только карточка с доступными фотографиями.")
+            if product.seller_id and not get_public_sellers(seller_ids=(product.seller_id,)):
+                raise InputRejected("Профиль продавца больше не доступен.")
+        product.public_listing = enabled
+        product.save(update_fields=("public_listing",))
+        _audit(context, "public_listing_change", product.id, after={"state": "public" if enabled else "private"}, staff=product.kind == "common")
 
 
 def withdraw_product(*, product_id, context):

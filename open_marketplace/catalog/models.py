@@ -45,6 +45,7 @@ class Product(models.Model):
     published = models.JSONField(null=True)
     published_version = models.PositiveIntegerField(default=0)
     published_at = models.DateTimeField(null=True)
+    public_listing = models.BooleanField(default=False)
     blocked = models.BooleanField(default=False)
     block_reason = models.CharField(max_length=1024, blank=True)
     created_at = models.DateTimeField()

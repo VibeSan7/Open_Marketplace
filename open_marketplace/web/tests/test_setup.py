@@ -9,7 +9,7 @@ class SetupGuideTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "setup.html")
         self.assertContains(response, "<h1", count=1)
-        self.assertNotContains(response, "<form")
+        self.assertContains(response, 'role="search"')
         self.assertNotContains(response, 'method="post"')
         self.assertNotContains(response, "csrfmiddlewaretoken")
         for name in ("register", "login", "security", "seller-start", "catalog-search", "catalog-manage"):

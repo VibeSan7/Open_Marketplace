@@ -309,11 +309,14 @@ class ScopeBoundaryTests(SimpleTestCase):
                 metadata = " ".join(
                     (model._meta.label_lower, model.__module__)
                 ).casefold()
-                # v0.3 permits exactly these simulation records, not real commerce.
+                # Isolated demo orders and carts are allowed, not real commerce.
                 allowed_simulation = model._meta.label_lower in {
                     "demo_orders.demoinventory",
                     "demo_orders.demoorder",
                     "demo_orders.demoorderevent",
+                    "demo_orders.cart",
+                    "demo_orders.cartitem",
+                    "demo_orders.cartcheckoutreceipt",
                 } and model.__module__ == "open_marketplace.demo_orders.models"
                 if not allowed_simulation:
                     self.assertFalse(

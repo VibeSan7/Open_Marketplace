@@ -122,11 +122,10 @@ class CatalogLifecycleTests(CatalogTestCase):
         with self.assertRaises(PermissionDenied):
             self.catalog.get_product(product_id=product, context=self.buyer_context)
 
-    def test_fresh_email_verification_does_not_grant_catalog_access(self):
+    def test_verified_non_admitted_buyer_gets_only_public_catalog_access(self):
         stranger = self.create_account(kind="ordinary")
         context = self.context(self.create_registry(stranger))
-        with self.assertRaises(PermissionDenied):
-            self.catalog.list_categories(context=context)
+        self.assertEqual(self.catalog.list_categories(context=context), [])
 
     def test_revoked_session_is_rejected_before_read(self):
         product, variant, photo = self.product()

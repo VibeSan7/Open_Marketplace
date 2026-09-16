@@ -1,36 +1,76 @@
 {% extends "base.html" %}
-{% block title %}Open Marketplace — начало работы{% endblock %}
+{% block title %}Open Marketplace — витрина{% endblock %}
+{% block page_class %}home-shell{% endblock %}
 {% block content %}
-<section class="page-heading">
+<section class="storefront-hero">
   <div>
-    <span class="eyebrow">Товары и предложения в одном месте</span>
-    <h1>Найдите товар.<br>Предложите свой.</h1>
-    <p>Каталог помогает выбирать товары по характеристикам и сравнивать предложения продавцов.</p>
+    <h1>Товары и предложения</h1>
+    <p>Сравнивайте, выбирайте и сохраняйте понравившееся. Смотреть каталог можно без регистрации.</p>
+  </div>
+  <a class="button" href="{% url 'catalog-search' %}">Открыть каталог</a>
+</section>
+
+<section class="storefront-section" data-storefront>
+  <div class="section-heading">
+    <h2>Категории</h2>
+    <a href="{% url 'catalog-search' %}">Все товары</a>
+  </div>
+  <div class="category-strip">
+    {% for category in storefront.categories %}
+      <a class="category-chip" href="{{ category.url }}">
+        {% if category.cover_id %}<img src="{% url 'catalog-photo' photo_id=category.cover_id %}" alt="" loading="lazy" data-photo>{% endif %}
+        <span>{{ category.name }}</span>
+      </a>
+    {% empty %}
+      <p class="empty-inline">Категории появятся после публикации первых товаров.</p>
+    {% endfor %}
   </div>
 </section>
-<p class="notice">Сейчас это закрытая демонстрационная установка. Для просмотра товаров нужны подтверждённая почта и отдельный допуск владельца. Реальные заказы и платежи пока недоступны.</p>
-<section>
-  <h2>Хочу найти товар</h2>
-  <p>Откройте каталог, выберите категорию и нужные характеристики. У каждого варианта есть своя цена и наличие.</p>
-  <p><a class="button" href="{% url 'catalog-search' %}">Каталог товаров</a></p>
-  {% if not request.user.is_authenticated %}
-    <p>Первый раз здесь? <a href="{% url 'register' %}">Создайте аккаунт</a> и подтвердите почту. Затем владелец установки выдаст доступ. Если аккаунт уже есть, <a href="{% url 'login' %}">войдите</a>.</p>
-  {% else %}
-    <p>Если допуск ещё не выдан, обратитесь к владельцу этой установки. Повторная регистрация не нужна.</p>
-  {% endif %}
+
+<section class="storefront-section" data-storefront-grid>
+  <div class="section-heading">
+    <h2>Выбирайте товары</h2>
+    {% if storefront.total %}<span class="subtle">Товаров: {{ storefront.total }}</span>{% endif %}
+  </div>
+  <div class="storefront-grid">
+    {% for item in storefront.items %}
+      <article class="storefront-card">
+        <a class="storefront-card-image" href="{{ item.url }}">
+          {% if item.cover_id %}<img src="{% url 'catalog-photo' photo_id=item.cover_id %}" alt="{{ item.title }}" loading="lazy" data-photo>{% else %}<span class="photo-empty">Фото появится в карточке</span>{% endif %}
+        </a>
+        <div class="storefront-card-copy">
+          <p class="storefront-card-category">{{ item.category }}</p>
+          <p class="card-price">{{ item.price_label }} <span>· {{ item.unit_label }}</span></p>
+          <h3><a href="{{ item.url }}">{{ item.title }}</a></h3>
+          <a class="button button-secondary storefront-select" href="{{ item.url }}" aria-label="Выбрать: {{ item.title }}">Выбрать</a>
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty-storefront">
+        <h3>Витрина пока пуста</h3>
+        <p>Здесь появятся только товары, которые продавец опубликовал для открытого просмотра. Непубличные записи не показываются.</p>
+        <p><a class="button-secondary" href="{% url 'catalog-search' %}">Перейти в каталог</a></p>
+      </div>
+    {% endfor %}
+  </div>
+  {% if storefront.items %}<p class="storefront-more"><a class="button" href="{% url 'catalog-search' %}">Смотреть все товары</a></p>{% endif %}
 </section>
-<section>
-  <h2>Хочу предложить товары</h2>
-  <p>Подготовьте личный аккаунт, настройте защиту и отправьте тестовую заявку продавца. Подсказки покажут следующий шаг и помогут перейти к первому товару.</p>
-  <p><a class="button-secondary" href="{% url 'seller-start' %}">Стать продавцом</a></p>
-  <p>Служебный аккаунт сотрудника не используется для торговли. Одобрение заявки не заменяет отдельный допуск к каталогу.</p>
+
+{% if storefront.items %}
+<nav class="storefront-collections" aria-label="Подборки">
+  <a href="{% url 'catalog-search' %}?q=%D1%80%D0%B0%D0%B1%D0%BE%D1%87"><strong>Рабочее место</strong><span>Вещи для работы и заметок →</span></a>
+  <a href="{% url 'catalog-search' %}?price_max=1000&amp;sort=price_asc"><strong>До 1 000 ₽</strong><span>Выбор в пределах бюджета →</span></a>
+  <a href="{% url 'catalog-search' %}?q=%D0%BE%D1%82%D0%B4%D1%8B%D1%85"><strong>Время отдыхать</strong><span>Для прогулок и свободного времени →</span></a>
+</nav>
+{% endif %}
+<section class="storefront-note">
+  <div><span class="eyebrow">Для продавцов</span><h2>Откройте свою витрину</h2><p>Добавляйте товары, управляйте вариантами и следите за заказами в личном кабинете.</p></div>
+  <a class="button-secondary" href="{% url 'seller-start' %}">Стать продавцом</a>
 </section>
-<section>
-  <h2>Я установил площадку</h2>
-  <p>Подготовьте администратора, проверяющего сотрудника и категории. Для демонстрации используйте только вымышленные сведения: тестовые письма доступны в локальном почтовом ящике Mailpit.</p>
-  <p><a href="{% url 'setup-guide' %}">Пошаговая первоначальная настройка</a> · <a href="https://github.com/VibeSan7/Open_Marketplace/blob/main/docs/runbooks/catalog-quickstart-ru.md">Инструкция владельцу установки</a></p>
-  {% if request.user.is_authenticated and request.user.kind == "service" %}
-    <p><a href="/admin/">Панель сотрудников</a> · <a href="{% url 'catalog-manage' %}">Управление каталогом</a></p>
-  {% endif %}
-</section>
+{% if demo_orders_enabled %}<p class="subtle">Демонстрационная витрина: цены и комплектации учебные. Тестовые заказы не списывают деньги и не вызывают доставку.</p>{% endif %}
+{% if not request.user.is_authenticated %}<p class="subtle">Первый раз здесь? <a href="{% url 'register' %}">Создайте аккаунт</a> или <a href="{% url 'login' %}">войдите</a>, чтобы сохранять товары и пользоваться корзиной.</p>{% endif %}
+
+{% if request.user.is_authenticated and request.user.kind == "service" %}
+  <p class="subtle">Для владельца: <a href="{% url 'setup-guide' %}">пошаговая первоначальная настройка</a> · <a href="/admin/">панель сотрудников</a> · <a href="{% url 'catalog-manage' %}">управление каталогом</a>.</p>
+{% endif %}
 {% endblock %}

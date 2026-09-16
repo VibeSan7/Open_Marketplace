@@ -26,7 +26,7 @@ def identifier(value):
     return parsed
 
 
-def participant(context):
+def _authenticated_account(context):
     if context.actor_account_id is None or context.session_id is None:
         raise PermissionDenied("Для просмотра каталога требуется вход и допуск участника.")
     try:
@@ -36,6 +36,38 @@ def participant(context):
         raise PermissionDenied("Сессия недоступна. Войдите повторно.") from None
     if account.state != "active" or account.email_verified_at is None:
         raise PermissionDenied("Для просмотра каталога подтвердите адрес почты.")
+    return account
+
+
+def browse_account(context):
+    if context.actor_account_id is None and context.session_id is None:
+        return None
+    if context.actor_account_id is None or context.session_id is None:
+        raise PermissionDenied("Сессия недоступна. Войдите повторно.")
+    account = _authenticated_account(context)
+    if account.kind == "service":
+        authorize_read_only(context=context, permission="catalog.read")
+    return account
+
+
+def private_catalog_access(context):
+    account = browse_account(context)
+    if account is None:
+        return False
+    if account.kind == "service":
+        return True
+    return Participant.objects.filter(account_id=account.id, allowed=True).exists()
+
+
+def buyer(context):
+    account = _authenticated_account(context)
+    if account.kind != "ordinary":
+        raise PermissionDenied("Покупки доступны личным учётным записям.")
+    return account
+
+
+def participant(context):
+    account = _authenticated_account(context)
     if account.kind == "service":
         authorize_read_only(context=context, permission="catalog.read")
     elif not Participant.objects.filter(account_id=account.id, allowed=True).exists():
