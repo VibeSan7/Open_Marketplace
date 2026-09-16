@@ -1,6 +1,6 @@
 # CDEK API v2 protocol adapter
 
-This is a low-level transport and response boundary in `open_marketplace/shipping/cdek.py`, not an end-to-end delivery feature. The commerce app has only a local pending fulfillment plan; there are no CDEK-integrated shipping routes, address forms, courier pickups, or seller-arranged delivery screens in this slice.
+This is a low-level transport and response boundary in `open_marketplace/shipping/cdek.py`, not an end-to-end delivery feature. The commerce app has a local fulfillment plan and seller-arranged state workflow, but no CDEK-integrated shipping routes, address forms, courier pickups, or shipment screens in this slice.
 
 ## Contract and configuration
 

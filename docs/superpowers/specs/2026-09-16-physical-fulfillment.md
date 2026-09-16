@@ -22,4 +22,4 @@ This slice creates durable shipment planning records only after a commerce order
 
 ## Deferred
 
-CDEK requests, seller-arranged delivery workflow, packaging/address collection, courier pickup/refusal/returns, buyer receipt confirmation, delivery fees, and digital asset/entitlement delivery remain separate slices.
+CDEK requests and verified provider lifecycle events, packaging/address collection, courier pickup/refusal/returns, delivery fees, and digital asset/entitlement delivery remain separate slices. The local seller-arranged state workflow and buyer receipt confirmation are implemented separately in the fulfillment lifecycle boundary.

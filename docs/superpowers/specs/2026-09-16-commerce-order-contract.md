@@ -25,4 +25,4 @@ This slice adds the durable marketplace order boundary on top of the provider-in
 
 ## Explicitly deferred
 
-- Provider-specific payment intent creation, callback endpoint, reconciliation worker, Safe Deal contract for legal-entity payouts, refunds after fulfillment, shipment persistence, seller-arranged delivery, digital upload/versioning, and protected downloads.
+- Provider-specific payment intent creation, callback endpoint, reconciliation worker, Safe Deal contract for legal-entity payouts, refunds after fulfillment, verified CDEK lifecycle events, digital upload/versioning, and protected downloads.

@@ -93,6 +93,7 @@ def _record(shipment, *, context):
         shipment=shipment,
         state=shipment.state,
         action="planned",
+        sequence=1,
         actor_id=context.actor_account_id if context is not None else None,
         occurred_at=context.now if context is not None else timezone.now(),
     )
@@ -149,4 +150,74 @@ def create_fulfillment_plan(*, order_id, delivery_modes, context=None):
         return tuple(result)
 
 
-__all__ = ("create_fulfillment_plan",)
+def _authorize_transition(*, shipment, order, target_state, context):
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    if target_state in {
+        FulfillmentShipment.State.READY,
+        FulfillmentShipment.State.IN_TRANSIT,
+    }:
+        allowed = shipment.seller_account_id == context.actor_account_id
+    elif target_state == FulfillmentShipment.State.DELIVERED:
+        allowed = order.buyer_id == context.actor_account_id
+    else:
+        allowed = False
+    if not allowed:
+        raise PermissionDenied(_UNAVAILABLE)
+
+
+def transition_fulfillment(*, shipment_id, target_state, context):
+    shipment_id = _uuid(shipment_id, "Неверный идентификатор отгрузки.")
+    if not isinstance(target_state, str) or target_state not in FulfillmentShipment.State.values:
+        raise InputRejected("Указано неизвестное состояние отгрузки.")
+    with transaction.atomic():
+        order = CommerceOrder.objects.select_for_update().filter(shipments__id=shipment_id).first()
+        if order is None:
+            raise PermissionDenied(_UNAVAILABLE)
+        shipment = FulfillmentShipment.objects.select_for_update().filter(
+            pk=shipment_id,
+            order=order,
+        ).first()
+        if shipment is None:
+            raise PermissionDenied(_UNAVAILABLE)
+        _authorize_transition(
+            shipment=shipment,
+            order=order,
+            target_state=target_state,
+            context=context,
+        )
+        if target_state == shipment.state:
+            if target_state == FulfillmentShipment.State.PENDING:
+                raise InvalidState("Отгрузка ещё не готова к переходу.")
+            return _snapshot(shipment)
+        if target_state == FulfillmentShipment.State.READY:
+            if shipment.state != FulfillmentShipment.State.PENDING:
+                raise InvalidState("Отгрузка может стать готовой только из состояния ожидания.")
+        elif target_state == FulfillmentShipment.State.IN_TRANSIT:
+            if shipment.delivery_mode == FulfillmentShipment.DeliveryMode.CDEK:
+                raise InvalidState("Переход СДЭК должен прийти через проверенное уведомление провайдера.")
+            if shipment.state != FulfillmentShipment.State.READY:
+                raise InvalidState("В путь можно передать только готовую отгрузку.")
+        elif target_state == FulfillmentShipment.State.DELIVERED:
+            if shipment.delivery_mode == FulfillmentShipment.DeliveryMode.CDEK:
+                raise InvalidState("Получение СДЭК подтверждается отдельной проверкой провайдера.")
+            if shipment.state != FulfillmentShipment.State.IN_TRANSIT:
+                raise InvalidState("Получение можно подтвердить только для отгрузки в пути.")
+        else:
+            raise InvalidState("Такой переход состояния отгрузки не поддерживается.")
+        shipment.state = target_state
+        shipment.updated_at = context.now
+        shipment.save(update_fields=("state", "updated_at"))
+        last_sequence = FulfillmentEvent.objects.filter(shipment=shipment).order_by("-sequence").values_list("sequence", flat=True).first()
+        FulfillmentEvent.objects.create(
+            shipment=shipment,
+            state=shipment.state,
+            action=target_state,
+            sequence=last_sequence + 1,
+            actor_id=context.actor_account_id,
+            occurred_at=context.now,
+        )
+        return _snapshot(shipment)
+
+
+__all__ = ("create_fulfillment_plan", "transition_fulfillment")

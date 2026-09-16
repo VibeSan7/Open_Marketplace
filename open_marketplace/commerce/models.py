@@ -178,8 +178,15 @@ class FulfillmentEvent(models.Model):
     )
     state = models.CharField(max_length=16)
     action = models.CharField(max_length=32)
+    sequence = models.PositiveBigIntegerField()
     actor_id = models.UUIDField(null=True)
     occurred_at = models.DateTimeField()
 
     class Meta:
-        ordering = ("occurred_at", "id")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("shipment", "sequence"),
+                name="commerce_fulfillment_event_sequence_unique",
+            ),
+        )
+        ordering = ("shipment_id", "sequence")
