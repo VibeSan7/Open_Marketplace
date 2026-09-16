@@ -1,39 +1,39 @@
-# Проверка обновлённого оформления
+# Updated presentation validation
 
-Проверено: 2026-09-16T01:03:27.541575+00:00. Ветка: `ui/presentation`, основа: `5679b7a72476d1711702e518bd39421aaf69a306`.
+Validated: 2026-09-16T01:03:27.541575+00:00. Branch: `ui/presentation`, base: `5679b7a72476d1711702e518bd39421aaf69a306`.
 
-## Границы
+## Scope
 
-Обновлены общая шапка, навигация, каталог, страницы товаров, формы входа и регистрации, страницы безопасности, кабинет продавца и панель сотрудников. Используются системные шрифты и локальные CSS-файлы; новые библиотеки, внешние шрифты и сторонние ресурсы не подключались.
+The global header, navigation, catalog, product pages, login and registration forms, security pages, seller dashboard, and staff panel were updated. System fonts and local CSS files are used; no new libraries, external fonts, or third-party resources were added.
 
-Из Python-кода менялись только браузерные тесты. Прикладные правила, роли, миграции, поля и действия форм, поиск и публикация товаров не менялись. Полный перевод существующих английских подписей не выполнялся. Это по-прежнему каталог без заказов и оплаты.
+Only browser tests were changed in the Python code. Application rules, roles, migrations, fields and form actions, search, and product publication were not changed. Existing English labels were not translated in full. This remains a catalog without orders or payments.
 
-## Проверки
+## Checks
 
-- Полный набор: **507 тестов, OK**, 402.568 секунды, без пропусков.
-- Живой Chromium: **120 проверок** — 117 отображений 39 сочетаний роли и адреса на ширинах 320, 390, 1440 px, плюс 3 проверки отказа в доступе.
-- Проверены гость, покупатель, оба продавца, администратор и проверяющий. Проверки проходили в отдельных временных браузерных контекстах с сессиями только существующих тестовых аккаунтов. Пароли и ключи двухэтапного входа не читались и не менялись; временные сессии отозваны и их браузерные ключи удалены.
-- Горизонтального переполнения страниц, сломанных изображений, повторных главных заголовков и необработанных исключений JavaScript в проверенных состояниях нет. Поля, кнопки и списки выбора в основной области имеют высоту не менее 44 px.
-- Проверены клавиатурный переход к содержимому, фильтры, дозагрузка результатов, возврат к выдаче, восстановление фотографии после ошибки, публикация продавцом и отзыв доступа.
-- Django checks — без замечаний; `makemigrations --check --dry-run` — изменений нет; проверки зависимостей — 12 соблюдены, 0 нарушены; синтаксис JavaScript и `git diff --check` — успешно.
-- Скомпилированы все 35 шаблонов проекта. 227 файлов приложения в запущенном образе побайтно совпали с рабочей копией.
+- Full suite: **507 tests, OK**, 402.568 seconds, with no skips.
+- Live Chromium: **120 checks** — 117 renderings of 39 role-and-viewport combinations at widths 320, 390, and 1440 px, plus 3 access-denial checks.
+- Guest, buyer, both sellers, administrator, and reviewer were checked. Checks ran in separate temporary browser contexts with sessions for existing test accounts only. Passwords and two-step-login keys were not read or changed; temporary sessions were revoked and their browser keys deleted.
+- There was no horizontal page overflow, broken images, duplicate main headings, or unhandled JavaScript exceptions in the checked states. Fields, buttons, and select lists in the main area are at least 44 px high.
+- Keyboard navigation to content, filters, result loading, return to the results, photo recovery after an error, seller publication, and access revocation were checked.
+- Django checks — no issues; `makemigrations --check --dry-run` — no changes; dependency checks — 12 satisfied, 0 violated; JavaScript syntax and `git diff --check` — successful.
+- All 35 project templates were compiled. The 227 application files in the running image matched the working copy byte-for-byte.
 
-## Сохранность установки
+## Installation preservation
 
-Контрольные суммы записей каталога, заявок продавцов, назначений доступа и аккаунтов, а также 10 файлов изображений совпали до и после обновления. Технические журналы и временные сессии в этот отпечаток бизнес-данных не входят.
+Checksums of catalog records, seller applications, access assignments and accounts, as well as 10 image files, matched before and after the update. Technical logs and temporary sessions are not part of this business-data fingerprint.
 
-Веб-часть заменена без удаления хранилищ и без смены настроек установки. Привязка остаётся `127.0.0.1:8000`; публичного размещения нет. В образе нет `.env`, `.git`, `artifacts` и `backups`.
+The web component was replaced without removing storage or changing installation settings. The binding remains `127.0.0.1:8000`; there is no public hosting. The image contains no `.env`, `.git`, `artifacts`, or `backups`.
 
-Текущий образ: `sha256:24254822838608e7870c4d0da8bc025b227daa71fbfa72e28ab45634e094b732`.
-Предыдущий образ сохранён как `open-marketplace:before-presentation-20260916003442` для локального отката.
+Current image: `sha256:24254822838608e7870c4d0da8bc025b227daa71fbfa72e28ab45634e094b732`.
+The previous image was preserved as `open-marketplace:before-presentation-20260916003442` for local rollback.
 
-## Исправления, обнаруженные проверками
+## Fixes found by the checks
 
-1. Новая форма выхода в общей шапке добавляла случайный CSRF-код на нейтральные страницы ошибок. Форму убрали из общей шапки; существующий выход в разделе безопасности и защита POST-запросов сохранены. Проверку одинаковых ответов на чужую и отсутствующую заявку не ослабляли.
-2. Базовый шаблон Django admin и дочерние страницы одновременно выводили главный заголовок. Дубли убраны из дочерних шаблонов, добавлена браузерная проверка.
+1. The new logout form in the global header added a random CSRF token to neutral error pages. The form was removed from the global header; the existing logout in the security section and POST-request protection were preserved. The check for identical responses to another user’s and a nonexistent application was not weakened.
+2. The base Django admin template and child pages both rendered the main heading. The duplicates were removed from the child templates, and a browser check was added.
 
-## Локальные доказательства
+## Local evidence
 
-В `artifacts/presentation/`: `accepted-suite.log`, `accepted-structural-checks.log`, `live-browser-checks.json`, `state-before.json`, `state-after.json`, `qa-session-cleanup.json`, `image-manifest.json` и снимки экрана. Каталог исключён из Git и Docker-образа. В `README-UI-RU.md` находятся точные команды переключения оформления и возврата к предыдущему образу.
+In `artifacts/presentation/`: `accepted-suite.log`, `accepted-structural-checks.log`, `live-browser-checks.json`, `state-before.json`, `state-after.json`, `qa-session-cleanup.json`, `image-manifest.json`, and screenshots. The directory is excluded from Git and the Docker image. `README-UI-RU.md` contains the exact commands for switching the presentation and returning to the previous image.
 
-Штатный браузерный инструмент Hermes не ответил; живая проверка выполнена через уже установленный Chromium тестового Docker-образа. Новые инструменты не устанавливались. GitHub-релиз этим локальным обновлением не заменялся.
+The standard Hermes browser tool did not respond; live validation was performed through the Chromium already installed in the test Docker image. No new tools were installed. A GitHub release was not replaced by this local update.

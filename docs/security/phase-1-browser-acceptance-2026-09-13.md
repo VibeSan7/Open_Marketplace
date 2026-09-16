@@ -1,80 +1,80 @@
-# Open Marketplace: итог ручного прохода первой фазы
+# Open Marketplace: final manual pass of the first phase
 
-**Результат: 10 из 10 пунктов браузерного сценария выполнены. Фаза 1 в целом ещё не принята.**
+**Result: 10 of 10 browser-scenario items completed. Phase 1 as a whole has not yet been accepted.**
 
-Финальный серверный снимок: `2026-09-12T23:23:39.458546+00:00` (UTC), `2026-09-13T02:23:39.458546+03:00` (UTC+03:00).
+Final server snapshot: `2026-09-12T23:23:39.458546+00:00` (UTC), `2026-09-13T02:23:39.458546+03:00` (UTC+03:00).
 
-## Метод и границы
+## Method and scope
 
-Владислав выполнял действия в обычном Chrome и инкогнито. Подтверждения экранов сопоставлялись с чтением тестовой базы и реальной доставкой в Mailpit. Это реальный ручной проход через работающий веб-сервер, а не замена браузера Django test Client. Автоматический браузер Hermes не ремонтировался и не использовался для этого прохода.
+Vladislav performed the actions in regular Chrome and incognito mode. Screen confirmations were cross-checked against reads from the test database and actual delivery to Mailpit. This was a real manual pass through a running web server, not a substitute using the Django test Client. The automated Hermes browser was neither repaired nor used for this pass.
 
-- Рабочая ветка: `task20-phase1-completion`.
-- Изолированный Compose: `omp-browser-20260911t033934z`.
-- База: `postgres-test`; проверки выполнялись в транзакциях только для чтения.
-- Магазин: `http://127.0.0.1:8000`; тестовая почта: `http://127.0.0.1:8025/`.
-- Использовались только согласованные тестовые аккаунты и вымышленные данные заявки.
+- Working branch: `task20-phase1-completion`.
+- Isolated Compose project: `omp-browser-20260911t033934z`.
+- Database: `postgres-test`; checks were performed in read-only transactions.
+- Store: `http://127.0.0.1:8000`; test mail: `http://127.0.0.1:8025/`.
+- Only approved test accounts and fictitious application data were used.
 
-## Проверенный сценарий
+## Verified scenario
 
-1. **Пройдено — Создание приглашения первого администратора.** New live invitation and new Mailpit delivery verified
-2. **Пройдено — Активация администратора, Authenticator и показ резервных кодов.** Owner confirmed Recovery codes page; admin-activation-20260912.log verifies activation without secret values
-3. **Пройдено — Приглашение проверяющего из панели администратора.** Owner created invitation through custom Admin; reviewer-invitation-20260912.log verifies creator, role and Mailpit receipt
-4. **Пройдено — Активация проверяющего с отдельной защитой входа.** Owner confirmed reviewer Recovery codes in incognito; reviewer-activation-20260912.log verifies TOTP and seller_reviewer-only role
-5. **Пройдено — Регистрация продавца, подтверждение почты и вход.** ordinary-registration-20260912.log verifies account and mail; ordinary-login-20260912.log verifies email confirmation and login; owner confirmed Security page
-6. **Пройдено — Отзыв текущего сеанса, выход и повторный вход.** Owner verified current session, Revoke logout and new current session after login; session-management-20260912.log confirms revocation and replacement
-7. **Пройдено — Создание, изменение и отправка заявки.** Owner created the application, edited and saved its draft, then submitted it; seller-draft-20260912.log and seller-submission-20260912.log verify exact test-data matches and version 1
-8. **Пройдено — Рассмотрение и одобрение заявки проверяющим.** Owner confirmed approved; review-start-verified-20260913.log and seller-approval-20260913.log verify assigned reviewer, decision for version 1, active profile and audit transition
-9. **Пройдено — Приостановка и восстановление допуска администратором.** Owner confirmed suspended and then active with cleared reason. seller-suspension-20260913.log and seller-restoration-verified-20260913.log verify both admin transitions; owner account and approved application preserved.
-10. **Пройдено — Просмотр журнала заявки и проверка доставки писем.** Owner confirmed Audit page as reviewer with five success rows. audit-mail-verification-20260913.json verifies application/profile chains and nine current-run SMTP receipts; final-browser-state-20260913.log verifies final state.
+1. **Passed — Creating the first administrator invitation.** New live invitation and new Mailpit delivery verified
+2. **Passed — Activating the administrator, Authenticator, and displaying recovery codes.** Owner confirmed Recovery codes page; admin-activation-20260912.log verifies activation without secret values
+3. **Passed — Inviting a reviewer from the administrator panel.** Owner created invitation through custom Admin; reviewer-invitation-20260912.log verifies creator, role and Mailpit receipt
+4. **Passed — Activating the reviewer with separate login protection.** Owner confirmed reviewer Recovery codes in incognito; reviewer-activation-20260912.log verifies TOTP and seller_reviewer-only role
+5. **Passed — Seller registration, email confirmation, and login.** ordinary-registration-20260912.log verifies account and mail; ordinary-login-20260912.log verifies email confirmation and login; owner confirmed Security page
+6. **Passed — Revoking the current session, logging out, and logging in again.** Owner verified current session, Revoke logout and new current session after login; session-management-20260912.log confirms revocation and replacement
+7. **Passed — Creating, editing, and submitting an application.** Owner created the application, edited and saved its draft, then submitted it; seller-draft-20260912.log and seller-submission-20260912.log verify exact test-data matches and version 1
+8. **Passed — Reviewing and approving the application as the reviewer.** Owner confirmed approved; review-start-verified-20260913.log and seller-approval-20260913.log verify assigned reviewer, decision for version 1, active profile and audit transition
+9. **Passed — Suspending and restoring access as the administrator.** Owner confirmed suspended and then active with cleared reason. seller-suspension-20260913.log and seller-restoration-verified-20260913.log verify both admin transitions; owner account and approved application preserved.
+10. **Passed — Viewing the application audit log and checking email delivery.** Owner confirmed Audit page as reviewer with five success rows. audit-mail-verification-20260913.json verifies application/profile chains and nine current-run SMTP receipts; final-browser-state-20260913.log verifies final state.
 
-## Конечное состояние
+## Final state
 
-- `admin@example.test`: активная служебная учётная запись, только роль `security_admin`, подтверждённый Authenticator.
-- `reviewer@example.test`: активная служебная учётная запись, только роль `seller_reviewer`, подтверждённый Authenticator.
-- `seller@example.test`: активная обычная учётная запись, без служебных ролей, подтверждённый Authenticator.
-- Заявка `08af376d-341e-4a68-bd2d-6c3030f9130b`: `approved`, версия 1, решение `approve`.
-- Допуск `36e9596c-f54f-42a2-bacc-64f30fd36f28`: `active`, причина ограничения очищена.
-- Приостановка и восстановление допуска не заблокировали аккаунт владельца и не отменили одобрение заявки.
+- `admin@example.test`: active service account, only the `security_admin` role, Authenticator confirmed.
+- `reviewer@example.test`: active service account, only the `seller_reviewer` role, Authenticator confirmed.
+- `seller@example.test`: active ordinary account, no service roles, Authenticator confirmed.
+- Application `08af376d-341e-4a68-bd2d-6c3030f9130b`: `approved`, version 1, decision `approve`.
+- Access `36e9596c-f54f-42a2-bacc-64f30fd36f28`: `active`, restriction reason cleared.
+- Suspending and restoring access did not lock the owner's account or revoke the application approval.
 
-## Журнал и почта
+## Audit log and mail
 
-- Проверены 5 записей заявки: создание → изменение → отправка → начало рассмотрения → решение.
-- Проверены 3 записи допуска: создание → приостановка → восстановление.
-- Для записей сверены действовавшие аккаунты, роли, порядок событий и переходы состояний.
-- Все 13 сообщений очереди текущего прохода обработаны успешно. Состояние очереди само по себе не использовалось как доказательство доставки письма.
-- В Mailpit собрано 10 писем; 9 относятся к текущему проходу, 1 — к старому приглашению и исключено из текущей сверки.
-- Каждому из 9 ожидаемых почтовых отправлений сопоставлена отдельная фактическая доставка по получателю, теме и времени. Для уведомлений без секретов дополнительно проверено содержание; письмо о решении содержит `approve`.
-- События отправки заявки и изменения допуска обрабатываются локально, без SMTP-писем: это подтверждено `outbox/mail_delivery.py`.
-- Владислав открыл журнал заявки под проверяющим и подтвердил пять строк с `Result: success`.
+- 5 application records checked: creation → editing → submission → review started → decision.
+- 3 access records checked: creation → suspension → restoration.
+- The accounts, roles, event order, and state transitions in the records were cross-checked.
+- All 13 messages in the current-run queue were processed successfully. Queue state by itself was not used as evidence of email delivery.
+- 10 emails were collected in Mailpit; 9 belong to the current pass, and 1 was an old invitation excluded from the current cross-check.
+- Each of the 9 expected email sends was matched to a separate actual delivery by recipient, subject, and time. Content was additionally checked for notifications without secrets; the decision email contains `approve`.
+- Application-submission and access-change events are processed locally, without SMTP emails: this is confirmed by `outbox/mail_delivery.py`.
+- Vladislav opened the application audit log as the reviewer and confirmed five rows with `Result: success`.
 
-## Важные особенности и ограничения
+## Important characteristics and limitations
 
-- Подтверждение входа для чувствительных действий ограничено по времени. После отказа в восстановлении допуск оставался `suspended`; после повторного подтверждения входа и немедленного Restore стал `active`. Настройки защиты не ослаблялись.
-- У ролей разные области журнала: `seller_reviewer` видит историю заявок; `security_admin` — историю допуска и служебных операций. Права ради проверки не расширялись.
-- Первоначальная причина ошибки принятия приглашения не установлена. Последующая успешная активация проверена; успех не доказывает причину предыдущей ошибки.
-- Страницы резервных кодов были показаны пользователю. Их надёжное долговременное сохранение самим пользователем отдельно не подтверждено. Старые записи Authenticator не удалялись.
-- Пароли, одноразовые/резервные коды, секреты Authenticator, ссылки-приглашения и зашифрованные поля доставки не извлекались для итоговых проверок. Тела писем с одноразовыми ссылками не запрашивались при сверке доставки.
-- Консоль JavaScript, адаптивная вёрстка и полный визуальный аудит не проверялись. Подтверждения экранов получены от владельца; автоматические снимки этих экранов не заявляются.
-- Тестовая база не сбрасывалась; новая резервная копия базы этим проходом не создавалась. База `postgres-test` временная: этот результат не гарантирует сохранность её данных после перезапуска инфраструктуры.
-- Исходный код продукта в этом продолжении не изменялся. Существующие незакоммиченные изменения ветки сохранены. Новый независимый проверяющий не запускался, commit/push/merge не выполнялись.
+- Login confirmation for sensitive actions is time-limited. After the restoration attempt was denied, access remained `suspended`; after login was confirmed again and Restore was performed immediately, it became `active`. Protection settings were not weakened.
+- Roles have different audit-log scopes: `seller_reviewer` sees application history; `security_admin` sees access history and service operations. Permissions were not expanded for the check.
+- The initial cause of the invitation-acceptance error was not established. The subsequent successful activation was verified; that success does not prove the cause of the earlier error.
+- The recovery-code pages were shown to the user. The user's reliable long-term storage of the codes was not separately confirmed. Old Authenticator records were not deleted.
+- Passwords, one-time/recovery codes, Authenticator secrets, invitation links, and encrypted delivery fields were not extracted for the final checks. Email bodies containing one-time links were not requested when delivery was cross-checked.
+- The JavaScript console, responsive layout, and full visual audit were not checked. Screen confirmations were provided by the owner; automated screenshots of those screens are not claimed.
+- The test database was not reset; no new database backup was created during this pass. The `postgres-test` database is temporary: this result does not guarantee that its data will survive an infrastructure restart.
+- Product source code was not changed in this continuation. Existing uncommitted branch changes were preserved. No new independent reviewer was run; commit/push/merge were not performed.
 
-## Что ещё требуется для всей фазы
+## What is still required for the full phase
 
-1. Проверить обычный запуск по документированной команде в согласованной безопасной конфигурации. Этот ручной проход использовал отдельный тестовый Compose и не доказывает запуск обычной постоянной базы; Task 20 Step 5 пока закрыт не целиком.
-2. Повторить полный автоматический контроль после обновления документации. Результат 407 тестов от 2026-09-11 остаётся историческим, а не новым запуском.
-3. Получить действительное независимое заключение о коде. Дополнительная модель и её затраты требуют отдельного согласования.
-4. Завершить фиксацию изменений после проверок и согласованных действий. Готовность к слиянию или публикации не заявляется.
+1. Check ordinary startup using the documented command in the approved safe configuration. This manual pass used a separate test Compose project and does not prove startup with the ordinary persistent database; Task 20 Step 5 is not yet fully closed.
+2. Repeat the full automated check after updating the documentation. The result of 407 tests from 2026-09-11 remains historical, not a new run.
+3. Obtain a valid independent code assessment. An additional model and its cost require separate approval.
+4. Complete recording the changes after the checks and approved actions. Readiness for merge or publication is not claimed.
 
-## Доказательства
+## Evidence
 
-Основной локальный каталог: `artifacts/browser-acceptance-20260911T033934Z/`. Журналы остаются локальными; этот документ содержит несекретное резюме.
+Primary local directory: `artifacts/browser-acceptance-20260911T033934Z/`. Logs remain local; this document contains a non-secret summary.
 
-- `resume-20260912.json` — все десять пунктов и отдельные исторические снимки по шагам.
-- `seller-approval-20260913.log` — одобрение.
-- `seller-suspension-20260913.log` — приостановка.
-- `seller-restoration-verified-20260913.log` — восстановление.
-- `audit-outbox-metadata-20260913.log` — цепочки действий и состояния очереди.
-- `mailpit-metadata-batch-20260913.json` — полный собранный пакет почтовых метаданных.
-- `mailpit-safe-notices-20260913.json` — проверка содержания уведомлений без секретов.
-- `audit-mail-verification-20260913.json` — программная сверка и подсчёт.
-- `final-browser-state-20260913.log` — финальное состояние после подтверждения страницы Audit.
+- `resume-20260912.json` — all ten items and separate historical snapshots for the steps.
+- `seller-approval-20260913.log` — approval.
+- `seller-suspension-20260913.log` — suspension.
+- `seller-restoration-verified-20260913.log` — restoration.
+- `audit-outbox-metadata-20260913.log` — action chains and queue states.
+- `mailpit-metadata-batch-20260913.json` — complete collected package of mail metadata.
+- `mailpit-safe-notices-20260913.json` — content check of notifications without secrets.
+- `audit-mail-verification-20260913.json` — programmatic cross-check and count.
+- `final-browser-state-20260913.log` — final state after confirming the Audit page.

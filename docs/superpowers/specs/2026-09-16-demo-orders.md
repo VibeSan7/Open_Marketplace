@@ -4,7 +4,7 @@ Owner requests a verified project on GitHub without more ordinary technical ques
 
 ## Product and safety decisions
 
-- New Django app `demo_orders`; URLs `/demo-orders/`. Every page and every order says «Тестовый заказ — реальные деньги не списываются». No card/password collection, payment API, SMTP changes, external calls, shipping addresses or real dispatch.
+- New Django app `demo_orders`; URLs `/demo-orders/`. Every page and every order displays the warning "Demo order — no real money is charged" (the existing Russian UI string is `Тестовый заказ — реальные деньги не списываются`). No card/password collection, payment API, SMTP changes, external calls, shipping addresses or real dispatch.
 - `DEMO_ORDERS_ENABLED` defaults false, enabled only by the exact environment string `true`. Disabled HTTP endpoints return 404; public application functions also reject writes when disabled. Tests override this setting explicitly.
 - One order contains one selected physical offer/variant from one seller. Shared cards link to concrete offers; never silently choose a different seller. Buyers must be live, admitted ordinary accounts. Existing catalogue/session/seller authorization remains unchanged. A seller cannot buy their own offer.
 - Capture immutable published title/variant, seller display name, unit, unit price, quantity and total at checkout. Server calculates totals using Decimal; round quantity × unit price to two RUB places with ROUND_HALF_UP. No external delivery; UI explains simulated pickup, additional charge 0. No claims about real fees/taxes/delivery.

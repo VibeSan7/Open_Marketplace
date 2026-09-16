@@ -1,63 +1,63 @@
-# Open Marketplace — заметки технического исследования
+# Open Marketplace — Technical Research Notes
 
-**Дата:** 2026-09-02
-**Статус:** исследование завершено и рекомендация утверждена Владиславом; продуктовый код не создавался
-**Основание:** `docs/superpowers/specs/2026-09-02-open-marketplace-design.md`
+**Date:** 2026-09-02
+**Status:** research completed and recommendation approved by Vladislav; no product code was created
+**Basis:** `docs/superpowers/specs/2026-09-02-open-marketplace-design.md`
 
-## Проверяемые вопросы
+## Questions to Verify
 
-1. Какой серверный стек лучше поддерживает транзакционный модульный монолит с ясными границами модулей?
-2. Какая связка базы данных, миграций и фоновых задач надёжнее для заказов, остатков, платежей и аудита?
-3. Какая схема развёртывания минимальна для публичной беты, но позволяет проверять резервное копирование и восстановление?
-4. Как сохранить удобную разработку на Windows при Linux-среде выпуска?
+1. Which server stack best supports a transactional modular monolith with clear module boundaries?
+2. Which combination of database, migrations, and background tasks is more reliable for orders, inventory, payments, and auditing?
+3. What deployment scheme is minimal for a public beta while still allowing backup and recovery to be tested?
+4. How can convenient Windows development be preserved with a Linux release environment?
 
-## Конкурирующие гипотезы
+## Competing Hypotheses
 
 ### H1 — TypeScript / NestJS
 
-**За:** единый язык с будущим веб-интерфейсом, явные модули и внедрение зависимостей, строгие типы.
+**Pros:** one language shared with the future web interface, explicit modules and dependency injection, strict types.
 
-**Риск:** транзакционность и миграции зависят от выбранного ORM; легко собрать слишком много инфраструктурных пакетов.
+**Risk:** transactions and migrations depend on the selected ORM; it is easy to assemble too many infrastructure packages.
 
-**Начальная уверенность:** средняя.
+**Initial confidence:** medium.
 
 ### H2 — Python / Django
 
-**За:** зрелые транзакции ORM, миграции, административный интерфейс и встроенные средства для пользователей и операций.
+**Pros:** mature ORM transactions, migrations, an administrative interface, and built-in tools for users and operations.
 
-**Риск:** границы модулей и строгая типизация требуют дополнительной дисциплины; фоновые задачи обычно добавляют отдельный инструмент.
+**Risk:** module boundaries and strict typing require additional discipline; background tasks usually add a separate tool.
 
-**Начальная уверенность:** средне-высокая.
+**Initial confidence:** medium-high.
 
 ### H3 — Kotlin / Spring Boot
 
-**За:** сильная типизация, зрелая транзакционная экосистема, устойчивые интерфейсы и хорошие средства тестирования.
+**Pros:** strong typing, a mature transactional ecosystem, stable interfaces, and good testing tools.
 
-**Риск:** наиболее высокая сложность для Владислава и больший операционный порог для небольшой первой команды.
+**Risk:** the highest complexity for Vladislav and a higher operational threshold for a small initial team.
 
-**Начальная уверенность:** средняя.
+**Initial confidence:** medium.
 
-## Критерии сравнения
+## Comparison Criteria
 
-- корректность транзакций и конкурентных изменений;
-- естественная поддержка модульного монолита;
-- миграции и схема данных;
-- фоновые задачи и безопасный повтор;
-- тестирование и изоляция внешних адаптеров;
-- безопасность и административные операции;
-- сложность разработки и сопровождения;
-- Windows-разработка и Linux-выпуск;
-- зависимость от большого числа пакетов;
-- путь роста без преждевременных микросервисов.
+- correctness of transactions and concurrent changes;
+- natural support for a modular monolith;
+- migrations and data schema;
+- background tasks and safe retries;
+- testing and isolation of external adapters;
+- security and administrative operations;
+- development and maintenance complexity;
+- Windows development and Linux release;
+- dependence on a large number of packages;
+- a growth path without premature microservices.
 
-## Итог
+## Conclusion
 
-Рекомендуется Python 3.13, Django 5.2 LTS, Django REST Framework и PostgreSQL в форме модульного монолита.
+Python 3.13, Django 5.2 LTS, Django REST Framework, and PostgreSQL in the form of a modular monolith are recommended.
 
-Для первой серверной основы фоновые действия выполняются отдельным рабочим процессом через надёжные таблицы PostgreSQL; Redis и отдельный брокер не добавляются без измеренной необходимости.
+For the initial server foundation, background actions run in a separate worker process through reliable PostgreSQL tables; Redis and a separate broker are not added without measured need.
 
-Локальная разработка и полные тесты выполняются в Linux-контейнерах Docker Desktop через WSL 2. Для публичной беты рекомендуется управляемый PostgreSQL в российском облаке, реплика, независимая зашифрованная копия и проверка восстановления.
+Local development and the full test suite run in Linux containers on Docker Desktop through WSL 2. For the public beta, managed PostgreSQL in a Russian cloud, a replica, an independent encrypted copy, and recovery testing are recommended.
 
-Цитируемый отчёт и полное обоснование:
+The cited report and full rationale:
 
 `D:\Open_Marketplace\docs\research\2026-09-02-technical-stack-recommendation.md`

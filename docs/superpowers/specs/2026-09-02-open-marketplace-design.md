@@ -1,582 +1,582 @@
-# Open Marketplace — спецификация концепции и архитектуры
+# Open Marketplace — Concept and Architecture Specification
 
-**Дата:** 2026-09-02  
-**Статус:** утверждена Владиславом без изменений 2026-09-02  
-**Рабочее название:** Open Marketplace; не является публичным брендом  
-**Источник подробных решений:** `D:\Open_Marketplace\concept-protocol.md`
+**Date:** 2026-09-02\
+**Status:** approved by Vladislav without changes on 2026-09-02\
+**Working title:** Open Marketplace; not a public brand\
+**Source of detailed decisions:** `D:\Open_Marketplace\concept-protocol.md`
 
-## 1. Назначение
+## 1. Purpose
 
-Open Marketplace — российская торговая платформа для независимых продавцов и покупателей.
+Open Marketplace is a Russian commerce platform for independent sellers and buyers.
 
-Публичное позиционирование:
+Public positioning:
 
-> **Маркетплейс с собственными бренд-витринами продавцов и защищёнными сделками.**
+> **A marketplace with sellers' own branded storefronts and protected transactions.**
 
-Платформа объединяет:
+The platform combines:
 
-1. общий каталог, поиск и защищённую покупку;
-2. индивидуальные бренд-витрины продавцов;
-3. переносимые данные продавца через открытые форматы и документированный API;
-4. ограниченные AI-инструменты оформления;
-5. проверку продавцов, споры и защищённую выплату через платёжного партнёра.
+1. a shared catalog, search, and protected purchasing;
+2. individual branded seller storefronts;
+3. portable seller data through open formats and a documented API;
+4. limited AI design tools;
+5. seller verification, disputes, and protected payouts through a payment partner.
 
-Главный продуктовый баланс:
+Core product balance:
 
-- продавец сохраняет бренд, самостоятельную цену и возможность забрать собственные данные;
-- площадка отвечает за правила доступа, достоверное состояние заказа, защиту покупателя и проверяемое разрешение споров.
+- the seller retains the brand, independently set price, and ability to take their own data with them;
+- the platform is responsible for access rules, the authoritative order state, buyer protection, and verifiable dispute resolution.
 
-Официальный сервис не является open source: его исходный код остаётся закрытым. Открыты форматы данных, схемы, история версий и документированный API. Поэтому определение *Open Source Marketplace* для публичного продукта не используется.
+The official service is not open source: its source code remains closed. Data formats, schemas, version history, and the documented API are open. Therefore, the term *Open Source Marketplace* is not used for the public product.
 
-## 2. Цели российской публичной беты
+## 2. Goals of the Russian Public Beta
 
-Публичная бета — первый открытый запуск в России с реальными регистрациями, заказами и платежами, но с заранее опубликованными ограничениями.
+The public beta is the first open launch in Russia with real registrations, orders, and payments, but with limitations published in advance.
 
-До открытия должны быть объединены три направления:
+Before opening, three areas must be combined:
 
-1. **Инструменты продавца:** проверка, товары, остатки, импорт, экспорт, витрина и продажи.
-2. **Покупательский маркетплейс:** каталог, поиск, корзина, защищённая покупка, заказы, споры и отзывы.
-3. **Открытая инфраструктура данных:** форматы, API, импорт, экспорт, синхронизация и безопасные интеграции.
+1. **Seller tools:** verification, products, inventory, import, export, storefront, and sales.
+2. **Buyer marketplace:** catalog, search, cart, protected purchasing, orders, disputes, and reviews.
+3. **Open data infrastructure:** formats, API, import, export, synchronization, and secure integrations.
 
-Полный защищённый цикл подтверждается на:
+The complete protected cycle is validated for:
 
-- физических товарах;
-- скачиваемых файлах из управляемого хранилища платформы.
+- physical products;
+- downloadable files from the platform's managed storage.
 
-Главный критерий успешности — надёжность полного цикла:
+The primary success criterion is reliability of the complete cycle:
 
-`оплата → передача заказа → исполнение → выплата → отмена, возврат или спор при необходимости`
+`payment → order handover → fulfillment → payout → cancellation, return or dispute if needed`
 
-Критическая ошибка в деньгах, правах доступа, заказе, цифровой выдаче или восстановлении состояния блокирует признание пилота успешным.
+A critical error in money, access rights, the order, digital delivery, or state recovery blocks recognition of the pilot as successful.
 
-Оборот, активность продавцов, повторные покупки и доход учитываются дополнительно, но не заменяют надёжность.
+Turnover, seller activity, repeat purchases, and revenue are considered additionally, but do not replace reliability.
 
-## 3. Границы первой версии
+## 3. First-Version Boundaries
 
-### 3.1 Входит
+### 3.1 Included
 
-- Россия;
-- ИП, юридические лица и самозанятые после применимой проверки;
-- общий каталог и отдельные бренд-витрины;
-- физические товары;
-- скачиваемые файлы;
-- покупка у нескольких продавцов с независимыми частями заказа;
-- защищённая выплата через платёжного партнёра;
-- споры, возвраты, подтверждённые отзывы и публичные показатели;
-- бесплатная базовая переносимость данных;
-- ограниченный API каталога и данных продавца;
-- публичный каталог проверенных сторонних приложений;
-- AI-дизайнер как необязательная ограниченная бета.
+- Russia;
+- individual entrepreneurs, legal entities, and self-employed persons after applicable verification;
+- a shared catalog and individual branded storefronts;
+- physical products;
+- downloadable files;
+- purchases from multiple sellers with independent order parts;
+- protected payouts through a payment partner;
+- disputes, returns, verified reviews, and public metrics;
+- free basic data portability;
+- a limited API for the catalog and seller data;
+- a public catalog of verified third-party applications;
+- an AI designer as an optional limited beta.
 
-### 3.2 Не входит
+### 3.2 Excluded
 
-- международный запуск;
-- отдельный B2B-контур крупного поставщика и местного продавца;
-- лицензионные и активационные ключи, подписки и онлайн-услуги как способы цифрового исполнения;
-- управление полным жизненным циклом заказа через сторонний API;
-- доступ приложений к платежам, эскроу, спорам, документам личности и личным сообщениям;
-- внешняя выдача цифрового товара по изменяемой ссылке;
-- видео, аудио и сложные AI-эффекты;
-- платное размещение в каталоге и поиске;
-- скрытая поведенческая персонализация выдачи;
-- стартовая архитектура из микросервисов;
-- встроенная оплата и подписки сторонних приложений через площадку.
+- international launch;
+- a separate B2B channel for a major supplier and a local seller;
+- license and activation keys, subscriptions, and online services as digital-fulfillment methods;
+- management of the full order lifecycle through a third-party API;
+- application access to payments, escrow, disputes, identity documents, and private messages;
+- external digital-product delivery through a mutable link;
+- video, audio, and complex AI effects;
+- paid placement in the catalog and search;
+- hidden behavioral personalization of results;
+- a starting architecture based on microservices;
+- built-in payment and subscriptions for third-party applications through the platform.
 
-## 4. Архитектурный подход
+## 4. Architectural Approach
 
-### 4.1 Модульный монолит
+### 4.1 Modular Monolith
 
-Первая версия создаётся как одно серверное приложение с самостоятельными внутренними модулями и чёткими интерфейсами между ними.
+The first version is created as a single server application with independent internal modules and clear interfaces between them.
 
-Микросервис не создаётся заранее. Модуль может быть вынесен в отдельный сервис только после подтверждённой потребности в независимом масштабировании, изоляции риска или отдельном жизненном цикле.
+A microservice is not created in advance. A module may be extracted into a separate service only after a confirmed need for independent scaling, risk isolation, or a separate lifecycle.
 
-Конкретный язык, фреймворк, база данных, облако и схема развёртывания выбираются после утверждения этой спецификации и отдельного технического исследования.
+The specific language, framework, database, cloud, and deployment scheme are selected after this specification and a separate technical study are approved.
 
-Техническое исследование завершено и утверждено: для первой фазы выбраны Python 3.13, Django 5.2 LTS, Django REST Framework и PostgreSQL в форме модульного монолита. Полное обоснование находится в `D:\Open_Marketplace\docs\research\2026-09-02-technical-stack-recommendation.md`.
+The technical study is complete and approved: Python 3.13, Django 5.2 LTS, Django REST Framework, and PostgreSQL in the form of a modular monolith have been selected for the first phase. The full rationale is in `D:\Open_Marketplace\docs\research\2026-09-02-technical-stack-recommendation.md`.
 
-### 4.2 Сервер — единственный источник достоверного состояния
+### 4.2 Server as the Single Source of Truth
 
-Только сервер хранит и изменяет:
+Only the server stores and changes:
 
-- пользователей, продавцов и права;
-- карточки, варианты и реальные остатки;
-- корзины, заказы и их состояния;
-- платёжные записи, удержания, возвраты и выплаты;
-- версии цифровых файлов и права доступа;
-- споры, решения и апелляции;
-- подключения приложений и журналы их действий;
-- историю опубликованных карточек и AI-медиа.
-
-Браузер и будущие мобильные приложения показывают состояние и отправляют команды, но не являются единственным местом хранения защищённых или общих данных.
-
-### 4.3 Модули
-
-1. Пользователи, проверка и права.
-2. Продавцы, магазины и реквизиты.
-3. Каталог, эталонные товары, предложения, варианты и остатки.
-4. Поиск, фильтры и органическая выдача.
-5. Корзина, общий заказ и части продавцов.
-6. Платёжный учёт, удержания, возвраты и выплаты.
-7. Физическое исполнение.
-8. Цифровое исполнение.
-9. Споры, качество, отзывы и репутация.
-10. Витрины и дизайн-системы.
-11. Открытые форматы, API, события и интеграции.
-12. AI-дизайнер и медиа.
-13. Уведомления, мониторинг и аудит.
-
-### 4.4 Фоновые операции
-
-AI-генерация, обработка медиа, импорт, синхронизация, уведомления и другие долгие операции выполняются фоновыми исполнителями.
-
-Обычная работа сайта не ждёт завершения долгой операции. Пользователь видит её состояние, результат или понятную ошибку.
-
-### 4.5 Внешние партнёры
-
-Платёжные и логистические партнёры подключаются через отдельные адаптеры с единым внутренним контрактом.
-
-Замена партнёра не должна требовать изменения правил заказа во всех модулях.
-
-## 5. Основная доменная модель
-
-### 5.1 Участники
-
-- **Покупатель** — выбирает, оплачивает, получает заказ, открывает спор и оставляет подтверждённый отзыв.
-- **Продавец** — ИП, юридическое лицо или самозанятый, прошедший применимую проверку.
-- **Уполномоченный владелец кабинета** — единственный пользователь кабинета продавца в первой версии.
-- **Сотрудник площадки** — действует только в рамках назначенной роли; каждое действие журналируется.
-- **Разработчик приложения** — отвечает за своё приложение, поддержку, внешнюю оплату и возвраты за приложение.
-- **Платёжный и логистический партнёры** — внешние системы, состояние которых сверяется через адаптеры.
-
-### 5.2 Торговые сущности
-
-- **Эталонный товар** — общая карточка доказанно идентичного серийного товара.
-- **Предложение продавца** — цена, наличие, доставка, состояние и коммерческие условия конкретного продавца.
-- **Самостоятельная карточка** — уникальное предложение или цифровой товар без надёжного сопоставления; в публичной бете из цифровых способов исполнения поддерживается только скачиваемый файл.
-- **Вариант** — конкретная комбинация характеристик со своим остатком.
-- **Остаток** — единый реальный запас варианта по местам хранения продавца.
-- **Общий заказ** — покупка, которая может включать нескольких продавцов.
-- **Часть заказа продавца** — независимо исполняемая, оспариваемая и возвращаемая часть общего заказа.
-- **Исполнение** — физическая доставка или выдача точной версии скачиваемого файла.
-- **Спор** — формальная проверка проблемы с доказательствами, решением и возможной апелляцией.
-- **Отзыв** — оценка, связанная с подтверждённым заказом или подтверждённым использованием приложения.
-
-### 5.3 Интеграционные сущности
-
-- **Стороннее приложение** — зарегистрированная интеграция с разработчиком и проверяемыми правилами работы с данными.
-- **Разрешение приложения** — отдельное согласие продавца на точное действие.
-- **Событие** — подписанное уведомление об изменении разрешённых данных со стабильным идентификатором.
-- **Журнал приложения** — неизменяемая история действий конкретной интеграции.
-
-### 5.4 AI-сущности
-
-- **AI-проект витрины** — интервью, выбранное направление, дизайн-система и история правок.
-- **Медиа-исходник** — реальный материал продавца.
-- **AI-версия** — отдельный проверяемый результат обработки или генерации.
-- **Снимок карточки заказа** — точная карточка и медиа, доступные покупателю в момент покупки.
-
-## 6. Обязательные инварианты
-
-1. Продавец самостоятельно назначает фактическую цену.
-2. Перед оплатой сервер повторно проверяет цену, остаток, доставку и право продажи.
-3. Публикация одного варианта в нескольких витринах не создаёт отдельный запас.
-4. Повтор внешнего запроса не создаёт второй заказ, возврат или списание остатка.
-5. Денежное действие имеет проверяемую историю и внешний идентификатор партнёра.
-6. Неопределённый ответ партнёра не трактуется как успех или отказ без сверки.
-7. Общая покупка разделяется на независимые части продавцов.
-8. Продавец видит только собственные заказы и допустимые данные покупателей.
-9. Каждый заказ цифрового товара связан с точной проверенной версией файла.
-10. Продавец не может незаметно изменить уже купленный файл или карточку заказа.
-11. Открытая жалоба и незавершённый спор не ухудшают публичный показатель до подтверждения события и ответственности.
-12. AI не публикует материал без явного подтверждения продавца.
-13. Приложение не получает пароль кабинета или общий бессрочный ключ.
-14. Отзыв одного приложения не требует отключения остальных интеграций.
-15. Оплата, реклама или оформление витрины не повышают органическую позицию.
-16. Собственные переносимые данные доступны продавцу бесплатно.
-
-## 7. Сквозные пользовательские потоки
-
-### 7.1 Подключение продавца
-
-1. Продавец выбирает форму деятельности.
-2. Указывает официальные данные, контакт уполномоченного лица и допустимые реквизиты.
-3. Проходит базовую, категорийную и при необходимости усиленную проверку.
-4. После успешного завершения применимых проверок получает право продажи без платной очереди.
-5. Создаёт или импортирует каталог и получает базовую витрину.
-
-### 7.2 Покупка физического товара
+- users, sellers, and permissions;
+- listings, variants, and actual inventory;
+- carts, orders, and their states;
+- payment records, holds, refunds, and payouts;
+- versions of digital files and access rights;
+- disputes, decisions, and appeals;
+- application connections and logs of their actions;
+- the history of published listings and AI media.
+
+The browser and future mobile applications display state and send commands, but are not the sole place where protected or shared data is stored.
+
+### 4.3 Modules
+
+1. Users, verification, and permissions.
+2. Sellers, stores, and payment details.
+3. Catalog, canonical products, offers, variants, and inventory.
+4. Search, filters, and organic results.
+5. Cart, shared order, and seller parts.
+6. Payment accounting, holds, refunds, and payouts.
+7. Physical fulfillment.
+8. Digital fulfillment.
+9. Disputes, quality, reviews, and reputation.
+10. Storefronts and design systems.
+11. Open formats, API, events, and integrations.
+12. AI designer and media.
+13. Notifications, monitoring, and auditing.
+
+### 4.4 Background Operations
+
+AI generation, media processing, imports, synchronization, notifications, and other long-running operations are performed by background workers.
+
+Normal site operation does not wait for a long-running operation to finish. The user sees its status, result, or a clear error.
+
+### 4.5 External Partners
+
+Payment and logistics partners are connected through separate adapters with a common internal contract.
+
+Replacing a partner must not require changing order rules in every module.
+
+## 5. Core Domain Model
+
+### 5.1 Participants
+
+- **Buyer** — selects and pays for an order, receives it, opens a dispute, and leaves a verified review.
+- **Seller** — an individual entrepreneur, legal entity, or self-employed person who has passed applicable verification.
+- **Authorized account owner** — the sole user of the seller account in the first version.
+- **Platform employee** — acts only within the assigned role; every action is logged.
+- **Application developer** — responsible for their application, support, external payment, and refunds for the application.
+- **Payment and logistics partners** — external systems whose state is reconciled through adapters.
+
+### 5.2 Commerce Entities
+
+- **Canonical product** — a shared listing for a demonstrably identical serialized product.
+- **Seller offer** — the price, availability, delivery, condition, and commercial terms of a specific seller.
+- **Standalone listing** — a unique offer or digital product without reliable matching; in the public beta, the only supported digital-fulfillment method is a downloadable file.
+- **Variant** — a specific combination of attributes with its own inventory.
+- **Inventory** — the single actual stock of a variant across the seller's storage locations.
+- **Shared order** — a purchase that may include multiple sellers.
+- **Seller order part** — an independently fulfilled, disputed, and returned part of a shared order.
+- **Fulfillment** — physical delivery or delivery of the exact version of a downloadable file.
+- **Dispute** — a formal investigation of a problem with evidence, a decision, and a possible appeal.
+- **Review** — a rating linked to a verified order or verified use of an application.
+
+### 5.3 Integration Entities
+
+- **Third-party application** — a registered integration with a developer and verifiable data-handling rules.
+- **Application permission** — the seller's separate consent to a specific action.
+- **Event** — a signed notification of a change to permitted data with a stable identifier.
+- **Application log** — an immutable history of actions by a specific integration.
+
+### 5.4 AI Entities
+
+- **AI storefront project** — the interview, selected direction, design system, and edit history.
+- **Media source** — the seller's real source material.
+- **AI version** — a separate verifiable result of processing or generation.
+- **Order listing snapshot** — the exact listing and media available to the buyer at the time of purchase.
+
+## 6. Mandatory Invariants
+
+1. The seller independently sets the actual price.
+2. Before payment, the server rechecks the price, inventory, delivery, and right to sell.
+3. Publishing one variant in multiple storefronts does not create separate inventory.
+4. Repeating an external request does not create a second order or refund or consume inventory a second time.
+5. A monetary action has a verifiable history and the partner's external identifier.
+6. An indeterminate partner response is not treated as success or failure without reconciliation.
+7. A shared purchase is divided into independent seller parts.
+8. A seller sees only their own orders and permitted buyer data.
+9. Every digital-product order is linked to an exact verified file version.
+10. A seller cannot silently change an already purchased file or order snapshot.
+11. An open complaint and an unresolved dispute do not worsen a public metric until the event and responsibility are confirmed.
+12. AI does not publish material without the seller's explicit confirmation.
+13. An application does not receive the account password or a shared non-expiring key.
+14. Revoking one application does not require disabling the other integrations.
+15. Payment, advertising, or storefront design does not raise organic ranking.
+16. The seller's own portable data is available free of charge.
+
+## 7. End-to-End User Flows
+
+### 7.1 Seller Onboarding
+
+1. The seller selects a business form.
+2. The seller provides official details, the authorized person's contact information, and permitted payment details.
+3. The seller passes basic, category-specific, and, where necessary, enhanced verification.
+4. After successfully completing the applicable checks, the seller receives the right to sell without a paid queue.
+5. The seller creates or imports a catalog and receives a basic storefront.
+
+### 7.2 Physical-Product Purchase
 
-1. Покупатель находит товар и предложение.
-2. Добавление в корзину не резервирует запас.
-3. При оформлении сервер повторно проверяет цену, остаток, доставку и ограничения.
-4. Создаётся короткий резерв.
-5. Платёжный партнёр подтверждает оплату.
-6. Заказ передаётся продавцу и исполняется.
-7. После подтверждения или окончания опубликованного периода защиты выпускается выплата.
-8. При проблеме открывается спор с доказательствами и возможным возвратом.
+1. The buyer finds a product and offer.
+2. Adding an item to the cart does not reserve inventory.
+3. At checkout, the server rechecks the price, inventory, delivery, and restrictions.
+4. A short reservation is created.
+5. The payment partner confirms payment.
+6. The order is passed to the seller and fulfilled.
+7. After confirmation or the end of the published protection period, the payout is released.
+8. If there is a problem, a dispute is opened with evidence and a possible refund.
 
-### 7.3 Покупка скачиваемого файла
+### 7.3 Downloadable-File Purchase
 
-1. Продавец загружает файл в управляемое хранилище.
-2. Площадка проверяет формат и вредоносное содержимое.
-3. Опубликованная версия получает неизменяемую запись и контрольный отпечаток.
-4. После оплаты покупатель получает доступ к точной версии из заказа.
-5. События выдачи, доступа и ошибок журналируются.
-6. Выплата удерживается на опубликованный период защиты.
-7. Спор использует точную версию, карточку, системные требования и журналы выдачи.
+1. The seller uploads the file to managed storage.
+2. The platform checks the format and malicious content.
+3. The published version receives an immutable record and checksum.
+4. After payment, the buyer receives access to the exact version in the order.
+5. Delivery, access, and error events are logged.
+6. The payout is held for the published protection period.
+7. A dispute uses the exact version, listing, system requirements, and delivery logs.
 
-### 7.4 Спор
+### 7.4 Dispute
 
-1. Участник выбирает конкретную причину и прикладывает доступные доказательства.
-2. Площадка автоматически добавляет состояние заказа и применимые журналы.
-3. AI может подготовить материалы и найти риск, но не выносит окончательное спорное решение.
-4. Уполномоченный сотрудник применяет опубликованные правила.
-5. Возможны отказ, частичный возврат, полный возврат или иное предусмотренное законом решение.
-6. Участник получает обоснование и доступную процедуру апелляции.
+1. The participant selects a specific reason and attaches available evidence.
+2. The platform automatically adds the order state and applicable logs.
+3. AI may prepare materials and identify risk, but does not make the final dispute decision.
+4. An authorized employee applies the published rules.
+5. Possible outcomes include denial, a partial refund, a full refund, or another outcome provided by law.
+6. The participant receives the rationale and the available appeal procedure.
 
-### 7.5 Подключение приложения
+### 7.5 Application Connection
 
-1. Продавец видит разработчика, назначение, цену, работу с данными и точные права.
-2. Каждое право подтверждается отдельно.
-3. Критичные права имеют срок и требуют повторного подтверждения.
-4. Автоматические изменения работают только в обязательных пределах площадки; продавец может их ужесточить.
-5. Все действия журналируются и доступны продавцу.
-6. Превышение блокируется; повторная аномалия временно приостанавливает критичные права и запускает проверку.
-7. Продавец может немедленно отозвать только это подключение.
+1. The seller sees the developer, purpose, price, data handling, and exact permissions.
+2. Each permission is confirmed separately.
+3. Critical permissions are time-limited and require reconfirmation.
+4. Automatic changes operate only within the platform's mandatory limits; the seller may make them stricter.
+5. All actions are logged and available to the seller.
+6. An overreach is blocked; a repeated anomaly temporarily suspends critical permissions and starts an investigation.
+7. The seller can immediately revoke only this connection.
 
-### 7.6 AI-дизайнер
+### 7.6 AI Designer
 
-1. Проверенный продавец подаёт заявку в ограниченную бету.
-2. Проходит короткое интервью и выбирает визуальное направление.
-3. AI создаёт дизайн-систему и безопасную сборку витрины.
-4. Реальные фотографии обрабатываются без искажения свойств товара.
-5. Автоматическая проверка сравнивает результат с исходником.
-6. Низкая уверенность или существенное расхождение блокируют публикацию либо направляются человеку.
-7. Продавец явно подтверждает публикацию.
+1. A verified seller applies for the limited beta.
+2. The seller completes a short interview and selects a visual direction.
+3. AI creates a design system and a safe storefront assembly.
+4. Real photographs are processed without distorting the product's properties.
+5. An automated check compares the result with the source.
+6. Low confidence or a material discrepancy blocks publication or routes it to a human.
+7. The seller explicitly confirms publication.
 
-## 8. Поиск, цена и справедливость
+## 8. Search, Pricing, and Fairness
 
-### 8.1 Идентичный товар
+### 8.1 Identical Product
 
-Перед сортировкой исключаются предложения без остатка, доставки по адресу или права продажи.
+Before sorting, offers without inventory, delivery to the address, or the right to sell are excluded.
 
-Порядок по умолчанию учитывает:
+The default order considers:
 
-- возможность доставки;
-- полную стоимость с доставкой;
-- срок;
-- расстояние;
-- подтверждённое качество исполнения.
+- delivery availability;
+- total cost including delivery;
+- timeframe;
+- distance;
+- verified fulfillment quality.
 
-Покупатель может отдельно сортировать по полной стоимости, сроку, расстоянию или рейтингу.
+The buyer can sort separately by total cost, timeframe, distance, or rating.
 
-### 8.2 Разные товары
+### 8.2 Different Products
 
-Сначала учитываются:
+The following are considered first:
 
-1. соответствие запросу;
-2. категория и выбранные характеристики;
-3. доступность для адреса;
-4. доставка;
-5. подтверждённое качество исполнения.
+1. match to the query;
+2. category and selected attributes;
+3. availability for the address;
+4. delivery;
+5. verified fulfillment quality.
 
-Доступны отдельные сортировки по полной стоимости, новизне, сроку и рейтингу.
+Separate sorting by total cost, recency, timeframe, and rating is available.
 
-### 8.3 Прозрачность
+### 8.3 Transparency
 
-- Факторы публикуются.
-- Числовые веса определяются после моделирования и пилота до запуска.
-- Изменения весов получают версию, обоснование и предварительное уведомление.
-- В публичной бете нет скрытой поведенческой персонализации.
-- Одинаковый явно заданный контекст даёт одинаковый порядок.
-- Новый продавец получает нейтральную отметку «недостаточно данных» и усиленный начальный контроль.
-- В публичной бете рекламы нет.
-- После пилота реклама возможна только в отдельных помеченных блоках без влияния на органическую выдачу.
+- Factors are published.
+- Numerical weights are determined after modeling and the pilot, before launch.
+- Changes to weights receive a version, rationale, and advance notice.
+- There is no hidden behavioral personalization in the public beta.
+- The same explicitly specified context produces the same order.
+- A new seller receives a neutral “insufficient data” label and enhanced initial monitoring.
+- There is no advertising in the public beta.
+- After the pilot, advertising is possible only in separate labeled blocks without affecting organic results.
 
-### 8.4 Ценовой ориентир
+### 8.4 Reference Price
 
-Ориентир необязателен и не заменяет цену продавца.
+The reference price is optional and does not replace the seller's price.
 
-До достаточной внутренней истории допускается только проверенный внешний источник с названием и датой проверки. После достаточной истории используется опубликованная формула на основе медианы подходящих завершённых сделок.
+Until sufficient internal history exists, only a verified external source with a name and verification date is allowed. After sufficient history exists, a published formula based on the median of suitable completed transactions is used.
 
-При недостатке, устаревании или подозрительности данных ориентир скрывается или возвращается к свежему проверенному источнику. Сотрудник и AI не назначают произвольное значение.
+If the data is insufficient, outdated, or suspicious, the reference price is hidden or falls back to a recent verified source. An employee and AI do not assign an arbitrary value.
 
-## 9. Переносимость и открытая инфраструктура
+## 9. Portability and Open Infrastructure
 
-### 9.1 Бесплатный экспорт
+### 9.1 Free Export
 
-Продавец в любое время экспортирует собственные переносимые данные:
+The seller can export their own portable data at any time:
 
-- профиль;
-- каталог, карточки и варианты;
-- остатки;
-- принадлежащие ему медиа;
-- настройки витрины;
-- происхождение импортированных данных.
+- profile;
+- catalog, listings, and variants;
+- inventory;
+- media they own;
+- storefront settings;
+- provenance of imported data.
 
-Ручной полный экспорт остаётся бесплатным независимо от API-тарифа.
+Manual full export remains free regardless of the API plan.
 
-### 9.2 Открытый формат
+### 9.2 Open Format
 
-Публикуются:
+The following are published:
 
-- спецификация;
-- машинно-проверяемые схемы;
-- эталонные примеры;
-- предложения изменений и обсуждения;
-- решения и журнал версий.
+- the specification;
+- machine-validatable schemas;
+- reference examples;
+- change proposals and discussions;
+- decisions and the version log.
 
-Изменение уже опубликованной версии задним числом запрещено. Несовместимое изменение создаёт новую версию и переходный период.
+Changing an already published version retroactively is forbidden. A breaking change creates a new version and a transition period.
 
-Спецификация и эталонные материалы получают разрешительную открытую лицензию после правовой проверки конкретного текста лицензии.
+The specification and reference materials receive a permissive open license after legal review of the specific license text.
 
-### 9.3 API первого запуска
+### 9.3 Initial-Launch API
 
-API поддерживает:
+The API supports:
 
-1. чтение разрешённой публичной части каталога;
-2. импорт, экспорт и синхронизацию собственных карточек, цен и остатков продавца;
-3. безопасную ссылку на оформление заказа внутри платформы;
-4. подписанные события об изменениях разрешённых данных;
-5. периодическую сверку для восстановления пропущенных событий.
+1. reading the permitted public part of the catalog;
+2. importing, exporting, and synchronizing the seller's own listings, prices, and inventory;
+3. a safe link to checkout inside the platform;
+4. signed events about changes to permitted data;
+5. periodic reconciliation to recover missed events.
 
-Полное управление заказами, платежами, исполнением, отменами и возвратами через API проектируется только после успешного пилота как отдельный критичный канал.
+Full management of orders, payments, fulfillment, cancellations, and refunds through the API is designed only after a successful pilot, as a separate critical channel.
 
-## 10. Безопасность сторонних приложений
+## 10. Third-Party Application Security
 
-### 10.1 Допуск
+### 10.1 Admission
 
-Частная интеграция одного продавца работает только с его аккаунтом и соблюдает общие права, пределы и журналирование.
+A private integration for one seller operates only with that seller's account and follows the common permissions, limits, and logging requirements.
 
-Приложение для нескольких независимых продавцов до публичного распространения проходит проверку:
+Before public distribution, an application for multiple independent sellers undergoes checks of:
 
-- разработчика и контактов;
-- необходимости прав;
-- безопасности подключения;
-- хранения, передачи и удаления данных;
-- политики приватности;
-- поддержки;
-- сообщения об инцидентах.
+- the developer and contacts;
+- the necessity of permissions;
+- connection security;
+- data storage, transfer, and deletion;
+- the privacy policy;
+- support;
+- incident reporting.
 
-Исходный код не является обязательным единым условием для каждого приложения. Дополнительные материалы и испытания запрашиваются по риску.
+Source code is not a mandatory uniform requirement for every application. Additional materials and testing are requested according to risk.
 
-### 10.2 Права
+### 10.2 Permissions
 
-- Площадка публикует матрицу риска прав.
-- Минимальное чтение действует до отзыва и прекращается после длительной неактивности.
-- Критичные изменения цен, остатков и других доверенных данных ограничены сроком.
-- Расширение критичных прав требует нового согласия.
-- Площадка задаёт обязательные пределы; продавец может только ужесточить их.
-- Операция за пределами отклоняется.
+- The platform publishes a permission-risk matrix.
+- Minimal read access remains active until revoked and ends after a prolonged period of inactivity.
+- Critical changes to prices, inventory, and other trusted data are time-limited.
+- Expanding critical permissions requires new consent.
+- The platform sets mandatory limits; the seller may only make them stricter.
+- An operation outside the limits is rejected.
 
-### 10.3 Контроль и инциденты
+### 10.3 Monitoring and Incidents
 
-Приложение постоянно контролируется и повторно проверяется при существенном изменении или новом риске. Высокорисковые приложения дополнительно проходят плановую проверку.
+The application is continuously monitored and rechecked after a material change or a new risk. High-risk applications also undergo scheduled reviews.
 
-При повторной аномалии критичные права временно приостанавливаются. При существенном инциденте затронутый доступ ограничивается, доказательства сохраняются, участники уведомляются, а восстановление происходит после подтверждённого исправления.
+After a repeated anomaly, critical permissions are temporarily suspended. In the event of a material incident, affected access is restricted, evidence is preserved, participants are notified, and recovery occurs after a confirmed fix.
 
-### 10.4 Каталог приложений
+### 10.4 Application Catalog
 
-Публикуются только допущенные приложения. Карточка показывает разработчика, назначение, права, работу с данными, поддержку, цену и дату проверки.
+Only admitted applications are published. The listing shows the developer, purpose, permissions, data handling, support, price, and verification date.
 
-Отзывы оставляют только продавцы с подтверждённым использованием. Пользовательская оценка качества и поддержки отделена от статуса безопасности.
+Only sellers with verified use can leave reviews. User ratings of quality and support are separate from the security status.
 
-В первой версии разработчик принимает оплату вне площадки и отвечает за приложение, поддержку, отмену и возврат полученной оплаты. Площадка отвечает за подключение, права, безопасность, каталог и жалобы на нарушение правил.
+In the first version, the developer accepts payment outside the platform and is responsible for the application, support, cancellation, and refund of received payment. The platform is responsible for connection, permissions, security, the catalog, and complaints about rule violations.
 
-При прекращении поддержки новые подключения останавливаются. При отсутствии риска продавцы получают ограниченный переходный срок; затем права отзываются и разработчик подтверждает удаление данных. Существенный риск отключается немедленно.
+When support ends, new connections are stopped. If there is no risk, sellers receive a limited transition period; then permissions are revoked and the developer confirms data deletion. Material risk is disabled immediately.
 
-## 11. AI-дизайнер и медиа
+## 11. AI Designer and Media
 
-### 11.1 Начальная ограниченная бета
+### 11.1 Initial Limited Beta
 
-Включает:
+Includes:
 
-- короткое интервью;
-- несколько визуальных направлений;
-- дизайн-систему продавца;
-- сборку витрины из безопасных блоков;
-- разговорные правки;
-- безопасную обработку реальных фотографий;
-- сравнение результата с исходником;
-- явное подтверждение продавца.
+- a short interview;
+- several visual directions;
+- the seller's design system;
+- storefront assembly from safe blocks;
+- conversational edits;
+- safe processing of real photographs;
+- comparison of the result with the source;
+- the seller's explicit confirmation.
 
-Доступ к AI не является условием обычной публикации и продажи.
+Access to AI is not a condition of ordinary publication and sales.
 
-### 11.2 Правила изображения товара
+### 11.2 Product-Image Rules
 
-Разрешены фон, свет, кадрирование и композиция реального исходника.
+Background, lighting, cropping, and composition of the real source are allowed.
 
-Запрещено незаметно менять форму, цвет, маркировку, комплектацию и другие существенные свойства товара.
+It is forbidden to silently change the product's shape, color, markings, contents, or other material properties.
 
-Декоративные баннеры и окружение могут быть полностью сгенерированы. Если сцена показывает продаваемый товар, сам товар должен происходить из реального исходника.
+Decorative banners and surroundings may be fully generated. If a scene shows a product for sale, the product itself must come from a real source.
 
-### 11.3 Маркировка и история
+### 11.3 Labeling and History
 
-Полностью созданное или существенно заменённое AI-содержание получает публичную отметку. Простая техническая коррекция без нового видимого содержания не требует публичной отметки, но сохраняется в истории.
+Fully created or substantially replaced AI content receives a public label. A simple technical correction without new visible content does not require a public label, but is retained in the history.
 
-При AI-обложке в галерее остаётся реальное изображение без синтетических добавлений.
+When an AI cover is used, the gallery retains a real image without synthetic additions.
 
-Исходник и каждая опубликованная версия сохраняются отдельно. Откат создаёт новую запись и не стирает историю.
+The source and every published version are stored separately. A rollback creates a new record and does not erase the history.
 
-### 11.4 Условия расширения доступа
+### 11.4 Conditions for Expanding Access
 
-Открытие AI-дизайнера всем проверенным продавцам требует заранее зафиксированных порогов:
+Opening the AI designer to all verified sellers requires thresholds fixed in advance for:
 
-- качества;
-- безопасности;
-- стабильности;
-- экономики.
+- quality;
+- security;
+- stability;
+- economics.
 
-Видео, аудио и сложные эффекты добавляются отдельным решением после прохождения этих условий.
+Video, audio, and complex effects are added by a separate decision after these conditions are met.
 
-## 12. Ошибки и восстановление
+## 12. Errors and Recovery
 
-### 12.1 Атомарность
+### 12.1 Atomicity
 
-Критичное изменение завершается целиком или не применяется. Связанная группа импортируемых данных не применяется частично.
+A critical change completes in full or is not applied. A related group of imported data is not applied partially.
 
-### 12.2 Безопасный повтор
+### 12.2 Safe Retry
 
-Каждое повторяемое внешнее действие получает стабильный идентификатор. Повтор после сетевого сбоя возвращает существующий результат или безопасно продолжает операцию, но не создаёт дубликат.
+Every repeatable external action receives a stable identifier. A retry after a network failure returns the existing result or safely continues the operation, but does not create a duplicate.
 
-### 12.3 Неопределённый ответ партнёра
+### 12.3 Indeterminate Partner Response
 
-Если результат платежа, возврата или доставки неизвестен, операция получает состояние ожидания сверки. Площадка запрашивает фактическое состояние у партнёра и только после этого продолжает переход заказа.
+If the result of a payment, refund, or delivery is unknown, the operation enters a reconciliation-pending state. The platform requests the actual state from the partner and only then continues the order transition.
 
-### 12.4 Сбой синхронизации
+### 12.4 Synchronization Failure
 
-При недопустимом пакете сохраняется последняя подтверждённая версия. Продавец получает видимый статус задержки и отчёт о затронутых данных. Неподтверждённые цена или остаток после безопасного срока ограничивают продажу соответствующего предложения.
+For an invalid package, the last confirmed version is retained. The seller receives a visible delay status and a report of the affected data. An unconfirmed price or inventory after the safe period restricts sales of the corresponding offer.
 
-### 12.5 Инцидент
+### 12.5 Incident
 
-1. Ограничить затронутый риск.
-2. Сохранить журналы и доказательства.
-3. Уведомить участников.
-4. Проверить причину и масштаб.
-5. Исправить и повторно проверить.
-6. Восстановить доступ только после подтверждения исправления.
+1. Restrict the affected risk.
+2. Preserve logs and evidence.
+3. Notify participants.
+4. Check the cause and scope.
+5. Fix the issue and recheck it.
+6. Restore access only after the fix is confirmed.
 
-Апелляция не задерживает срочную временную защиту.
+An appeal does not delay urgent temporary protection.
 
-## 13. Наблюдаемость и аудит
+## 13. Observability and Auditing
 
-Система должна позволять восстановить:
+The system must make it possible to determine:
 
-- кто выполнил действие;
-- когда оно произошло;
-- какой объект и версия были затронуты;
-- какое состояние было до и после;
-- какой запрос или событие стало причиной;
-- какой внешний партнёр и идентификатор участвовали;
-- какое правило привело к автоматическому ограничению;
-- кто и почему принял окончательное ручное решение.
+- who performed the action;
+- when it occurred;
+- which object and version were affected;
+- what the state was before and after;
+- which request or event caused it;
+- which external partner and identifier were involved;
+- which rule caused the automatic restriction;
+- who made the final manual decision and why.
 
-Секреты, пароли, полные платёжные реквизиты и лишние персональные данные в журналы не записываются.
+Secrets, passwords, full payment details, and unnecessary personal data are not written to logs.
 
-## 14. Проверка качества
+## 14. Quality Assurance
 
-### 14.1 Уровни тестирования
+### 14.1 Testing Levels
 
-1. **Бизнес-правила модулей:** допустимые переходы заказов, права, резервы, выплаты, возвраты и споры.
-2. **Интеграция модулей и данных:** транзакции, ограничения, конкурентные изменения остатка, версии и миграции.
-3. **Контракты адаптеров:** платёж, доставка, уведомления, импорт и публичный API.
-4. **Сквозные сценарии:** физический товар и скачиваемый файл от регистрации продавца до выплаты или возврата.
-5. **Безопасность:** изоляция продавцов, минимальные права, отзыв доступа, срок действия и повторное подтверждение.
-6. **Отказоустойчивость:** повторы, задержки, потеря ответа, частичная недоступность партнёра, восстановление фоновой операции.
-7. **Нагрузка:** каталог, поиск, оформление, конкурентные остатки, импорт и AI-фоновые задачи.
-8. **Восстановление:** проверяемое возвращение данных и рабочего состояния после сбоя.
+1. **Module business rules:** permitted order transitions, permissions, reservations, payouts, refunds, and disputes.
+2. **Module and data integration:** transactions, constraints, concurrent inventory changes, versions, and migrations.
+3. **Adapter contracts:** payment, delivery, notifications, import, and public API.
+4. **End-to-end scenarios:** a physical product and a downloadable file from seller registration through payout or refund.
+5. **Security:** seller isolation, least privilege, access revocation, expiration, and reconfirmation.
+6. **Resilience:** retries, delays, lost responses, partial partner unavailability, and background-operation recovery.
+7. **Load:** catalog, search, checkout, concurrent inventory, import, and AI background tasks.
+8. **Recovery:** verifiable restoration of data and working state after a failure.
 
-### 14.2 Обязательные сквозные сценарии
+### 14.2 Mandatory End-to-End Scenarios
 
-- покупка одного физического товара;
-- покупка у нескольких продавцов;
-- конкурентная покупка последнего остатка;
-- отказ платежа и безопасное освобождение резерва;
-- потеря ответа после успешного платежа без второго списания;
-- частичный возврат одной части общего заказа;
-- спор по физическому товару;
-- покупка и выдача точной версии файла;
-- спор по невыдаче или несовместимости файла;
-- отзыв критичного права приложения;
-- повторная доставка одного события без повторного изменения;
-- безопасное скрытие и восстановление AI-медиа;
-- восстановление после сбоя без потери подтверждённого состояния.
+- purchase of one physical product;
+- purchase from multiple sellers;
+- concurrent purchase of the last unit;
+- payment failure and safe release of the reservation;
+- loss of the response after a successful payment without a second charge;
+- partial refund of one part of a shared order;
+- dispute over a physical product;
+- purchase and delivery of the exact file version;
+- dispute over failure to deliver or file incompatibility;
+- revocation of a critical application permission;
+- redelivery of one event without a repeated change;
+- safe hiding and recovery of AI media;
+- recovery after a failure without losing confirmed state.
 
-## 15. Последовательность подготовки
+## 15. Preparation Sequence
 
-1. Серверная основа: идентичность, роли, права, продавцы, аудит и единая достоверная версия состояния.
-2. Каталог, варианты, остатки, поиск и минимальный покупательский интерфейс.
-3. Корзина, заказ, платёжные адаптеры, физическое и цифровое исполнение, возвраты и споры.
-4. Полноценный кабинет продавца, импорт, экспорт и бренд-витрины.
-5. Открытый формат, API, события, синхронизация и сторонние приложения.
-6. AI-дизайнер и медиа как ограниченная бета.
-7. Минимальная аналитика и автоматизация публичной беты.
-8. Объединённая правовая, безопасностная, экономическая и операционная проверка российского пилота.
+1. Server foundation: identity, roles, permissions, sellers, auditing, and a single authoritative version of state.
+2. Catalog, variants, inventory, search, and a minimal buyer interface.
+3. Cart, order, payment adapters, physical and digital fulfillment, refunds, and disputes.
+4. Full seller dashboard, import, export, and branded storefronts.
+5. Open format, API, events, synchronization, and third-party applications.
+6. AI designer and media as a limited beta.
+7. Minimal analytics and automation for the public beta.
+8. Combined legal, security, economic, and operational review of the Russian pilot.
 
-Это не детальный план реализации. Для каждого этапа после утверждения спецификации создаются отдельные проверяемые критерии и задачи.
+This is not a detailed implementation plan. After the specification is approved, separate verifiable criteria and tasks are created for each stage.
 
-## 16. Условия допуска к публичной бете
+## 16. Public Beta Admission Conditions
 
-До открытия обязательны:
+Before opening, the following are mandatory:
 
-- проверенная юридическая модель;
-- выбранный платёжный партнёр с требуемыми операциями;
-- опубликованные ограничения стоимости заказа и активных предложений;
-- утверждённые категории и документы продавца;
-- проверенные правила физической доставки и цифровой выдачи;
-- опубликованные сроки защиты, споров, возвратов и выплат;
-- мониторинг, аудит, уведомления и процедуры инцидентов;
-- рабочие процедуры поддержки, модерации и апелляции;
-- проверенное восстановление;
-- отсутствие критических ошибок в деньгах, доступе, заказах и выдаче;
-- прохождение обязательных сквозных сценариев;
-- отдельные лимиты и критерии ограниченной AI-беты.
+- a verified legal model;
+- a selected payment partner with the required operations;
+- published limits on order value and active offers;
+- approved seller categories and documents;
+- verified rules for physical delivery and digital delivery;
+- published periods for protection, disputes, refunds, and payouts;
+- monitoring, auditing, notifications, and incident procedures;
+- working support, moderation, and appeal procedures;
+- verified recovery;
+- no critical errors in money, access, orders, or delivery;
+- completion of the mandatory end-to-end scenarios;
+- separate limits and criteria for the limited AI beta.
 
-Ограничения повышаются только после подтверждённой устойчивой работы и предварительного уведомления участников.
+Limits are increased only after stable operation has been confirmed and participants have been notified in advance.
 
-## 17. Решения, требующие исследования до соответствующего этапа
+## 17. Decisions Requiring Research Before the Relevant Stage
 
-Эти пункты не являются скрытыми допущениями и не заполняются произвольными значениями:
+These items are not hidden assumptions and must not be filled with arbitrary values:
 
-1. Платёжный партнёр и юридическая реализуемость удержаний, распределений и частичных возвратов.
-2. Точная комиссия пилота после расчёта обязательных расходов.
-3. Разрешённые и запрещённые категории и документы по российскому праву.
-4. Числовые ограничения заказа, активных предложений, резервов, споров и выплат.
-5. Службы доставки, доказательства получения и правила собственной доставки продавца.
-6. Разрешённые форматы, размеры и сроки хранения цифровых файлов.
-7. Точные пороги ценового ориентира и защиты от манипуляций.
-8. Первая версия открытого формата и конкретная открытая лицензия.
-9. Первые официально поддерживаемые источники импорта.
-10. Матрица риска API-прав, сроки повторного подтверждения и обязательные пределы.
-11. Числовые веса органической выдачи после моделирования и пилота.
-12. Лимиты, цены и критерии ограниченной AI-беты.
-13. Технологический стек, развёртывание и детальные интерфейсы модулей.
-14. Числовые критерии успешности российского пилота.
+1. The payment partner and the legal feasibility of holds, splits, and partial refunds.
+2. The exact pilot commission after mandatory costs are calculated.
+3. Permitted and prohibited categories and documents under Russian law.
+4. Numerical limits for orders, active offers, reservations, disputes, and payouts.
+5. Delivery services, proof of receipt, and the rules for seller-managed delivery.
+6. Permitted formats, sizes, and retention periods for digital files.
+7. Exact thresholds for the reference price and protection against manipulation.
+8. The first version of the open format and the specific open license.
+9. The first officially supported import sources.
+10. The API-permission risk matrix, reconfirmation periods, and mandatory limits.
+11. Numerical weights for organic results after modeling and the pilot.
+12. Limits, prices, and criteria for the limited AI beta.
+13. The technology stack, deployment, and detailed module interfaces.
+14. Numerical success criteria for the Russian pilot.
 
-Каждое решение принимается до начала зависимого этапа, получает источник, владельца, способ проверки и критерий пересмотра.
+Each decision is made before the dependent stage begins and receives a source, an owner, a verification method, and a review criterion.
 
-## 18. Международное расширение
+## 18. International Expansion
 
-Международная дата заранее не назначается.
+An international date is not set in advance.
 
-Сначала подтверждается устойчивый выпуск в России. Затем выбирается одна страна, для которой отдельно закрываются:
+Stable operation in Russia is confirmed first. Then one country is selected, for which the following are addressed separately:
 
-- право и налоги;
-- платежи и валюта;
-- локализация;
-- логистика;
-- поддержка;
-- защита покупателей.
+- law and taxes;
+- payments and currency;
+- localization;
+- logistics;
+- support;
+- buyer protection.
 
-Выход начинается с ограниченного пилота одной страны. Перевода интерфейса недостаточно.
+The launch begins with a limited pilot in one country. Translating the interface is not enough.
 
-## 19. Критерии готовности этой спецификации
+## 19. Readiness Criteria for This Specification
 
-Спецификация готова к переходу в план реализации, если:
+The specification is ready to transition to an implementation plan if:
 
-1. Владислав подтвердил все семь разделов концепции.
-2. Документ не противоречит `concept-protocol.md`.
-3. В документе нет скрытых продуктовых решений, выданных за технические детали.
-4. Неисследованные числа, партнёры и правовые вопросы оформлены как обязательные входные условия соответствующих этапов.
-5. Документ рассматривается как общая архитектурная спецификация, а не объём одной реализации: каждая крупная фаза получает отдельную подчинённую спецификацию и план; первой фазой является серверная основа транзакционного ядра.
-6. Реализация не начинается до отдельного утверждения этой письменной спецификации.
+1. Vladislav has confirmed all seven sections of the concept.
+2. The document does not contradict `concept-protocol.md`.
+3. The document contains no hidden product decisions presented as technical details.
+4. Unresearched numbers, partners, and legal questions are documented as mandatory inputs for the relevant stages.
+5. The document is treated as a general architecture specification, not the scope of one implementation: each major phase receives a separate subordinate specification and plan; the first phase is the server foundation of the transactional core.
+6. Implementation does not begin until this written specification is separately approved.

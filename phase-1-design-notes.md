@@ -1,147 +1,147 @@
-# Open Marketplace — рабочие решения по первой фазе
+# Open Marketplace — Working Decisions for Phase One
 
-**Дата:** 2026-09-02
-**Статус:** интервью завершено; письменная спецификация утверждена Владиславом 2026-09-02
-**Основание:** `docs/superpowers/specs/2026-09-02-open-marketplace-design.md`
-**Техническое направление:** `docs/research/2026-09-02-technical-stack-recommendation.md`
+**Date:** 2026-09-02
+**Status:** interview completed; written specification approved by Vladislav on 2026-09-02
+**Basis:** `docs/superpowers/specs/2026-09-02-open-marketplace-design.md`
+**Technology direction:** `docs/research/2026-09-02-technical-stack-recommendation.md`
 
-## Цель первой фазы
+## Goal of Phase One
 
-Первая фаза должна дать самостоятельный работающий вертикальный поток:
+Phase one must provide a self-contained working vertical flow:
 
-1. человек регистрируется и входит;
-2. подтверждает контакт;
-3. подаёт заявку на статус продавца;
-4. сотрудник площадки рассматривает заявку в служебной панели;
-5. система выдаёт или отклоняет право продавца;
-6. критичные действия записываются в аудит;
-7. доступ без требуемого права блокируется.
+1. a person registers and signs in;
+2. confirms their contact information;
+3. submits an application for seller status;
+4. a marketplace employee reviews the application in the staff panel;
+5. the system grants or rejects seller rights;
+6. critical actions are recorded in audit;
+7. access without the required permission is blocked.
 
-Каталог, остатки, заказы и платежи в первую фазу не входят.
+The catalog, inventory, orders, and payments are not included in phase one.
 
-## Утверждено: регистрация и вход
+## Approved: Registration and Sign-In
 
-Основной идентификатор аккаунта — email. Пользователь задаёт пароль и обязан подтвердить владение email до доступа к защищённым действиям.
+The primary account identifier is email. The user sets a password and must confirm ownership of the email before accessing protected actions.
 
-Телефон и SMS-вход в первую фазу не входят.
+Phone and SMS sign-in are not included in phase one.
 
-## Утверждено: двухфакторная аутентификация
+## Approved: Two-Factor Authentication
 
-Вторая защита использует одноразовые коды приложения-аутентификатора, а не SMS.
+The second layer of protection uses one-time authenticator-app codes, not SMS.
 
-- для сотрудника площадки она обязательна;
-- продавец обязан включить её до активации статуса;
-- для обычного покупателя она добровольна.
+- it is mandatory for a marketplace employee;
+- a seller must enable it before status activation;
+- it is optional for an ordinary buyer.
 
-## Утверждено: восстановление второго фактора
+## Approved: Second-Factor Recovery
 
-При включении второго фактора пользователь получает одноразовые резервные коды. Если устройство и резервные коды потеряны, продавец или сотрудник проходит ручную повторную проверку. Доступ к email сам по себе не позволяет отключить обязательную вторую защиту.
+When enabling the second factor, the user receives one-time recovery codes. If the device and recovery codes are lost, the seller or employee undergoes manual re-verification. Access to the email alone does not allow the mandatory second protection to be disabled.
 
-Каждое использование резервного кода и каждое ручное восстановление записывается в аудит; использованный код становится недействительным.
+Every use of a recovery code and every manual recovery is recorded in audit; a used code becomes invalid.
 
-## Утверждено: совмещение ролей
+## Approved: Combining Roles
 
-Обычная учётная запись может одновременно быть покупателем и уполномоченным владельцем одного кабинета продавца.
+An ordinary account may simultaneously be a buyer and the authorized owner of one seller account.
 
-Служебная учётная запись сотрудника площадки создаётся отдельно, не участвует в покупках и продажах и не может владеть кабинетом продавца.
+A marketplace employee's service account is created separately, does not participate in purchases or sales, and cannot own a seller account.
 
-Несколько владельцев или сотрудников одного продавца в первую фазу не поддерживаются.
+Multiple owners or employees for one seller are not supported in phase one.
 
-## Утверждено: данные заявки продавца
+## Approved: Seller-Application Data
 
-Первая фаза использует минимальные поля и тестовые данные для проверки полного жизненного цикла заявки.
+Phase one uses minimal fields and test data to verify the application's complete lifecycle.
 
-Настоящие документы личности, сканы, платёжные реквизиты и подключение внешней системы проверки не входят. Их состав, хранение и обработка определяются отдельной правовой и безопасностной спецификацией до производственного допуска продавцов.
+Real identity documents, scans, payment details, and connection to an external verification system are not included. Their composition, storage, and processing are defined by a separate legal and security specification before sellers are admitted to production.
 
-## Утверждено: решение по заявке
+## Approved: Application Decision
 
-Сотрудник может:
+A staff member can:
 
-- одобрить заявку;
-- отклонить заявку;
-- запросить исправления.
+- approve an application;
+- reject an application;
+- request changes.
 
-Для каждого решения обязательна причина. Сотрудник не редактирует сведения заявителя. Заявитель сам создаёт исправленную версию и повторно отправляет её. История версий, решений и участников сохраняется в аудите.
+A reason is mandatory for every decision. The staff member does not edit the applicant's information. The applicant creates a corrected version themselves and resubmits it. The history of versions, decisions, and participants is preserved in audit.
 
-## Утверждено: служебные роли
+## Approved: Staff Roles
 
-В первой фазе существуют две отдельные служебные роли:
+Phase one has two separate staff roles:
 
-- **проверяющий продавцов** — просматривает заявки и принимает решения;
-- **администратор безопасности** — управляет служебными учётными записями и ручным восстановлением защищённого доступа.
+- **seller reviewer** — views applications and makes decisions;
+- **security administrator** — manages service accounts and manual recovery of protected access.
 
-Проверяющий не создаёт сотрудников и не отключает второй фактор. Администратор безопасности не рассматривает заявки без отдельного назначения роли проверяющего.
+The reviewer does not create employees or disable the second factor. The security administrator does not review applications without a separate seller-reviewer role assignment.
 
-## Утверждено: аудит
+## Approved: Audit
 
-В неизменяемый аудит попадают:
+The immutable audit contains:
 
-- регистрация и подтверждение email;
-- успешные и неуспешные попытки входа;
-- сброс и смена пароля;
-- включение, отключение и восстановление второго фактора;
-- создание, завершение и отзыв защищённых сеансов;
-- создание и каждая версия заявки продавца;
-- каждое решение по заявке и его причина;
-- назначение и отзыв ролей;
-- блокировка и восстановление учётной записи;
-- защищённые действия сотрудников и фоновых исполнителей.
+- registration and email confirmation;
+- successful and failed sign-in attempts;
+- password reset and change;
+- enabling, disabling, and recovering the second factor;
+- creation, completion, and revocation of protected sessions;
+- creation of and every version of a seller application;
+- every application decision and its reason;
+- role assignment and revocation;
+- account blocking and recovery;
+- protected actions by employees and background workers.
 
-Запись содержит участника, время, тип действия, затронутый объект, результат, идентификатор запроса и допустимые сведения до/после. Пароли, резервные коды, токены, секреты и лишние персональные данные не записываются.
+The record contains the actor, time, action type, affected object, result, request identifier, and permitted before/after information. Passwords, recovery codes, tokens, secrets, and unnecessary personal data are not recorded.
 
-## Утверждено: управление сеансами
+## Approved: Session Management
 
-Пользователь видит список активных сеансов с допустимой информацией об устройстве и времени активности и может отозвать отдельный сеанс или все остальные.
+The user sees a list of active sessions with permitted device information and activity time and can revoke an individual session or all other sessions.
 
-Смена или сброс пароля, ручное восстановление второго фактора, блокировка аккаунта и изменение служебных полномочий завершают все затронутые сеансы. Для особо чувствительного действия требуется недавнее повторное подтверждение пароля и второго фактора, если он обязателен.
+Changing or resetting a password, manually recovering the second factor, blocking an account, and changing staff privileges end all affected sessions. A particularly sensitive action requires recent re-confirmation of the password and second factor if it is mandatory.
 
-## Утверждено: независимые состояния
+## Approved: Independent States
 
-Состояние учётной записи человека и состояние продавца хранятся отдельно.
+The state of a person's account and the state of the seller are stored separately.
 
-Отклонение, приостановка или отзыв статуса продавца не блокируют обычный аккаунт покупателя. Полная блокировка аккаунта применяется отдельным решением при риске, компрометации или другом предусмотренном основании.
+Rejecting, suspending, or revoking seller status does not block the ordinary buyer account. Full account blocking is applied by a separate decision when there is a risk, compromise, or another specified basis.
 
-История заявок, ролей и решений не удаляется изменением текущего статуса.
+The history of applications, roles, and decisions is not deleted by changing the current status.
 
-## Утверждено: создание сотрудников
+## Approved: Employee Creation
 
-Первый администратор безопасности создаётся одноразовой локальной командой при начальной настройке окружения.
+The first security administrator is created by a one-time local command during initial environment setup.
 
-Следующие служебные учётные записи создаются только персональным приглашением действующего администратора безопасности. Приглашение одноразовое, ограничено сроком и связано с конкретным email и назначаемой ролью. Сотрудник самостоятельно задаёт пароль и включает обязательный второй фактор до первого защищённого действия.
+Subsequent service accounts are created only through a personal invitation from an active security administrator. The invitation is single-use, time-limited, and tied to a specific email and assigned role. The employee sets their own password and enables the mandatory second factor before the first protected action.
 
-Публичное получение служебной роли, общий служебный аккаунт, общий пароль и автоматическое назначение первому зарегистрированному пользователю запрещены.
+Public acquisition of a staff role, a shared service account, a shared password, and automatic assignment to the first registered user are prohibited.
 
-## Утверждено: модульный подход
+## Approved: Modular Approach
 
-Первая фаза строится из вертикальных предметных модулей. HTTP, служебная панель, локальные команды и фоновые исполнители являются внешними входами и вызывают одни и те же прикладные операции.
+Phase one is built from vertical domain modules. HTTP, the staff panel, local commands, and background workers are external entry points and call the same application operations.
 
-Бизнес-правила не дублируются в представлениях, сериализаторах, формах, Django Admin или сигналах. Универсальный конструктор ролей и согласований не создаётся.
+Business rules are not duplicated in views, serializers, forms, Django Admin, or signals. No universal role-and-approval builder is created.
 
-## Утверждено при проверке письменной спецификации
+## Approved During Written-Specification Review
 
-- отдельные JSON endpoints убраны из первой фазы; остаются HTML-страницы Django и Django Admin;
-- уже одобренного продавца приостанавливает, восстанавливает или окончательно отзывает только администратор безопасности с обязательной причиной и аудитом;
-- после `rejected` или `withdrawn` разрешена новая заявка с новой историей, но одновременно незавершённой может быть только одна;
-- у email удаляются внешние пробелы, после чего всё значение сравнивается без учёта регистра.
+- separate JSON endpoints were removed from phase one; Django HTML pages and Django Admin remain;
+- only the security administrator can suspend, restore, or permanently revoke an already approved seller, with a mandatory reason and audit;
+- after `rejected` or `withdrawn`, a new application with a new history is allowed, but only one unfinished application may exist at a time;
+- outer whitespace is removed from an email, after which the entire value is compared case-insensitively.
 
-## Статус интервью
+## Interview Status
 
-Интервью и подтверждение разделов завершены. Письменная подчинённая спецификация прошла самопроверку и утверждена Владиславом 2026-09-02.
+The interview and confirmation of the sections are complete. The written subordinate specification passed self-review and was approved by Vladislav on 2026-09-02.
 
-## Подтверждения проекта
+## Project Confirmations
 
-- Раздел 1 «Архитектура первой фазы» подтверждён без изменений.
-- Раздел 2 «Состояния и обязательные правила» подтверждён без изменений.
-- Раздел 3 «Пользовательские потоки и интерфейсы» подтверждён без изменений.
-- Раздел 4 «Безопасность и обработка ошибок» подтверждён без изменений.
-- Раздел 5 «Тестирование и критерии завершения» подтверждён без изменений.
+- Section 1 “Phase-One Architecture” was confirmed without changes.
+- Section 2 “States and Mandatory Rules” was confirmed without changes.
+- Section 3 “User Flows and Interfaces” was confirmed without changes.
+- Section 4 “Security and Error Handling” was confirmed without changes.
+- Section 5 “Testing and Completion Criteria” was confirmed without changes.
 
-Все пять разделов проекта первой фазы и итоговая письменная подчинённая спецификация утверждены Владиславом. Следующий этап — детальный план реализации без начала кода.
+All five sections of the phase-one project and the final written subordinate specification were approved by Vladislav. The next stage is a detailed implementation plan without starting code.
 
-## Утверждено: интерфейс первой фазы
+## Approved: Phase-One Interface
 
-Обычный пользователь получает минимальные серверные страницы Django для регистрации, входа, безопасности аккаунта и заявки продавца.
+An ordinary user receives minimal server-rendered Django pages for registration, sign-in, account security, and the seller application.
 
-Сотрудники работают через защищённый Django Admin, который вызывает те же прикладные операции и не изменяет защищённые модели напрямую.
+Employees work through protected Django Admin, which calls the same application operations and does not change protected models directly.
 
-Отдельный React/Next.js-интерфейс в первую фазу не создаётся.
+A separate React/Next.js interface is not created in phase one.

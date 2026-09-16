@@ -1,43 +1,43 @@
-# Фаза 1 — проверка обычного запуска 2026-09-13
+# Phase 1 — ordinary-startup validation 2026-09-13
 
-Проверка: `2026-09-13T05:50:07.216350+00:00`. Обычный запуск подтверждён; это не независимое заключение и не разрешение на объединение или публикацию.
+Validation: `2026-09-13T05:50:07.216350+00:00`. Ordinary startup was confirmed; this is not an independent assessment or authorization to merge or publish.
 
-## Что выполнено
+## What was completed
 
-После штатного одноразового разрешения владельца исполнена точная команда из инструкции:
+After the owner’s one-time standard approval, the exact command from the instruction was run:
 
 ```bash
 docker compose run --rm --build web python manage.py migrate --noinput && docker compose up --build
 ```
 
-Команда выполнена внутри Hermes, без внешнего окна терминала, в отдельной контрольной копии текущего рабочего дерева. Проект: `omp-final-20260913t023437z`. Он использует обычный сервис `postgres` с собственным постоянным томом `omp-final-20260913t023437z_postgres_data`, а не `postgres-test`.
+The command was run inside Hermes, without an external terminal window, in a separate control copy of the current working tree. Project: `omp-final-20260913t023437z`. It uses the ordinary `postgres` service with its own persistent volume `omp-final-20260913t023437z_postgres_data`, not `postgres-test`.
 
-Из исходного рабочего дерева скопировано 200 файлов, содержимое которых проверено по контрольным суммам. Только в копии изменены опубликованные локальные порты и `APP_BASE_URL`: сайт `127.0.0.1:18000`, Mailpit `127.0.0.1:18025`, SMTP `127.0.0.1:11025`. Это согласованный вариант для совместной работы с существующим стендом; одновременный запуск на его занятых портах 8000/8025/1025 не заявляется. Остальные разрешённые настройки совпали, прикладной код и `ops/verify_restore.sh` не изменялись.
+200 files were copied from the original working tree, and their contents were checked by checksum. Only the published local ports and `APP_BASE_URL` were changed in the copy: site `127.0.0.1:18000`, Mailpit `127.0.0.1:18025`, SMTP `127.0.0.1:11025`. This is the approved arrangement for working alongside the existing stand; simultaneous startup on its occupied ports 8000/8025/1025 is not claimed. The other approved settings matched; application code and `ops/verify_restore.sh` were not changed.
 
-## Подтверждённые результаты
+## Confirmed results
 
-- Runtime-образы web и worker собраны из контрольной копии.
-- Начальные миграции успешно применены; последующий `migrate --check` с read-only подключением завершился с кодом 0.
-- `postgres` и Mailpit имеют состояние `healthy`; web и worker работают.
-- Приложение и worker используют `DATABASE_HOST=postgres`, выполняются от `appuser` и подключены только к отдельной сети проекта.
-- `/login/` и `/register/` через настоящий HTTP вернули 200 и формы.
-- Почтовый ящик копии перед тестами пуст; опубликованные порты привязаны только к `127.0.0.1`.
-- Исходные контейнеры не перезапускались, их привязки портов сохранены. Письма и агрегаты таблиц исходной базы совпали с исходным снимком. Исходные файлы и `.env` не изменились.
+- Web and worker runtime images were built from the control copy.
+- Initial migrations were applied successfully; the subsequent `migrate --check` with a read-only connection completed with code 0.
+- `postgres` and Mailpit have `healthy` status; web and worker are running.
+- The application and worker use `DATABASE_HOST=postgres`, run as `appuser`, and are connected only to the project’s separate network.
+- `/login/` and `/register/` returned 200 and forms over real HTTP.
+- The copy’s mailbox was empty before the tests; published ports are bound only to `127.0.0.1`.
+- The original containers were not restarted, and their port bindings were preserved. The emails and table aggregates of the original database matched the original snapshot. The original files and `.env` were unchanged.
 
-Первый HTTP-пробник curl получил HTTP 200, но завершился с кодом 23 при записи ответа и не засчитан как успешный. Последующий независимый HTTP-запрос через стандартную библиотеку Python полностью завершился успешно. Ошибка пробника не приписывается приложению.
+The first curl HTTP probe received HTTP 200 but ended with code 23 while writing the response and was not counted as successful. A subsequent independent HTTP request through the Python standard library completed successfully. The probe error is not attributed to the application.
 
-## Границы результата
+## Result boundaries
 
-Браузерный проход не повторялся в новой базе: [ручная приёмка](phase-1-browser-acceptance-2026-09-13.md) остаётся отдельным ранее выполненным доказательством. Вместе с проверенным обычным запуском это закрывает оставшуюся часть Task 20 Step 5. Позднее [полный свежий автоматический gate прошёл](phase-1-local-validation-2026-09-13.md), после чего остановлена только контрольная копия с сохранением её постоянного тома. Действительное независимое заключение ещё не получено; вся Task 20 не закрыта.
+The browser pass was not repeated in the new database: [manual acceptance](phase-1-browser-acceptance-2026-09-13.md) remains a separate previously completed piece of evidence. Together with the confirmed ordinary startup, this closes the remaining part of Task 20 Step 5. Later, the [full fresh automated gate passed](phase-1-local-validation-2026-09-13.md), after which only the control copy was stopped, with its persistent volume preserved. A valid independent assessment has not yet been obtained; Task 20 as a whole is not closed.
 
-`.env` в контрольной копии — жёсткая ссылка на исходный файл, а не новый набор ключей. Её нельзя редактировать, перегенерировать или включать в архивы/вложения. Последующий автоматический gate подтвердил отсутствие `.env` и `.git` в runtime- и test-образах.
+The `.env` in the control copy is a hard link to the original file, not a new set of keys. It must not be edited, regenerated, or included in archives/attachments. The subsequent automated gate confirmed the absence of `.env` and `.git` in the runtime and test images.
 
-## Свидетельства
+## Evidence
 
-Локальная папка, игнорируемая Git: `artifacts/final-local-20260913T023437Z/`.
+Local Git-ignored directory: `artifacts/final-local-20260913T023437Z/`.
 
-- `ordinary-start.log` — реальная сборка, применение миграций и запуск сервисов;
-- `ordinary-startup-verification.json` — HTTP, контейнеры, сеть, том и ограничения;
-- `ordinary-migration-check.log` — вывод проверки миграций, код 0 записан в JSON;
-- `preservation-after-startup.json` — сохранность исходного стенда;
-- `preflight.json`, `source-manifest.json`, `isolation-config.json` — подготовка и границы изоляции.
+- `ordinary-start.log` — actual build, migration application, and service startup;
+- `ordinary-startup-verification.json` — HTTP, containers, network, volume, and limitations;
+- `ordinary-migration-check.log` — migration-check output; code 0 is recorded in JSON;
+- `preservation-after-startup.json` — preservation of the original stand;
+- `preflight.json`, `source-manifest.json`, `isolation-config.json` — setup and isolation boundaries.

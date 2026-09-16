@@ -1,269 +1,269 @@
-# Open Marketplace — рекомендация по технологическому стеку
+# Open Marketplace — Technical Stack Recommendation
 
-**Дата:** 2026-09-02  
-**Статус:** утверждён Владиславом без изменений 2026-09-02; продуктовый код не создавался  
-**Основание:** `D:\Open_Marketplace\docs\superpowers\specs\2026-09-02-open-marketplace-design.md`
+**Date:** 2026-09-02\
+**Status:** approved by Vladislav without changes on 2026-09-02; no product code was created\
+**Basis:** `D:\Open_Marketplace\docs\superpowers\specs\2026-09-02-open-marketplace-design.md`
 
-## 1. Краткое решение
+## 1. Summary Decision
 
-Для первой фазы Open Marketplace рекомендуется следующий базовый стек:
+The following baseline stack is recommended for the first phase of Open Marketplace:
 
-- **язык:** Python 3.13;
-- **серверный фреймворк:** последняя исправленная версия Django 5.2 LTS;
-- **будущий HTTP API:** совместимая исправленная версия Django REST Framework после появления первого JSON-канала; в локальную первую фазу не устанавливается;
-- **основная база:** PostgreSQL;
-- **архитектура:** модульный монолит;
-- **фоновые действия первой фазы:** отдельный рабочий процесс и надёжная таблица заданий/исходящих событий в PostgreSQL;
-- **локальное окружение:** Linux-контейнеры Docker Desktop через WSL 2;
-- **сборка локального окружения:** Docker Compose;
-- **публичная бета:** Linux-контейнеры у российского провайдера и управляемый PostgreSQL;
-- **поиск первой версии:** возможности PostgreSQL без отдельного поискового кластера;
-- **не добавлять на старте:** Kubernetes, микросервисы, Redis, Kafka, Elasticsearch/OpenSearch и отдельный брокер задач.
+- **language:** Python 3.13;
+- **server framework:** latest patched version of Django 5.2 LTS;
+- **future HTTP API:** a compatible patched version of Django REST Framework after the first JSON channel appears; it is not installed in the local first phase;
+- **primary database:** PostgreSQL;
+- **architecture:** modular monolith;
+- **background actions in the first phase:** a separate worker process and a reliable PostgreSQL table of jobs/outgoing events;
+- **local environment:** Linux containers on Docker Desktop through WSL 2;
+- **local environment orchestration:** Docker Compose;
+- **public beta:** Linux containers with a Russian provider and managed PostgreSQL;
+- **first-version search:** PostgreSQL capabilities without a separate search cluster;
+- **do not add at startup:** Kubernetes, microservices, Redis, Kafka, Elasticsearch/OpenSearch, or a separate task broker.
 
-Это решение минимизирует количество инфраструктурных компонентов, но сохраняет необходимые свойства: транзакции, миграции, права, аудит, фоновые повторы и проверяемое восстановление.
+This decision minimizes the number of infrastructure components while preserving the required properties: transactions, migrations, permissions, auditing, background retries, and verifiable recovery.
 
-## 2. Почему выбран Django
+## 2. Why Django Was Chosen
 
-Django 5.2 является LTS-выпуском и получает обновления безопасности как минимум три года после выпуска.[1][26]
+Django 5.2 is an LTS release and receives security updates for at least three years after release.[1][26]
 
-Он официально поддерживает Python 3.10–3.14; Python 3.13 выбран как консервативная совместимая основа, а не как самый новый возможный интерпретатор.[26]
+It officially supports Python 3.10–3.14; Python 3.13 was chosen as a conservative compatible foundation, not as the newest possible interpreter.[26]
 
-Переход Django на будущий годовой цикл не отменяет ранее заявленные обязательства поддержки ветки 5.2 LTS.[25]
+Django's transition to a future annual release cycle does not cancel its previously stated support commitments for the 5.2 LTS branch.[25]
 
-Django предоставляет управляемые транзакции, миграции схемы и встроенный административный интерфейс.[2][3][4] Для раннего маркетплейса административный интерфейс важен не как конечный кабинет, а как защищённый служебный инструмент проверки продавцов, расследования заказов и контролируемых ручных действий.
+Django provides managed transactions, schema migrations, and a built-in administrative interface.[2][3][4] For an early marketplace, the administrative interface matters not as an end-user dashboard but as a protected operational tool for verifying sellers, investigating orders, and performing controlled manual actions.
 
-Django REST Framework поддерживает Django 5.2 и Python 3.13, предоставляет сериализацию, аутентификацию, политики доступа и тестовые HTTP-клиенты.[27][28][29] После появления JSON API он используется только как входной HTTP-слой: правила заказа, остатка, платежа и прав не должны жить в представлениях или сериализаторах.
+Django REST Framework supports Django 5.2 and Python 3.13 and provides serialization, authentication, permission policies, and test HTTP clients.[27][28][29] After the JSON API appears, it is used only as the entry HTTP layer: order, inventory, payment, and permission rules must not live in views or serializers.
 
-### Обязательная компенсация слабого места Django
+### Required Mitigation for Django's Weakness
 
-Django-приложения сами по себе не гарантируют строгую изоляцию предметных модулей. Поэтому проект вводит собственные правила:
+Django applications do not by themselves guarantee strict isolation of domain modules. Therefore, the project introduces its own rules:
 
-1. файлы группируются по предметным областям, а не по общим техническим папкам;
-2. каждый модуль публикует небольшой явный интерфейс;
-3. прямой доступ к чужим моделям и внутренним функциям запрещён, кроме утверждённых интерфейсов;
-4. зависимости между модулями проверяются автоматическим тестом;
-5. HTTP, Django Admin и фоновые исполнители вызывают одинаковые прикладные операции;
-6. бизнес-правила проверяются без HTTP и без административного интерфейса.
+1. files are grouped by domain rather than by shared technical folders;
+2. each module publishes a small explicit interface;
+3. direct access to other modules' models and internal functions is forbidden except through approved interfaces;
+4. dependencies between modules are checked by an automated test;
+5. HTTP, Django Admin, and background workers call the same application operations;
+6. business rules are tested without HTTP and without the administrative interface.
 
-## 3. Почему не NestJS
+## 3. Why Not NestJS
 
-NestJS предоставляет модули, внедрение зависимостей и хорошие средства модульного и сквозного тестирования.[5][6]
+NestJS provides modules, dependency injection, and good unit and end-to-end testing tools.[5][6]
 
-Однако работа с SQL, миграциями и транзакциями зависит от отдельно выбранной ORM-интеграции, а официальная очередь NestJS использует дополнительные пакеты и Redis-совместимый сервер.[7][8] Для первой небольшой команды это добавляет несколько решений, которые Django уже закрывает единым набором средств.
+However, working with SQL, migrations, and transactions depends on a separately selected ORM integration, while the official NestJS queue uses additional packages and a Redis-compatible server.[7][8] For the first small team, this adds several decisions that Django already covers with one integrated set of tools.
 
-NestJS остаётся допустимым вариантом, если главным ограничением станет единый TypeScript во всём продукте или появится опытная TypeScript-команда. Сейчас это не перевешивает дополнительные решения по данным и операциям.
+NestJS remains an acceptable option if a single TypeScript language across the entire product becomes the primary constraint or an experienced TypeScript team appears. At present, this does not outweigh the additional data and operations decisions.
 
-## 4. Почему не Spring Boot
+## 4. Why Not Spring Boot
 
-Spring Modulith умеет анализировать модульную структуру, проверять зависимости и запускать тесты отдельных модулей.[9][10]
+Spring Modulith can analyze the modular structure, check dependencies, and run tests for individual modules.[9][10]
 
-Spring Boot также имеет зрелую поддержку Testcontainers и операционных точек наблюдения через Actuator.[11][12]
+Spring Boot also has mature support for Testcontainers and operational observability endpoints through Actuator.[11][12]
 
-Это самый строгий из рассмотренных вариантов для формального модульного монолита. Он не выбран из-за более высокого порога сложности, объёма конфигурации и стоимости сопровождения для небольшой начальной команды. Возврат к нему оправдан при появлении сильной Java/Kotlin-команды или формальных корпоративных требований, которые Django не сможет удовлетворить без чрезмерных доработок.
+This is the strictest of the options considered for a formal modular monolith. It was not selected because of its higher complexity threshold, configuration volume, and maintenance cost for a small initial team. Returning to it would be justified if a strong Java/Kotlin team appeared or if formal corporate requirements emerged that Django could not satisfy without excessive customization.
 
-## 5. PostgreSQL и транзакции
+## 5. PostgreSQL and Transactions
 
-PostgreSQL остаётся единственным источником достоверного состояния для пользователей, продавцов, прав, товаров, остатков, заказов, платежных записей, споров и аудита.
+PostgreSQL remains the single source of truth for users, sellers, permissions, products, inventory, orders, payment records, disputes, and auditing.
 
-PostgreSQL предоставляет транзакционную изоляцию и явные блокировки строк.[13][14] На этой основе устанавливаются правила:
+PostgreSQL provides transaction isolation and explicit row locks.[13][14] The following rules are established on this basis:
 
-1. одна прикладная операция открывает одну короткую транзакцию;
-2. проверка остатка и резерв последней единицы выполняются внутри одной транзакции;
-3. блокировка применяется только к конкретным изменяемым строкам;
-4. уникальные ограничения базы запрещают повторный внешний идентификатор и дублирующий ключ идемпотентности;
-5. денежные суммы хранятся в минимальных целых единицах валюты, а не в двоичном числе с плавающей точкой;
-6. допустимые состояния и связи защищаются ограничениями базы и прикладной моделью;
-7. внешний сетевой запрос не выполняется внутри долгой транзакции базы;
-8. неопределённый ответ партнёра создаёт состояние ожидания сверки, а не предполагаемый успех или отказ.
+1. one application operation opens one short transaction;
+2. checking inventory and reserving the last unit are performed within one transaction;
+3. locking is applied only to the specific rows being changed;
+4. unique database constraints prevent a repeated external identifier and a duplicate idempotency key;
+5. monetary amounts are stored in the smallest integer units of the currency, not as binary floating-point numbers;
+6. allowed states and relationships are protected by database constraints and the application model;
+7. an external network request is not executed inside a long database transaction;
+8. an indeterminate partner response creates a reconciliation-pending state, not an assumed success or failure.
 
-Django `transaction.atomic()` задаёт транзакционную границу, а действия после успешной фиксации запускаются через механизм `on_commit()`.[2]
+Django `transaction.atomic()` defines the transaction boundary, and actions after a successful commit are started through the `on_commit()` mechanism.[2]
 
-### Миграции
+### Migrations
 
-Схема изменяется только версионированными миграциями Django.[3]
+The schema is changed only through versioned Django migrations.[3]
 
-Для каждой миграции обязательны:
+Every migration must have:
 
-- применение на пустой базе;
-- применение поверх предыдущей версии;
-- тест сохранности существующих данных;
-- отдельное решение для длительного изменения большой таблицы;
-- проверенный план отката выпуска, который не предполагает автоматическую потерю новых данных.
+- application to an empty database;
+- application on top of the previous version;
+- a test verifying preservation of existing data;
+- a separate solution for a long-running change to a large table;
+- a tested release rollback plan that does not assume automatic loss of new data.
 
-Ручное изменение производственной схемы вне миграций запрещено.
+Manual changes to the production schema outside migrations are forbidden.
 
-## 6. Фоновые задачи без преждевременного Redis
+## 6. Background Tasks Without Premature Redis
 
-Первая фаза использует таблицы PostgreSQL:
+The first phase uses PostgreSQL tables for:
 
-- **исходящие события** — то, что нужно отправить после подтверждённого изменения;
-- **фоновые задания** — то, что нужно выполнить вне HTTP-запроса;
-- **попытки и ошибки** — состояние повторов и последняя безопасная причина сбоя.
+- **outgoing events** — what must be sent after a confirmed change;
+- **background jobs** — what must be performed outside the HTTP request;
+- **attempts and errors** — retry state and the last safe reason for failure.
 
-Запись предметного изменения и исходящего события происходит в одной транзакции. Отдельный рабочий процесс выбирает готовые строки, блокирует их и обрабатывает. PostgreSQL прямо указывает, что `SKIP LOCKED` не даёт согласованного общего снимка, но подходит для нескольких потребителей таблицы, похожей на очередь.[14]
+The domain change and outgoing event are recorded in one transaction. A separate worker process selects, locks, and processes ready rows. PostgreSQL explicitly states that `SKIP LOCKED` does not provide a consistent view of the data, but is suitable for multiple consumers of a queue-like table.[14]
 
-Гарантия обработки — **как минимум один раз**, а не недоказанное «ровно один раз». Поэтому каждый обработчик обязан быть идемпотентным: безопасный повтор не создаёт второй заказ, возврат, письмо или изменение остатка.
+The processing guarantee is **at least once**, not the unproven “exactly once.” Therefore, every handler must be idempotent: a safe retry does not create a second order, refund, email, or inventory change.
 
-Redis, Celery или отдельный брокер добавляются только после измеренного ограничения PostgreSQL-очереди либо перед AI/медиа-нагрузкой, для которой появятся отдельные требования. Они не нужны для первой серверной основы.
+Redis, Celery, or a separate broker are added only after a measured limitation of the PostgreSQL queue or before AI/media workloads for which separate requirements emerge. They are not needed for the initial server foundation.
 
-## 7. Тестирование данных
+## 7. Data Testing
 
-Транзакционные и интеграционные тесты выполняются на настоящем PostgreSQL, а не на SQLite. Проверяются:
+Transaction and integration tests run against real PostgreSQL, not SQLite. The following are tested:
 
-- конкурентная покупка последней единицы;
-- повтор одинакового запроса;
-- потеря ответа после подтверждения внешней операции;
-- повторная обработка фонового задания;
-- блокировка и освобождение резерва;
-- частичный отказ общей покупки;
-- миграция существующих данных;
-- восстановление очереди после остановки рабочего процесса.
+- concurrent purchase of the last unit;
+- repetition of an identical request;
+- loss of the response after confirmation of an external operation;
+- reprocessing of a background job;
+- locking and release of a reservation;
+- partial failure of a multi-seller purchase;
+- migration of existing data;
+- queue recovery after the worker process stops.
 
-Быстрые чистые бизнес-правила могут тестироваться без базы. HTTP-права дополнительно проверяются средствами Django REST Framework.[28][29]
+Fast pure business rules can be tested without a database. HTTP permissions are additionally tested with Django REST Framework tools.[28][29]
 
-## 8. Схема развёртывания
+## 8. Deployment Scheme
 
-### 8.1 Разработка и ранний стенд
+### 8.1 Development and Early Environment
 
-Минимальный состав:
+Minimum composition:
 
-- контейнер приложения;
-- контейнер фонового исполнителя из того же образа;
-- локальный PostgreSQL;
+- application container;
+- background worker container from the same image;
+- local PostgreSQL;
 - Docker Compose;
-- отдельная тестовая база.
+- separate test database.
 
-Docker Compose описывает многоконтейнерное приложение одним набором файлов и поддерживает отдельные производственные настройки.[19][20]
+Docker Compose describes a multi-container application with one set of files and supports separate production settings.[19][20]
 
-### 8.2 Российская публичная бета
+### 8.2 Russian Public Beta
 
-До работы с реальными деньгами минимальная производственная схема повышается до:
+Before working with real money, the minimum production scheme is increased to:
 
-- двух одинаковых stateless-экземпляров веб-приложения;
-- балансировщика;
-- отдельного фонового исполнителя с возможностью запуска второго;
-- управляемого PostgreSQL с основной нодой и репликой;
-- закрытой сети между приложением и базой;
-- S3-совместимого объектного хранилища для файлов;
-- централизованных журналов, метрик и уведомлений;
-- отдельного тестового окружения;
-- независимого механизма резервного копирования.
+- two identical stateless web application instances;
+- a load balancer;
+- a separate background worker with the ability to run a second one;
+- managed PostgreSQL with a primary node and a replica;
+- a private network between the application and database;
+- S3-compatible object storage for files;
+- centralized logs, metrics, and notifications;
+- a separate test environment;
+- an independent backup mechanism.
 
-**Stateless** означает, что экземпляр приложения не хранит единственную копию пользовательского состояния на своём диске. Перезапуск или замена экземпляра не теряет подтверждённый заказ.
+**Stateless** means that an application instance does not store the sole copy of user state on its disk. Restarting or replacing an instance does not lose a confirmed order.
 
-Kubernetes для этой схемы не требуется. Docker Compose на контролируемых Linux-узлах достаточен до появления измеренной потребности в более сложном оркестраторе.
+Kubernetes is not required for this scheme. Docker Compose on controlled Linux nodes is sufficient until a measured need for a more complex orchestrator appears.
 
-## 9. Selectel и Yandex Cloud
+## 9. Selectel and Yandex Cloud
 
-Selectel Managed Databases документирует автоматические резервные копии, восстановление на момент времени, мониторинг, реплики и переключение при отказе.[21] Для PostgreSQL описано семидневное хранение и восстановление на выбранный момент внутри этого периода; встроенные копии нельзя скачать.[22]
+Selectel Managed Databases documents automatic backups, point-in-time recovery, monitoring, replicas, and failover.[21] For PostgreSQL, seven-day retention and recovery to a selected point within that period are documented; built-in copies cannot be downloaded.[22]
 
-Yandex Managed Service for PostgreSQL также документирует автоматические резервные копии, репликацию и восстановление на момент времени.[23][24]
+Yandex Managed Service for PostgreSQL also documents automatic backups, replication, and point-in-time recovery.[23][24]
 
-### Рекомендация
+### Recommendation
 
-Рабочая гипотеза для последующей проверки договора и цены:
+Working hypothesis for subsequent contract and pricing verification:
 
-- основное приложение и управляемый PostgreSQL — Selectel;
-- независимая зашифрованная логическая копия — S3-совместимое хранилище в отдельном контуре, кандидатом является Yandex Object Storage.
+- primary application and managed PostgreSQL — Selectel;
+- independent encrypted logical copy — S3-compatible storage in a separate environment, with Yandex Object Storage as a candidate.
 
-Это ещё не договорное решение. До выбора обязательны:
+This is not yet a contractual decision. Before selection, the following are mandatory:
 
-1. российская правовая проверка размещения и обработки данных;
-2. расчёт стоимости двух приложений, базы с репликой, трафика, хранения и поддержки;
-3. проверка частной сети и доступных регионов;
-4. фиксация RPO — допустимой потери данных по времени;
-5. фиксация RTO — допустимого времени восстановления;
-6. проверка полного восстановления, а не только наличия файла резервной копии.
+1. a Russian legal review of data hosting and processing;
+2. a cost calculation for two applications, the database with a replica, traffic, storage, and support;
+3. verification of the private network and available regions;
+4. definition of the RPO — the acceptable amount of data loss measured in time;
+5. definition of the RTO — the acceptable recovery time;
+6. verification of full recovery, not merely the presence of a backup file.
 
-## 10. Резервное копирование
+## 10. Backups
 
-Встроенная копия облачного провайдера не считается единственной защитой.
+The cloud provider's built-in copy is not considered the only protection.
 
-Используются два слоя:
+Two layers are used:
 
-1. управляемое восстановление PostgreSQL на момент времени;
-2. независимая зашифрованная логическая копия в другом контуре хранения.
+1. managed point-in-time recovery for PostgreSQL;
+2. an independent encrypted logical copy in a separate storage environment.
 
-Проверка восстановления выполняется регулярно в изолированную базу. Проверяется не только запуск PostgreSQL, но и согласованность пользователей, прав, заказов, остатков, денежных записей, споров и фоновых событий.
+Recovery is tested regularly in an isolated database. The test checks not only that PostgreSQL starts, but also the consistency of users, permissions, orders, inventory, monetary records, disputes, and background events.
 
-PostgreSQL документирует логические копии, файловые копии и непрерывное архивирование журнала для восстановления на момент времени.[15][16]
+PostgreSQL documents logical backups, file-system backups, and continuous WAL archiving for point-in-time recovery.[15][16]
 
-## 11. Windows-разработка и Linux-выпуск
+## 11. Windows Development and Linux Release
 
-Docker Desktop поддерживает Linux-контейнеры через WSL 2; Docker рекомендует WSL 2 и отдельно описывает практики работы с файловой системой.[17][18]
+Docker Desktop supports Linux containers through WSL 2; Docker recommends WSL 2 and separately documents file-system practices.[17][18]
 
-На компьютере Владислава проверено чтением:
+The following were verified by reading on Vladislav's computer:
 
-- WSL 2 включён;
-- дистрибутив Ubuntu запущен;
-- Docker Desktop работает с Linux-движком через WSL 2;
-- Docker Compose доступен;
-- установленный нативный Python — 3.11.
+- WSL 2 is enabled;
+- the Ubuntu distribution is running;
+- Docker Desktop is running with the Linux engine through WSL 2;
+- Docker Compose is available;
+- the installed native Python is 3.11.
 
-Поэтому локальный Python 3.11 не используется как производственная основа. Рекомендуемый режим:
+Therefore, local Python 3.11 is not used as the production foundation. Recommended mode:
 
-1. документы и будущий репозиторий остаются под `D:\Open_Marketplace`;
-2. приложение, миграции и полный набор тестов выполняются в закреплённом Linux-контейнере Python 3.13;
-3. PostgreSQL запускается через Docker Compose;
-4. секреты хранятся только в `.env`, который включён в `.gitignore`; производственные секреты передаются через средство секретов провайдера;
-5. CI также работает на Linux;
-6. если измерение покажет неприемлемую скорость файловых операций с `D:`, рабочее дерево переносится в файловую систему WSL отдельным согласованным решением, а не заранее.
+1. the documents and future repository remain under `D:\Open_Marketplace`;
+2. the application, migrations, and full test suite run in a pinned Python 3.13 Linux container;
+3. PostgreSQL runs through Docker Compose;
+4. secrets are stored only in `.env`, which is included in `.gitignore`; production secrets are supplied through the provider's secrets manager;
+5. CI also runs on Linux;
+6. if measurement shows unacceptable file-operation speed on `D:`, the working tree is moved to the WSL file system through a separate agreed decision, not in advance.
 
-Так Windows остаётся рабочим столом, а исполняемая среда совпадает с Linux-выпуском.
+This keeps Windows as the workstation while making the execution environment match the Linux release environment.
 
-## 12. Граница первой подчинённой спецификации
+## 12. Boundary of the First Subordinate Specification
 
-Следующая спецификация охватывает только серверную основу:
+The next specification covers only the server foundation:
 
-- структуру Django-проекта и правила модулей;
-- пользовательскую идентичность;
-- роли и права;
-- продавца и единственного владельца кабинета;
-- аудит;
-- идемпотентные команды;
-- таблицу исходящих событий и фонового исполнения;
-- PostgreSQL, миграции и тестовое окружение;
-- контейнерное локальное окружение;
-- проверки модульных границ.
+- Django project structure and module rules;
+- user identity;
+- roles and permissions;
+- the seller and sole account owner;
+- auditing;
+- idempotent commands;
+- the outgoing-event and background-execution table;
+- PostgreSQL, migrations, and the test environment;
+- the containerized local environment;
+- module-boundary checks.
 
-Она не включает каталог, остатки, корзину, платежи, доставку, файлы, споры, публичные приложения и AI. Эти части получают собственные спецификации и планы позже.
+It does not include the catalog, inventory, cart, payments, delivery, files, disputes, public applications, or AI. These parts receive their own specifications and plans later.
 
-## 13. Решения, которые остаются входными условиями
+## 13. Decisions That Remain Input Conditions
 
-До создания локального плана первой фазы нужно отдельно утвердить:
+Before creating the local plan for the first phase, the following must be approved separately:
 
-1. создание Git-репозитория и его точный путь;
-2. точные закреплённые версии Python, Django и PostgreSQL после проверки доступных образов;
-3. инструмент управления зависимостями и lock-файлом;
-4. формат автоматической проверки границ модулей.
+1. creation of the Git repository and its exact path;
+2. exact pinned versions of Python, Django, and PostgreSQL after verifying available images;
+3. the dependency and lock-file management tool;
+4. the format of automated module-boundary checks.
 
-Django-стек из этого отчёта уже утверждён. Django REST Framework не устанавливается в первой фазе, потому что утверждённый пользовательский результат не содержит JSON API.
+The Django stack from this report is already approved. Django REST Framework is not installed in the first phase because the approved user-facing result does not include a JSON API.
 
-До отдельного плана внешнего стенда, а не до локальной первой фазы, обязательно утверждаются:
+Before a separate plan for the external environment, but not before the local first phase, the following must be approved:
 
-1. значения RPO и RTO;
-2. основной и резервный облачные контуры;
-3. производственное средство хранения секретов.
+1. RPO and RTO values;
+2. the primary and backup cloud environments;
+3. the production secrets-storage solution.
 
-Ни один из этих пунктов не разрешает развёртывание или расходы без отдельного подтверждения Владислава.
+None of these items authorizes deployment or spending without Vladislav's separate approval.
 
-## 14. Итоговый вердикт
+## 14. Final Verdict
 
-**Django 5.2 LTS + PostgreSQL — рекомендуемая основа локальной первой фазы; Django REST Framework утверждён для будущего JSON API.**
+**Django 5.2 LTS + PostgreSQL is the recommended foundation for the local first phase; Django REST Framework is approved for the future JSON API.**
 
-Вердикт основан не на абсолютном превосходстве Django, а на соответствии текущим ограничениям:
+The verdict is based not on Django's absolute superiority, but on its fit for the current constraints:
 
-- небольшая команда;
-- сложная транзакционная область;
-- необходимость ручных защищённых операций;
-- требование минимальной инфраструктуры;
-- Windows-разработка и Linux-выпуск;
-- запрет преждевременных микросервисов;
-- потребность в проверяемом восстановлении.
+- small team;
+- complex transactional domain;
+- need for protected manual operations;
+- requirement for minimal infrastructure;
+- Windows development and Linux release;
+- prohibition on premature microservices;
+- need for verifiable recovery.
 
-NestJS остаётся вторым вариантом при приоритете единого TypeScript. Spring Boot + Spring Modulith остаётся вариантом для более крупной опытной JVM-команды.
+NestJS remains the second option if a single TypeScript language is prioritized. Spring Boot + Spring Modulith remains an option for a larger experienced JVM team.
 
-Техническое исследование завершает выбор направления, но не является разрешением создавать репозиторий, писать продуктовый код или покупать облачные ресурсы.
+The technical research completes the choice of direction, but it is not authorization to create a repository, write product code, or purchase cloud resources.
 
 ## Sources
 

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Создать локально работающий и проверенный поток `регистрация → подтверждение email → вход и безопасность → заявка продавца → решение сотрудника → допуск и аудит` без каталога, денег, облака и настоящих документов.
+**Goal:** Create a locally working and verified flow `registration → email verification → sign-in and security → seller application → staff decision → admission and audit` without a catalog, money, cloud, or real documents.
 
-**Architecture:** Один Django-проект и одна PostgreSQL-база образуют модульный монолит. Пять предметных модулей (`identity`, `access`, `seller_onboarding`, `audit`, `outbox`) публикуют небольшие интерфейсы через `public.py`; HTML, Django Admin, management-команды и worker вызывают эти интерфейсы и не меняют защищённые модели напрямую.
+**Architecture:** One Django project and one PostgreSQL database form a modular monolith. Five domain modules (`identity`, `access`, `seller_onboarding`, `audit`, `outbox`) publish small interfaces through `public.py`; HTML, Django Admin, management commands, and the worker call these interfaces and do not change protected models directly.
 
 **Tech Stack:** Python 3.13.15, Django 5.2.17 LTS, PostgreSQL 17.11, psycopg 3.3.5, cryptography 50.0.1, PyOTP 2.10.0, uv 0.12.9, Import Linter 2.14, Mailpit 1.31.0, Docker Compose.
 
@@ -12,20 +12,20 @@
 
 ## Global Constraints
 
-- Корень будущего Git-репозитория: `D:/Open_Marketplace`.
-- Git-репозиторий создаётся только в Task 1; до запуска этого плана его нет.
-- Пользовательский интерфейс: только server-rendered HTML Django. JSON API и Django REST Framework отсутствуют.
-- Служебный интерфейс: только защищённый Django Admin с вызовом прикладных операций.
-- PostgreSQL является единственной базой; SQLite запрещён даже в интеграционных тестах.
-- Секреты находятся только в `.env`; `.env` обязательно игнорируется Git. В плане и фикстурах открытых секретов нет.
-- TOTP-секрет шифруется с проверкой целостности; пароли хеширует Django; recovery codes и одноразовые токены хранятся только как необратимые отпечатки.
-- Состояние партии, каталога, денег, заказов и иные будущие общие данные в эту фазу не добавляются.
-- Реальные документы, KYC/AML, production email, Redis, Celery, Kafka, Kubernetes и облачное развёртывание отсутствуют.
-- Каждая изменяющая операция создаёт допустимый аудит и применимое outbox-сообщение в той же транзакции.
-- Django signals не координируют бизнес-переходы.
-- Каждая задача с продуктовым кодом содержит явный сфокусированный цикл RED → минимальная реализация → GREEN и заканчивается отдельным коммитом. Task 1 сначала создаёт необходимое окружение, затем проводит первый RED/GREEN; финальные интеграционные задачи не подменяют модульные циклы.
-- Все команды выполняются скрыто через внутренние инструменты Hermes из `D:/Open_Marketplace`; внешнее окно терминала не открывается.
-- Исходники не подключаются в контейнер через bind-mount. Поэтому каждая команда `docker compose ... run` после изменения кода использует `--build`; запуск старого образа не считается проверкой.
+- Root of the future Git repository: `D:/Open_Marketplace`.
+- The Git repository is created only in Task 1; it does not exist before this plan is started.
+- User interface: server-rendered Django HTML only. No JSON API or Django REST Framework.
+- Staff interface: protected Django Admin only, calling application operations.
+- PostgreSQL is the only database; SQLite is prohibited even in integration tests.
+- Secrets are located only in `.env`; `.env` must be ignored by Git. The plan and fixtures contain no cleartext secrets.
+- The TOTP secret is encrypted with integrity verification; Django hashes passwords; recovery codes and one-time tokens are stored only as irreversible digests.
+- Party state, catalog, money, orders, and other future shared data are not added to this phase.
+- Real documents, KYC/AML, production email, Redis, Celery, Kafka, Kubernetes, and cloud deployment are absent.
+- Every changing operation creates permitted audit and the applicable outbox message in the same transaction.
+- Django signals do not coordinate business transitions.
+- Every task with product code contains an explicit focused RED → minimal implementation → GREEN cycle and ends with a separate commit. Task 1 first creates the required environment and then performs the first RED/GREEN cycle; final integration tasks do not replace module cycles.
+- All commands run hidden through the internal Hermes tools from `D:/Open_Marketplace`; no external terminal window is opened.
+- Sources are not bind-mounted into the container. Therefore every `docker compose ... run` command after a code change uses `--build`; running an old image does not count as verification.
 
 ## Fixed Versions and Images
 
@@ -235,7 +235,7 @@ D:/Open_Marketplace/
 
 ### Task 1: Git, locked environment, containers, Django skeleton, module contracts
 
-**Objective:** Получить воспроизводимый пустой Django-проект, который запускается на PostgreSQL и уже запрещает недопустимые импорты.
+**Objective:** Obtain a reproducible empty Django project that runs on PostgreSQL and already prohibits invalid imports.
 
 **Files:**
 - Create: `.gitignore`, `.dockerignore`, `.env.example`, `.python-version`
@@ -261,7 +261,7 @@ git init
 git branch -M main
 ```
 
-Expected: repository root is exactly `D:/Open_Marketplace`; существующие Markdown-документы остаются без изменений.
+Expected: repository root is exactly `D:/Open_Marketplace`; existing Markdown documents remain unchanged.
 
 - [ ] **Step 2: Write the environment manifest**
 
@@ -579,7 +579,7 @@ git commit -m "build: initialize locked Django environment"
 
 ### Task 2: Custom account before the first migration
 
-**Objective:** Создать канонический email-account и гарантировать, что Django никогда не мигрирует стандартного пользователя.
+**Objective:** Create a canonical email account and guarantee that Django never migrates the default user.
 
 **Files:**
 - Create: `open_marketplace/identity/domain.py`, `managers.py`, `models.py`, `public.py`
@@ -657,7 +657,7 @@ git commit -m "feat: add canonical account model"
 
 ### Task 3: Append-only audit module
 
-**Objective:** Создать единственный интерфейс добавления аудита без прикладного изменения или удаления существующих записей.
+**Objective:** Create the single interface for appending audit without application-level modification or deletion of existing records.
 
 **Files:**
 - Create: `open_marketplace/common/errors.py`
@@ -730,7 +730,7 @@ git commit -m "feat(audit): add append-only audit log"
 
 ### Task 4: Transactional outbox with lease recovery
 
-**Objective:** Надёжно сохранить и повторить email/internal events без длинной транзакции и без повторения предметного действия.
+**Objective:** Reliably save and retry email/internal events without a long transaction and without repeating the domain action.
 
 **Files:**
 - Create: `open_marketplace/outbox/apps.py`, `models.py`, `application.py`, `public.py`
@@ -802,7 +802,7 @@ git commit -m "feat(outbox): add leased transactional outbox"
 
 ### Task 5: Registration, email verification and one-time token primitive
 
-**Objective:** Реализовать нейтральную регистрацию и подтверждение email на одном безопасном механизме одноразовых токенов.
+**Objective:** Implement neutral registration and email confirmation on one safe one-time-token mechanism.
 
 **Files:**
 - Create: `open_marketplace/common/crypto.py`
@@ -876,7 +876,7 @@ git commit -m "feat(identity): add registration and email verification"
 
 ### Task 6: Primary authentication and revocable sessions
 
-**Objective:** Реализовать нейтральную проверку пароля, атомарную выдачу серверного сеанса после неё, rotation contract и точечный отзыв.
+**Objective:** Implement neutral password verification, atomic issuance of a server-side session afterward, the rotation contract, and targeted revocation.
 
 **Files:**
 - Modify: `open_marketplace/identity/models.py`, `application.py`, `public.py`
@@ -945,7 +945,7 @@ git commit -m "feat: add primary authentication and revocable sessions"
 
 ### Task 7: Password reset and authenticated password change
 
-**Objective:** Добавить одноразовый 30-минутный сброс и безопасную смену пароля с отзывом уже существующих сеансов.
+**Objective:** Add a one-time 30-minute reset and safe password change with revocation of existing sessions.
 
 **Files:**
 - Modify: `open_marketplace/identity/application.py`, `public.py`
@@ -997,7 +997,7 @@ git commit -m "feat: add protected password recovery"
 
 ### Task 8: TOTP setup, authentication and recovery codes
 
-**Objective:** Реализовать добровольный/обязательный TOTP и одноразовые recovery codes без хранения открытого секрета.
+**Objective:** Implement optional/mandatory TOTP and one-time recovery codes without storing a cleartext secret.
 
 **Files:**
 - Modify: `open_marketplace/identity/models.py`, `domain.py`, `application.py`, `public.py`
@@ -1067,7 +1067,7 @@ git commit -m "feat: add TOTP and recovery codes"
 
 ### Task 9: Service-role assignments and exact permissions
 
-**Objective:** Создать независимо отзываемые `seller_reviewer`/`security_admin` assignments and the single permission-checking implementation.
+**Objective:** Create independently revocable `seller_reviewer`/`security_admin` assignments and the single permission-checking implementation.
 
 **Files:**
 - Create: `open_marketplace/access/apps.py`, `domain.py`, `models.py`, `application.py`, `public.py`
@@ -1137,14 +1137,14 @@ git commit -m "feat: add exact staff permissions"
 
 ### Task 10: Account block/unblock and mandatory TOTP recovery
 
-**Objective:** Реализовать security-admin операции блокировки, разблокировки и восстановления обязательного TOTP внутри identity с внутренней авторизацией, обязательной причиной и полным отзывом затронутых сеансов.
+**Objective:** Implement security-administrator operations for blocking, unblocking, and recovering mandatory TOTP inside identity with internal authorization, a mandatory reason, and full revocation of affected sessions.
 
 **Files:**
 - Modify: `open_marketplace/identity/domain.py`, `models.py`, `application.py`, `public.py`
 - Create: `open_marketplace/identity/migrations/0005_account_administration_and_totp_recovery.py`
 - Create: `open_marketplace/identity/tests/test_account_administration.py`, `test_totp_recovery.py`
 - Modify: `open_marketplace/outbox/application.py`, `tests/test_outbox.py`
-- Modify: существующие test fixtures, создающие `state="blocked"`
+- Modify: existing test fixtures that create `state="blocked"`
 
 **Interfaces:**
 
@@ -1190,7 +1190,7 @@ git commit -m "feat: add protected account recovery operations"
 
 ### Task 11: Staff invitations and bootstrap
 
-**Objective:** Создать service accounts only through one-time invitations and activate one exact role only after password/email/TOTP proof.
+**Objective:** Create service accounts only through one-time invitations and activate one exact role only after password/email/TOTP proof.
 
 **Files:**
 - Modify: `open_marketplace/access/models.py`, `application.py`, `public.py`
@@ -1256,7 +1256,7 @@ git commit -m "feat: add invited staff accounts"
 
 ### Task 12: Seller application drafts, immutable versions and own queries
 
-**Objective:** Реализовать ordinary-account draft/submit/withdraw history with one unfinished application and immutable submitted versions.
+**Objective:** Implement ordinary-account draft/submit/withdraw history with one unfinished application and immutable submitted versions.
 
 **Files:**
 - Create: `open_marketplace/seller_onboarding/__init__.py`, `apps.py`, `migrations/__init__.py`, `tests/__init__.py`
@@ -1309,7 +1309,7 @@ git commit -m "feat: add versioned seller applications"
 
 ### Task 13: Seller review, profile, admission and TOTP activation workflow
 
-**Objective:** Добавить reviewer decisions, one owner/profile, admission transitions and atomic activation after owner TOTP.
+**Objective:** Add reviewer decisions, one owner/profile, admission transitions, and atomic activation after owner TOTP.
 
 **Files:**
 - Modify: `open_marketplace/seller_onboarding/models.py`, `application.py`, `public.py`
@@ -1377,7 +1377,7 @@ git commit -m "feat: add seller review and admission"
 
 ### Task 14: Identity, sensitive-link and staff-invitation HTML flow
 
-**Objective:** Сделать реальный browser flow for registration, verification, login, password, sessions, TOTP and staff-invitation acceptance without JSON and without leaving raw one-time tokens in rendered pages, redirects, logs or clean-form URLs.
+**Objective:** Create a real browser flow for registration, verification, login, password, sessions, TOTP, and staff-invitation acceptance without JSON and without leaving raw one-time tokens in rendered pages, redirects, logs, or clean-form URLs.
 
 **Files:**
 - Create: `open_marketplace/web/forms.py`, `identity_views.py`, `staff_views.py`, `sensitive_links.py`, `middleware.py`, `errors.py`, `logging.py`, `urls.py`
@@ -1427,7 +1427,7 @@ git commit -m "feat: add identity and invitation HTML flows"
 
 ### Task 15: Seller application HTML flow
 
-**Objective:** Дать ordinary account страницы draft/submit/withdraw/status/history/reapplication.
+**Objective:** Give an ordinary account draft/submit/withdraw/status/history/reapplication pages.
 
 **Files:**
 - Modify: `open_marketplace/seller_onboarding/application.py`, `public.py`
@@ -1469,7 +1469,7 @@ git commit -m "feat: add seller application HTML flow"
 
 ### Task 16: Protected Django Admin adapters
 
-**Objective:** Реализовать service UI as custom `AdminSite` pages backed only by public query/operation contracts, with no protected model registration, import or save path and with exact role separation.
+**Objective:** Implement the service UI as custom `AdminSite` pages backed only by public query/operation contracts, with no protected model registration, import, or save path and with exact role separation.
 
 **Files:**
 - Create: `open_marketplace/staff_admin/site.py`
@@ -1516,7 +1516,7 @@ git commit -m "feat: add role-separated staff admin"
 
 ### Task 17: PostgreSQL security throttling
 
-**Objective:** Добавить нейтральные ограничения входа и email-запросов без Redis и без хранения открытых email/IP в счётчиках.
+**Objective:** Add neutral limits for sign-in and email requests without Redis and without storing cleartext email/IP addresses in counters.
 
 **Files:**
 - Modify: `open_marketplace/config/settings.py`
@@ -1565,7 +1565,7 @@ git commit -m "feat: add PostgreSQL security throttling"
 
 ### Task 18: Outbox worker and Mailpit delivery
 
-**Objective:** Реализовать реальную фоновую SMTP-доставку с короткими lease transactions, bounded retry and safe failure evidence.
+**Objective:** Implement real background SMTP delivery with short lease transactions, bounded retries, and safe failure evidence.
 
 **Files:**
 - Create: `open_marketplace/outbox/mail_delivery.py`
@@ -1615,7 +1615,7 @@ git commit -m "feat: add background email delivery"
 
 ### Task 19: Database restore proof
 
-**Objective:** Доказать реальное восстановление из `pg_dump` в отдельную изолированную PostgreSQL-базу без запуска Django test runner против восстановленной базы и без обещаний production RPO/RTO.
+**Objective:** Prove real restoration from `pg_dump` into a separate isolated PostgreSQL database without running the Django test runner against the restored database and without promising production RPO/RTO.
 
 **Files:**
 - Create: `ops/verify_restore.sh`
@@ -1755,7 +1755,7 @@ git commit -m "test: verify PostgreSQL backup restoration"
 
 ### Task 20: Full flows, documentation, security gate and completion evidence
 
-**Objective:** Доказать все acceptance criteria свежими командами and produce repeatable local runbooks.
+**Objective:** Prove all acceptance criteria with fresh commands and produce repeatable local runbooks.
 
 **Files:**
 - Create: `open_marketplace/tests/test_full_flows.py`, `open_marketplace/tests/test_scope_boundaries.py`, `open_marketplace/tests/test_migrations.py`
@@ -1888,4 +1888,4 @@ Expected: clean working tree and documented evidence for every criterion in spec
 
 ## Execution Gate
 
-This plan does not itself create the repository, install packages, write product code or start containers. Execution starts only after Владислав selects an execution mode and explicitly authorizes starting Task 1.
+This plan does not itself create the repository, install packages, write product code, or start containers. Execution starts only after Vladislav selects an execution mode and explicitly authorizes starting Task 1.
