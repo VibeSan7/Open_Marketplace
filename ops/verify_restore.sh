@@ -41,7 +41,7 @@ cleanup() {
   exit "$status"
 }
 
-"${compose[@]}" up -d postgres-test
+"${compose[@]}" up -d --wait postgres-test
 trap cleanup EXIT
 "${compose[@]}" build test
 "${compose[@]}" exec -T postgres-test createdb --maintenance-db=postgres --username "$DATABASE_USER" "$source_db"
