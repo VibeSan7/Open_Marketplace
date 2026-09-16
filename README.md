@@ -1,10 +1,12 @@
-# Open Marketplace — каталог товаров
+# Open Marketplace — открытая витрина и демонстрационная корзина
 
 Русский | [English](README.en.md)
 
-**Актуальный исходный код:** [скачать ZIP ветки main](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) · [Что изменилось в v0.4.0](docs/releases/v0.4.0.md)
+**Проверенный выпуск:** [v0.4.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.4.0) · [Скачать ZIP](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip) · [Контрольная сумма](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS)
 
-[Архивный выпуск v0.2.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.2.0) сохранён без изменений и содержит прежнее оформление.
+**Проверка v0.4.0:** 647 тестов и 12 правил границ модулей прошли. Проверены установка, восстановление, мобильная и настольная витрина. [Итоговый отчёт и ссылки на проверки GitHub](docs/releases/v0.4.0-verification.md).
+
+[Текущая ветка main](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) может содержать более новые изменения, чем неизменяемый архив выпуска. [Что изменилось в v0.4.0](docs/releases/v0.4.0.md) · [Предыдущие выпуски](https://github.com/VibeSan7/Open_Marketplace/releases).
 
 Проект запускается на вашем компьютере через Docker и открывается в браузере. Продавец ведёт карточки, фотографии, варианты, цены и остатки. Покупатель ищет товары и сравнивает подтверждённые предложения продавцов.
 
@@ -38,7 +40,7 @@
 
 ## 2. Скачать проект
 
-Скачайте [актуальный ZIP с новым интерфейсом](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) и распакуйте архив. Старые версии доступны на [странице Releases](https://github.com/VibeSan7/Open_Marketplace/releases). Либо клонируйте репозиторий:
+Для проверенной версии скачайте [ZIP v0.4.0](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip) и распакуйте архив. Его контрольная сумма опубликована в [SHA256SUMS](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS). Для текущей ветки разработки клонируйте репозиторий:
 
 ```bash
 git clone https://github.com/VibeSan7/Open_Marketplace.git
@@ -187,7 +189,7 @@ docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml ru
 COMPOSE_PROJECT_NAME=open-marketplace-tests bash ops/verify_restore.sh
 ```
 
-Результаты конкретной проверки выпуска, ограничения и первоисточники: [отчёт проверки](docs/security/phase-2-local-validation.md). Тесты не являются обещанием безошибочности любой установки или заменой настройки внешнего сервера.
+Результаты проверки v0.4.0, ограничения и ссылки на проверки GitHub: [итоговый отчёт](docs/releases/v0.4.0-verification.md). [Предыдущий отчёт каталога](docs/security/phase-2-local-validation.md) сохранён для истории. Тесты не являются обещанием безошибочности любой установки или заменой настройки внешнего сервера.
 
 ## Ограничения
 
@@ -200,6 +202,8 @@ COMPOSE_PROJECT_NAME=open-marketplace-tests bash ops/verify_restore.sh
 
 ## Документы и модули
 
+- [Требования к витрине и корзине v0.4](docs/superpowers/specs/2026-09-16-storefront-v04-design.md).
+- [Итоговая проверка v0.4.0](docs/releases/v0.4.0-verification.md).
 - [Согласованные правила каталога](docs/superpowers/specs/2026-09-14-phase-2-catalog-design.md).
 - [План реализации](docs/superpowers/plans/2026-09-15-phase-2-catalog-implementation.md).
 - [Завершённая первая фаза: вход и права](docs/security/phase-1-review.md).
