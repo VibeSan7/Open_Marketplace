@@ -1,41 +1,48 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Каталог{% endblock %}
+{% block page_class %}catalog-shell{% endblock %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">
 <section class="catalog-page" data-catalog-search data-applied-url="{{ applied_url }}" data-next-cursor="{{ search.next_cursor|default:'' }}" data-total="{{ search.total }}">
-  <h1>Каталог</h1>
-  <button type="button" data-share-search>Поделиться условиями поиска</button>
-  <form method="get" class="search-form" data-search-form>
-    <label for="catalog-q">Поиск</label>
-    <input id="catalog-q" name="q" value="{{ search.query }}" maxlength="200" autocomplete="off">
-    <button type="submit">Найти</button>
-    <label for="catalog-category">Категория</label>
-    <select id="catalog-category" name="category" data-auto-submit>
-      <option value="">Все категории</option>
-      {% for category in search.categories %}
-        <option value="{{ category.id }}" {% if category.id == search.category_id %}selected{% endif %}>{{ category.name }}</option>
-      {% endfor %}
-    </select>
-    <fieldset class="facets">
-      <legend>Фильтры</legend>
-      {% for facet in search.facets %}
-        <details open>
-          <summary>{{ facet.label }}</summary>
-          {% for value in facet.values %}
-            <label class="{% if not value.available and not value.selected %}facet-disabled{% endif %}" title="{% if not value.available and not value.selected %}Нет подходящих товаров{% endif %}">
-              <input type="checkbox" name="f.{{ facet.key }}" value="{{ value.value }}" {% if value.selected %}checked{% endif %} {% if not value.available and not value.selected %}disabled{% endif %} data-auto-submit>
-              {{ value.value }}{% if not value.available and not value.selected %} — Нет подходящих товаров{% endif %}
-            </label>
-          {% endfor %}
-        </details>
-      {% endfor %}
-    </fieldset>
-  </form>
-  {% if search.suggestion %}
-    <p class="suggestion">Возможно, вы имели в виду: <a href="{{ suggestion_url }}">{{ search.suggestion }}</a></p>
-  {% endif %}
-  {% include "catalog/_results.html" %}
+  <div class="page-heading">
+    <div><span class="eyebrow">Выбирайте по делу</span><h1>Каталог</h1><p>Найдите подходящий товар. Сравните варианты, цены и предложения продавцов.</p></div>
+    <button class="button-secondary" type="button" data-share-search>Поделиться условиями поиска</button>
+  </div>
+  <div class="catalog-layout">
+    <form method="get" class="search-form" data-search-form>
+      <label for="catalog-q">Поиск</label>
+      <input id="catalog-q" name="q" value="{{ search.query }}" maxlength="200" autocomplete="off" placeholder="Название или описание">
+      <button type="submit">Найти</button>
+      <label for="catalog-category">Категория</label>
+      <select id="catalog-category" name="category" data-auto-submit>
+        <option value="">Все категории</option>
+        {% for category in search.categories %}
+          <option value="{{ category.id }}" {% if category.id == search.category_id %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+      </select>
+      <fieldset class="facets">
+        <legend>Фильтры</legend>
+        {% for facet in search.facets %}
+          <details open>
+            <summary>{{ facet.label }}</summary>
+            {% for value in facet.values %}
+              <label class="{% if not value.available and not value.selected %}facet-disabled{% endif %}" title="{% if not value.available and not value.selected %}Нет подходящих товаров{% endif %}">
+                <input type="checkbox" name="f.{{ facet.key }}" value="{{ value.value }}" {% if value.selected %}checked{% endif %} {% if not value.available and not value.selected %}disabled{% endif %} data-auto-submit>
+                <span>{{ value.value }}{% if not value.available and not value.selected %} — Нет подходящих товаров{% endif %}</span>
+              </label>
+            {% endfor %}
+          </details>
+        {% endfor %}
+      </fieldset>
+    </form>
+    <div class="catalog-content">
+      {% if search.suggestion %}
+        <p class="suggestion">Возможно, вы имели в виду: <a href="{{ suggestion_url }}">{{ search.suggestion }}</a></p>
+      {% endif %}
+      {% include "catalog/_results.html" %}
+    </div>
+  </div>
 </section>
 <script src="{% static 'catalog/catalog.js' %}" defer></script>
 {% endblock %}

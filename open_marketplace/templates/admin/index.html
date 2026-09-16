@@ -1,8 +1,8 @@
 {% extends "admin/base_site.html" %}
 
 {% block content %}
-<h1>{{ title }}</h1>
-<ul>
+
+<ul class="staff-grid">
   {% for label, url in nav_links %}
     <li><a href="{{ url }}">{{ label }}</a></li>
   {% empty %}

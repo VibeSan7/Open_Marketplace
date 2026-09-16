@@ -9,12 +9,14 @@
         {% else %}
           <p class="photo-empty">Общее фото товара</p>
         {% endif %}
-        <h2><a href="{{ item.url }}">{{ item.title }}</a></h2>
-        <p>{{ item.price_label }} · {{ item.unit_label }}</p>
-        {% if item.approximate %}<p>Приблизительное совпадение</p>{% endif %}
+        <div class="card-copy">
+          <h2><a href="{{ item.url }}">{{ item.title }}</a></h2>
+          <p class="card-price">{{ item.price_label }} <span>· {{ item.unit_label }}</span></p>
+          {% if item.approximate %}<p class="approximate">Приблизительное совпадение</p>{% endif %}
+        </div>
       </article>
     {% empty %}
-      <p>Подходящих товаров не найдено. Измените запрос или снимите фильтр.</p>
+      <p class="empty-state">Подходящих товаров не найдено. Измените запрос или снимите фильтр.</p>
     {% endfor %}
   </div>
   <meta data-next-cursor content="{{ search.next_cursor|default:'' }}">

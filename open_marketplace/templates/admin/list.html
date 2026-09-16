@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 
 {% block content %}
-<h1>{{ title }}</h1>
+
 
 {% if invitation_create_url %}
 <section>
@@ -20,6 +20,7 @@
 </section>
 {% endif %}
 
+<div class="table-scroll" role="region" aria-label="{{ title }}" tabindex="0">
 <table>
   <thead>
     <tr>
@@ -50,4 +51,5 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}
