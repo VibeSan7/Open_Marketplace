@@ -519,13 +519,13 @@ class SellerPageTests(TestCase):
         for response in (listing, detail, status):
             self.assertEqual(response.status_code, 200)
             self._assert_secure(response)
-        self.assertContains(listing, "changes_requested")
+        self.assertContains(listing, "нужны изменения")
         self.assertContains(listing, reason)
         self.assertNotContains(listing, "Test shop")
-        self.assertContains(detail, "changes_requested")
+        self.assertContains(detail, "нужны изменения")
         self.assertContains(detail, reason)
         self.assertContains(detail, "Test shop")
-        self.assertContains(status, "suspended")
+        self.assertContains(status, "приостановлен")
         self.assertContains(status, reason)
 
     def test_invalid_forms_and_application_errors_are_neutral_bounded_and_secure(self):
@@ -539,7 +539,7 @@ class SellerPageTests(TestCase):
             kwargs={"application_id": application_id},
         )
         self.assertEqual(invalid.status_code, 200)
-        self.assertNotContains(invalid, "not enough data")
+        self.assertContains(invalid, "not enough data")
         self.assertLess(len(invalid.content), 16_384)
         self._assert_secure(invalid)
 
@@ -552,3 +552,58 @@ class SellerPageTests(TestCase):
         self.assertNotContains(failed_submit, "Seller application data is incomplete")
         self.assertLess(len(failed_submit.content), 16_384)
         self._assert_secure(failed_submit)
+
+    def test_invalid_own_draft_preserves_safe_fields_and_does_not_mutate(self):
+        account = self._account()
+        self._bind(self.client, account)
+        application_id = self._create_application()
+        before = SellerApplication.objects.get(pk=application_id)
+
+        invalid = self._post(
+            self.client,
+            "seller-application-edit",
+            data={
+                **self.draft,
+                "display_name": "Updated shop",
+                "contact_email": "invalid-address",
+            },
+            kwargs={"application_id": application_id},
+        )
+
+        self.assertEqual(invalid.status_code, 200)
+        self.assertContains(invalid, "Updated shop")
+        self.assertContains(invalid, "invalid-address")
+        self.assertTrue(invalid.context["form"].errors["contact_email"])
+        after = SellerApplication.objects.get(pk=application_id)
+        self.assertEqual(after.current_version, before.current_version)
+        self.assertIsNone(after.display_name)
+
+    def test_invalid_foreign_and_unknown_drafts_are_identical_and_do_not_mutate(self):
+        owner = self._account()
+        owner_client = Client(enforce_csrf_checks=True)
+        self._bind(owner_client, owner)
+        application_id = self._create_application(owner_client)
+        before = SellerApplication.objects.get(pk=application_id)
+
+        other_client = Client(enforce_csrf_checks=True)
+        self._bind(other_client, self._account())
+        payload = {"display_name": "FOREIGN-PRIVATE-VALUE"}
+        foreign = self._post(
+            other_client,
+            "seller-application-edit",
+            data=payload,
+            kwargs={"application_id": application_id},
+        )
+        unknown = self._post(
+            other_client,
+            "seller-application-edit",
+            data=payload,
+            kwargs={"application_id": uuid4()},
+        )
+
+        self.assertEqual(foreign.status_code, unknown.status_code)
+        self.assertEqual(foreign.content, unknown.content)
+        self.assertNotContains(foreign, "FOREIGN-PRIVATE-VALUE")
+        before.refresh_from_db()
+        self.assertEqual(before.current_version, 0)
+        self.assertIsNone(before.display_name)

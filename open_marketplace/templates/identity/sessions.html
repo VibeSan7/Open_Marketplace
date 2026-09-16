@@ -1,27 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Sessions{% endblock %}
+{% block title %}Сеансы{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Sessions</h1>
+<h1>Сеансы</h1>
 {% if message %}<p>{{ message }}</p>{% endif %}
 <ul>
 {% for session in sessions %}
   <li>
     <span>{{ session.device_label }}</span>
-    {% if session.is_current %}<strong>current</strong>{% endif %}
+    {% if session.is_current %}<strong>текущий</strong>{% endif %}
     {% if not session.revoked_at %}
     <form method="post" action="{% url 'session-revoke' session_id=session.id %}">
       {% csrf_token %}
-      <button type="submit">Revoke</button>
+      <button type="submit">Завершить</button>
     </form>
     {% endif %}
   </li>
 {% empty %}
-  <li>No sessions.</li>
+  <li>Нет активных сеансов.</li>
 {% endfor %}
 </ul>
 <form method="post" action="{% url 'sessions-revoke-others' %}">
   {% csrf_token %}
-  <button type="submit">Revoke other sessions</button>
+<button type="submit">Завершить остальные сеансы</button>
 </form>
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Стать продавцом{% endblock %}
+{% block page_class %}content-page form-page{% endblock %}
+{% block content %}
+<h1>Стать продавцом</h1>
+<p>Для заявки нужны тестовые данные; эта демонстрация не предназначена для реальных заказов и платежей.</p>
+<p>Для публикации товаров нужен отдельный допуск к каталогу.</p>
+{% if not account %}
+  <p>Войдите или создайте обычный аккаунт, чтобы начать путь продавца.</p>
+  <p><a href="{{ login_url }}">Войти</a> · <a href="{% url 'register' %}">Зарегистрироваться</a></p>
+{% elif account.kind == "service" %}
+  <p>Служебный аккаунт не может подавать заявку продавца. Для этого нужен отдельный обычный аккаунт.</p>
+  <p>Права служебного аккаунта не изменены.</p>
+{% else %}
+  <h2>Ваши следующие шаги</h2>
+  <ol>
+    <li>{% if account.email_verified_at %}Электронная почта подтверждена.{% else %}Подтвердите электронную почту.{% endif %}</li>
+    <li>{% if account.totp_enabled %}Двухэтапный вход настроен.{% else %}Защитите аккаунт: настройте дополнительный код входа из приложения в разделе <a href="{% url 'security' %}">безопасности аккаунта</a>. Это второй этап проверки после пароля.{% endif %}</li>
+    <li>Заполните <a href="{% url 'seller-applications' %}">заявку продавца</a> только тестовыми данными.</li>
+    <li>Дождитесь проверки заявки.</li>
+    <li>После одобрения отдельно получите допуск к каталогу и добавьте первый товар.</li>
+  </ol>
+  <p>Заявка продавца не даёт автоматического допуска к каталогу. Реальные заказы и платежи в этой демонстрации недоступны.</p>
+  {% if account.state != "active" or not account.email_verified_at %}
+    <p>Сейчас подача заявки недоступна: сначала активируйте аккаунт и подтвердите почту.</p>
+  {% elif lookup_failed %}
+    <p class="error">Не удалось проверить состояние заявки. Обновите страницу или войдите повторно; новая заявка не создана.</p>
+  {% elif profile %}
+    {% if profile.state == "active" and account.totp_enabled %}
+      <h2>Допуск продавца активен</h2>
+      <p>Перейдите к товарам. Если отдельный допуск к каталогу ещё не выдан, обратитесь к владельцу установки.</p>
+      <p><a class="button" href="{% url 'catalog-own' %}">Мои карточки</a> · <a href="{% url 'catalog-own-new' %}">Добавить товар</a></p>
+    {% elif profile.state == "awaiting_owner_totp" or profile.state == "active" %}
+      <p>Заявка одобрена. Для работы продавцом включите <a href="{% url 'security' %}">двухэтапный вход</a>.</p>
+    {% else %}
+      <p>Доступ продавца ограничен. <a href="{% url 'seller-status' %}">Посмотрите состояние и причину ограничения</a>.</p>
+    {% endif %}
+  {% elif current_application %}
+    {% if current_application.state == "draft" or current_application.state == "changes_requested" %}
+      <p><a class="button" href="{% url 'seller-application-edit' application_id=current_application.id %}">Продолжить заявку</a></p>
+    {% else %}
+      <p>Заявка отправлена. <a href="{% url 'seller-application-detail' application_id=current_application.id %}">Проверить состояние заявки</a>.</p>
+    {% endif %}
+  {% else %}
+    <p><a href="{% url 'seller-application-create' %}">Начать заявку продавца</a></p>
+  {% endif %}
+  {% if applications %}
+    <h2>Ваши заявки</h2>
+    <ul>
+    {% for application in applications %}
+      <li>
+        {% if application.state == "draft" %}Черновик{% elif application.state == "submitted" %}Отправлена{% elif application.state == "under_review" %}На проверке{% elif application.state == "changes_requested" %}Нужны изменения{% elif application.state == "approved" %}Одобрена{% elif application.state == "rejected" %}Отклонена{% elif application.state == "withdrawn" %}Отозвана{% endif %} —
+        <a href="{% url 'seller-application-detail' application_id=application.id %}">открыть заявку</a>
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  {% if profile %}<p><a href="{% url 'seller-status' %}">Открыть статус продавца</a></p>{% endif %}
+{% endif %}
+{% endblock %}

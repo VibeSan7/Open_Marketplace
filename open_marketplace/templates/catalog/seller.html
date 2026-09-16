@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">{% endblock %}
+{% block title %}{{ store.seller.display_name }} — каталог{% endblock %}
+{% block page_class %}catalog-shell{% endblock %}
+{% block content %}
+<section class="catalog-page">
+  <h1>{{ store.seller.display_name }}</h1>
+  <p class="notice">Каталог для тестирования: продавец допущен к тестовому каталогу.</p>
+  <p>Допуск в тестовый каталог не является проверкой качества или юридической проверкой.</p>
+  <p>Доставка, возвраты и оформление заказов пока не настроены.</p>
+  <ul class="product-list">
+    {% for product in store.products %}
+      <li class="product-card">
+        {% if product.cover_id %}<img src="{% url 'catalog-photo' photo_id=product.cover_id %}" alt="Общее фото товара">{% endif %}
+        <a href="{{ product.url }}"><h2>{{ product.title }}</h2></a>
+        <p>{{ product.category }} · {{ product.unit_label }}</p>
+        <p>{{ product.price_label }} · {% if product.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

@@ -1,10 +1,12 @@
 from functools import wraps
+from urllib.parse import urlencode
 from uuid import UUID
 
 from django.http import HttpResponseNotAllowed
 from django.urls import reverse
 
 from open_marketplace.common.errors import ApplicationError
+from open_marketplace.identity import public as identity_public
 from open_marketplace.seller_onboarding import public as seller_public
 from open_marketplace.web.errors import EXPECTED_ERROR_MESSAGE, secure_render, secure_response
 from open_marketplace.web.forms import SellerApplicationForm
@@ -46,6 +48,49 @@ def _draft_initial(draft):
     }
 
 
+@_method_guard(("GET",))
+def seller_start(request):
+    account = None
+    applications = ()
+    profile = None
+    lookup_failed = False
+    if getattr(request.user, "is_authenticated", False):
+        account = identity_public.get_account_snapshot(request.user.pk)
+        if (
+            account.kind == "ordinary"
+            and account.state == "active"
+            and account.email_verified_at is not None
+        ):
+            try:
+                applications = seller_public.list_own_seller_applications(
+                    context=_context(request)
+                )
+                profile = seller_public.get_seller_profile_for_owner(
+                    context=_context(request)
+                )
+            except ApplicationError:
+                applications = ()
+                profile = None
+                lookup_failed = True
+    current_application = next((row for row in applications if row.state in {
+        "draft", "submitted", "under_review", "changes_requested",
+    }), None)
+    return secure_render(
+        request,
+        "seller/start.html",
+        {
+            "account": account,
+            "applications": applications,
+            "profile": profile,
+            "current_application": current_application,
+            "lookup_failed": lookup_failed,
+            "login_url": (
+                f"{reverse('login')}?{urlencode({'next': request.get_full_path()})}"
+            ),
+        },
+    )
+
+
 @_method_guard(("GET", "POST"))
 @_login_required
 def seller_application_create(request):
@@ -79,12 +124,19 @@ def seller_application_edit(request, *, application_id: UUID):
             {"form": SellerApplicationForm(initial=_draft_initial(draft))},
         )
 
+    try:
+        seller_public.get_own_seller_application_draft(
+            application_id=application_id,
+            context=_context(request),
+        )
+    except ApplicationError:
+        return _neutral(request)
     form = SellerApplicationForm(request.POST)
     if not form.is_valid():
         return secure_render(
             request,
             "seller/application_edit.html",
-            {"form": SellerApplicationForm(), "message": EXPECTED_ERROR_MESSAGE},
+            {"form": form, "message": EXPECTED_ERROR_MESSAGE},
         )
     try:
         seller_public.update_seller_application_draft(

@@ -1,35 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Seller application{% endblock %}
+{% block title %}Заявка продавца{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Seller application</h1>
-<p>State: {{ application.state }}</p>
-{% if application.reason %}<p>Reason: {{ application.reason }}</p>{% endif %}
+<h1>Заявка продавца</h1>
+<p>Статус: {% if application.state == "draft" %}черновик{% elif application.state == "submitted" %}отправлена{% elif application.state == "under_review" %}на проверке{% elif application.state == "changes_requested" %}нужны изменения{% elif application.state == "approved" %}одобрена{% elif application.state == "rejected" %}отклонена{% elif application.state == "withdrawn" %}отозвана{% endif %}</p>
+{% if application.reason %}<p>Причина: {{ application.reason }}</p>{% endif %}
 {% if application.state == "draft" or application.state == "changes_requested" %}
-  <p><a href="{% url 'seller-application-edit' application_id=application.id %}">Edit application</a></p>
+  <p><a href="{% url 'seller-application-edit' application_id=application.id %}">Изменить заявку</a></p>
   <form method="post" action="{% url 'seller-application-submit' application_id=application.id %}">
     {% csrf_token %}
-    <button type="submit">Submit application</button>
+    <button type="submit">Отправить заявку</button>
   </form>
 {% endif %}
 {% if application.state == "draft" or application.state == "submitted" or application.state == "under_review" or application.state == "changes_requested" %}
   <form method="post" action="{% url 'seller-application-withdraw' application_id=application.id %}">
     {% csrf_token %}
-    <button type="submit">Withdraw application</button>
+    <button type="submit">Отозвать заявку</button>
   </form>
 {% elif application.state == "rejected" or application.state == "withdrawn" %}
-  <p><a href="{% url 'seller-application-create' %}">Start a new application</a></p>
+  <p><a href="{% url 'seller-application-create' %}">Начать новую заявку</a></p>
 {% endif %}
 {% for version in versions %}
   <article>
-    <h2>Submitted version {{ version.version_number }}</h2>
+    <h2>Отправленная версия {{ version.version_number }}</h2>
     <dl>
-      <dt>Business form</dt><dd>{{ version.data.business_form }}</dd>
-      <dt>Display name</dt><dd>{{ version.data.display_name }}</dd>
-      <dt>Official name</dt><dd>{{ version.data.official_name }}</dd>
-      <dt>Registration identifier</dt><dd>{{ version.data.registration_identifier }}</dd>
-      <dt>Contact email</dt><dd>{{ version.data.contact_email }}</dd>
-      <dt>Test data attested</dt><dd>{{ version.data.test_data_attested }}</dd>
+      <dt>Форма ведения деятельности</dt><dd>{% if version.data.business_form == "sole_proprietor" %}индивидуальный предприниматель{% elif version.data.business_form == "legal_entity" %}юридическое лицо{% elif version.data.business_form == "self_employed" %}самозанятый{% endif %}</dd>
+      <dt>Название в каталоге</dt><dd>{{ version.data.display_name }}</dd>
+      <dt>Официальное название</dt><dd>{{ version.data.official_name }}</dd>
+      <dt>Регистрационный номер</dt><dd>{{ version.data.registration_identifier }}</dd>
+      <dt>Контактная почта</dt><dd>{{ version.data.contact_email }}</dd>
+      <dt>Тестовые данные</dt><dd>{% if version.data.test_data_attested %}да{% else %}нет{% endif %}</dd>
     </dl>
   </article>
 {% endfor %}

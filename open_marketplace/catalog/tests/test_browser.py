@@ -1,3 +1,4 @@
+from django.test import override_settings
 from contextlib import contextmanager
 from importlib import import_module
 from urllib.parse import parse_qs, urlsplit
@@ -91,6 +92,79 @@ class CatalogBrowserTests(StaticLiveServerTestCase):
             expect(page.locator("[data-item-id]")).to_have_count(1)
             expect(page.locator('[name="f.size"][value="M"]')).to_be_disabled()
             self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
+
+    def test_price_filter_and_sort_work_on_mobile_and_survive_back(self):
+        low, _, _ = self.fixture.product(title="Куртка недорогая", price="100")
+        high, _, _ = self.fixture.product(title="Куртка дорогая", price="300")
+        with self.browser(self.fixture.buyer_registry, width=390) as page:
+            page.goto(self.live_server_url + "/catalog/")
+            self.assertEqual(page.locator('[name="price_min"]').count(), 1)
+            self.assertEqual(page.locator('[name="sort"]').count(), 1)
+            page.locator('[name="q"]').fill("Куртка")
+            page.locator('[name="price_min"]').fill("200,00")
+            page.locator('[name="price_min"]').press("Tab")
+            page.wait_for_url("**/catalog/?**")
+            expect(page.locator("[data-item-id]")).to_have_count(1)
+            page.locator('[name="sort"]').select_option("price_desc")
+            page.wait_for_url("**sort=price_desc**")
+            self.assertEqual(parse_qs(urlsplit(page.url).query)["q"], ["Куртка"])
+            self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
+            page.locator("[data-item-id] h2 a").click()
+            expect(page.locator("[data-product]")).to_be_visible()
+            self.assertIn(str(high), page.url)
+            self.assertEqual(parse_qs(urlsplit(page.url).query)["sort"], ["price_desc"])
+            page.get_by_role("link", name="Вернуться к результатам").click()
+            expect(page.locator("[data-item-id]")).to_have_count(1)
+            expect(page.locator('[name="sort"]')).to_have_value("price_desc")
+            self.assertEqual(parse_qs(urlsplit(page.url).query)["price_min"], ["200.00"])
+
+    def test_saved_product_and_seller_store_work_from_mobile_navigation(self):
+        product, _, _ = self.fixture.product(title="Для избранного")
+        with self.browser(self.fixture.buyer_registry, width=390) as page:
+            page.goto(self.live_server_url + "/")
+            page.get_by_role("navigation", name="Навигация", exact=True).get_by_role("link", name="Каталог", exact=True).click()
+            page.locator("[data-item-id] h2 a").click()
+            page.get_by_role("button", name="Сохранить в избранное", exact=True).click()
+            page.wait_for_url("**/catalog/saved/")
+            expect(page.locator("main")).to_contain_text("Для избранного")
+            expect(page.locator(".product-card")).to_have_css("border-top-style", "solid")
+            page.get_by_role("link", name="Для избранного", exact=True).click()
+            page.locator('main a[href*="/catalog/sellers/"]').first.click()
+            expect(page.locator("main")).to_contain_text("Первый продавец")
+            self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
+            page.goto(self.live_server_url + "/catalog/saved/")
+            page.get_by_role("button", name="Удалить из избранного", exact=True).click()
+            expect(page.locator("main")).not_to_contain_text("Для избранного")
+        with self.browser(self.fixture.other_registry, width=390) as page:
+            page.goto(self.live_server_url + "/catalog/saved/")
+            expect(page.locator("main")).not_to_contain_text("Для избранного")
+
+    @override_settings(DEMO_ORDERS_ENABLED=True)
+    def test_buyer_and_seller_complete_demo_order_on_mobile(self):
+        product, _, _ = self.fixture.product(title="Сценарий покупки")
+        with self.browser(self.fixture.buyer_registry, width=390) as page:
+            from django.urls import reverse
+            page.goto(self.live_server_url + reverse("catalog-product", kwargs={"product_id": product}))
+            page.get_by_role("link", name="Создать тестовый заказ", exact=True).click()
+            page.get_by_label("Количество", exact=True).fill("1")
+            page.get_by_role("button", name="Создать тестовый заказ", exact=True).click()
+            order_url = page.url
+            expect(page.locator("main")).to_contain_text("Ожидает симуляции")
+            page.get_by_role("button", name="Симулировать отказ оплаты", exact=True).click()
+            expect(page.locator("main")).to_contain_text("Ожидает симуляции")
+            page.get_by_role("button", name="Симулировать успешную оплату", exact=True).click()
+            expect(page.locator("main")).to_contain_text("Оплачено в симуляции")
+            expect(page.get_by_role("button", name="Симулировать передачу продавцом", exact=True)).to_have_count(0)
+        with self.browser(self.fixture.seller_registry, width=390) as page:
+            page.goto(order_url)
+            page.get_by_role("button", name="Симулировать передачу продавцом", exact=True).click()
+            expect(page.locator("main")).to_contain_text("Передано в симуляции")
+        with self.browser(self.fixture.buyer_registry, width=390) as page:
+            page.goto(order_url)
+            page.get_by_role("button", name="Симулировать завершение", exact=True).click()
+            expect(page.locator("main")).to_contain_text("Завершено в симуляции")
+            self.assertEqual(page.locator("h1").count(), 1)
+            self.assertFalse(page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
     def test_scroll_error_keeps_items_retry_and_back_restore_fresh_window(self):
         for index in range(23):

@@ -82,6 +82,7 @@ def _bounded_int(name, default, *, minimum, maximum):
 SECRET_KEY = _required("DJANGO_SECRET_KEY")
 _database_password = _required("DATABASE_PASSWORD")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+DEMO_ORDERS_ENABLED = os.environ.get("DEMO_ORDERS_ENABLED", "false") == "true"
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("ALLOWED_HOSTS", "").split(",")
@@ -96,6 +97,7 @@ INSTALLED_APPS = [
     "open_marketplace.outbox.apps.OutboxConfig",
     "open_marketplace.verification.apps.VerificationConfig",
     "open_marketplace.catalog.apps.CatalogConfig",
+    "open_marketplace.demo_orders.apps.DemoOrdersConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,6 +133,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "open_marketplace.web.context_processors.public_features",
             ],
         },
     },
@@ -168,7 +171,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True

@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Security{% endblock %}
+{% block title %}Безопасность аккаунта{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Security</h1>
+<h1>Безопасность аккаунта</h1>
 {% if account %}
-<p>Email: {{ account.email }}</p>
-<p>TOTP enabled: {{ account.totp_enabled|yesno:"yes,no" }}</p>
+<p>Электронная почта: {{ account.email }}</p>
+<p>Второй фактор TOTP: {% if account.totp_enabled %}включён{% else %}не включён{% endif %}</p>
 {% endif %}
 <nav>
-  <a href="{% url 'sessions' %}">Sessions</a>
-  <a href="{% url 'reauthenticate' %}">Reauthenticate</a>
-  <a href="{% url 'totp-setup' %}">Set up TOTP</a>
-  <a href="{% url 'totp-disable' %}">Disable TOTP</a>
-  <a href="{% url 'recovery-codes-replace' %}">Replace recovery codes</a>
+  <a href="{% url 'sessions' %}">Сеансы</a>
+  <a href="{% url 'reauthenticate' %}">Подтвердить личность</a>
+  <a href="{% url 'totp-setup' %}">Настроить второй фактор</a>
+  <a href="{% url 'totp-disable' %}">Отключить второй фактор</a>
+  <a href="{% url 'recovery-codes-replace' %}">Заменить резервные коды</a>
 </nav>
 <form method="post" action="{% url 'logout' %}">
   {% csrf_token %}
-  <button type="submit">Sign out</button>
+  <button type="submit">Выйти</button>
 </form>
 {% endblock %}

@@ -7,6 +7,16 @@
 {% if message %}<p class="error">{{ message }}</p>{% endif %}
 <p>Сохранение черновика не публикует изменения. Старое опубликованное содержание остаётся видимым до успешной публикации.</p>
 {% if product.kind == "digital" %}<p class="notice">Цифровой товар можно сохранить как черновик, но опубликовать его и доставлять файлы пока нельзя.</p>{% endif %}
+<section aria-labelledby="readiness-title">
+  <h2 id="readiness-title">Проверка перед публикацией</h2>
+  <p>Проверяется последний сохранённый черновик. Несохранённые поля на странице не участвуют в публикации. Цена и остаток изменяются отдельно и сразу.</p>
+  <ul>{% for check in readiness.checks %}<li>{% if check.complete %}Готово{% else %}Нужно заполнить или проверить{% endif %}: {{ check.label }}</li>{% endfor %}</ul>
+  {% for issue in readiness.issues %}<p class="error">{{ issue }}</p>{% endfor %}
+  {% if readiness.ready %}<p><a href="{% url 'catalog-own-preview' product_id=product.id %}">Предпросмотр сохранённого черновика</a></p>{% endif %}
+  {% if readiness.has_unpublished_changes %}<p class="notice">Сохранённые изменения ещё не опубликованы.</p>{% endif %}
+  {% if readiness.can_view_published %}<p><a href="{% url 'catalog-product' product_id=product.id %}">Открыть текущую опубликованную карточку</a></p>{% endif %}
+  <p>Перед публикацией данные будут проверены повторно. Готовность черновика не отменяет проверку доступа и свежего подтверждения личности.</p>
+</section>
 <section>
   <h2>Основное содержание</h2>
   <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_product">{{ product_form.as_p }}<button type="submit">Сохранить черновик</button></form>
@@ -48,7 +58,7 @@
 {% endif %}
 <section class="actions">
   <h2>Публикация</h2>
-  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="publish"><input type="hidden" name="expected_version" value="{{ product.draft_version }}"><button type="submit">Опубликовать</button></form>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="publish"><input type="hidden" name="expected_version" value="{{ product.draft_version }}"><button type="submit"{% if not readiness.ready %} disabled{% endif %}>Опубликовать</button></form>
   <form method="post">{% csrf_token %}<input type="hidden" name="action" value="withdraw_all"><button type="submit">Снять всю карточку</button></form>
 </section>
 {% if product.kind == "physical" %}

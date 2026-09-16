@@ -1,12 +1,13 @@
 from copy import deepcopy
 
+from open_marketplace.catalog.application import _publication_data
 from open_marketplace.catalog.common_cards import compose_common_cards
 
-from open_marketplace.catalog.domain import UNITS, price_label
-from open_marketplace.catalog.models import Category, Participant, Photo, Product, StorageLocation, Variant
+from open_marketplace.catalog.domain import UNITS, price_label, price_limited_variant, price_range
+from open_marketplace.catalog.models import Category, Participant, Photo, Product, SavedProduct, StorageLocation, Variant
 from open_marketplace.catalog.photos import photo_path
 from open_marketplace.catalog.policy import UNAVAILABLE, identifier, manager, owned_product, participant, seller
-from open_marketplace.common.errors import PermissionDenied
+from open_marketplace.common.errors import InputRejected, PermissionDenied
 from open_marketplace.identity.public import get_account_snapshot
 from open_marketplace.seller_onboarding.public import get_public_sellers
 
@@ -42,6 +43,52 @@ def get_own_product(*, product_id, context):
         "photos": [{"id": str(row.id), "width": row.width, "height": row.height, "available": photo_path(row.id).is_file()} for row in product.photos.order_by("created_at", "id")]}
 
 
+def get_publication_readiness(*, product_id, context):
+    product = owned_product(product_id, context)
+    variants = [row for row in product.variants.prefetch_related("stocks")
+                if not row.blocked and (row.state != "withdrawn" or row.restore_version == row.withdrawal_version)]
+    issues = []
+    changed = None
+    preview = None
+    if product.blocked:
+        issues.append("Карточка заблокирована. Публикация недоступна.")
+    elif product.kind == "digital":
+        issues.append("Цифровые карточки пока доступны только как черновики.")
+    else:
+        try:
+            content, published_variants = _publication_data(product)
+            changed = content != product.published or any(
+                row.state != "published" or data != row.published for row, data in published_variants)
+            category = Category.objects.prefetch_related("attributes").get(pk=content["category_id"])
+            labels = {attribute.key: attribute.label for attribute in category.attributes.all()}
+            preview = {**deepcopy(content), "id": str(product.id), "kind": product.kind,
+                "category": category.name, "unit_label": UNITS[product.unit],
+                "variants": [{**deepcopy(data), "id": str(row.id),
+                    "attribute_items": [{"label": labels.get(key, key), "value": value} for key, value in data["attributes"].items()],
+                    "price_label": price_label(row.price) if row.price is not None else "Цены берутся из предложений продавцов",
+                    "in_stock": any(stock.quantity is not None and stock.quantity > 0 for stock in row.stocks.all())}
+                    for row, data in published_variants]}
+        except InputRejected as exc:
+            issues.append(str(exc))
+    try:
+        get_product(product_id=product.id, context=context)
+        can_view_published = True
+    except PermissionDenied:
+        can_view_published = False
+    checks = [
+        {"label": "Название и описание", "complete": bool(product.draft.get("title") and product.draft.get("description"))},
+        {"label": "Действующая категория", "complete": Category.objects.filter(pk=product.draft.get("category_id"), active=True).exists()},
+        {"label": "Варианты с названиями", "complete": bool(variants) and all(row.draft.get("label") for row in variants)},
+        {"label": "Доступные фотографии вариантов", "complete": bool(variants) and all(
+            row.draft.get("photo_ids") and _available_photos(product, row.draft["photo_ids"]) == row.draft["photo_ids"] for row in variants)},
+        {"label": "Цена и остаток", "complete": bool(variants) and (product.kind == "common" or all(
+            row.price is not None and bool(row.stocks.all()) and all(stock.quantity is not None for stock in row.stocks.all()) for row in variants))},
+        {"label": "Все требования публикации", "complete": not issues},
+    ]
+    return {"ready": not issues, "issues": issues, "checks": checks,
+            "can_view_published": can_view_published, "has_unpublished_changes": changed, "preview": preview}
+
+
 def list_own_products(*, context):
     account = participant(context)
     if account.kind == "service":
@@ -50,8 +97,35 @@ def list_own_products(*, context):
     else:
         profile = seller(context)
         query = Product.objects.filter(owner_id=account.id, seller_id=profile.id)
-    return [{"id": str(row.id), "title": row.draft.get("title") or "Без названия", "kind": row.kind,
-             "published": row.published is not None, "blocked": row.blocked, "unit": UNITS[row.unit]} for row in query]
+    visible_ids = {row["id"] for row in public_products(context)}
+    result = []
+    for row in query.prefetch_related("variants__stocks"):
+        variants = list(row.variants.all())
+        active_variants = [variant for variant in variants if not variant.blocked and variant.state != "withdrawn"]
+        prices = [variant.price for variant in active_variants if variant.price is not None]
+        stocks = [stock.quantity for variant in active_variants for stock in variant.stocks.all()]
+        if row.blocked:
+            status = "Заблокирована"
+        elif row.published is None:
+            status = "Черновик"
+        elif variants and all(variant.state == "withdrawn" for variant in variants):
+            status = "Снята с продажи"
+        elif str(row.id) not in visible_ids:
+            status = "Не видна покупателям"
+        else:
+            status = "Опубликована"
+        if row.kind == "common":
+            amount, availability = "Цены продавцов", "Предложения продавцов"
+        else:
+            amount = price_label(min(prices), different=min(prices) != max(prices)) if prices else "Цена не указана"
+            availability = "В наличии" if any(value is not None and value > 0 for value in stocks) else (
+                "Нет в наличии" if stocks and all(value is not None for value in stocks) else "Остаток не заполнен")
+        result.append({"id": str(row.id), "title": row.draft.get("title") or "Без названия", "kind": row.kind,
+            "kind_label": {"physical": "Физический товар", "digital": "Цифровой черновик", "common": "Общая карточка"}[row.kind],
+            "published": row.published is not None, "blocked": row.blocked, "unit": UNITS[row.unit],
+            "status_label": status, "price_label": amount, "availability_label": availability,
+            "can_view_published": str(row.id) in visible_ids})
+    return result
 
 
 def list_common_cards(*, context):
@@ -125,37 +199,73 @@ def public_products(context):
             in_stock = any(row.quantity is not None and row.quantity > 0 for row in variant.stocks.all())
             offers = []
             if product.seller_id and variant.price is not None:
-                offers.append({"variant_id": str(variant.id), "product_id": str(product.id), "seller_name": sellers[str(product.seller_id)]["display_name"], "price": variant.price, "in_stock": in_stock})
+                offers.append({"variant_id": str(variant.id), "product_id": str(product.id), "seller_id": str(product.seller_id), "seller_name": sellers[str(product.seller_id)]["display_name"], "price": variant.price, "in_stock": in_stock})
             variants.append({"id": str(variant.id), "label": data["label"], "attributes": deepcopy(data["attributes"]),
                 "photo_ids": _available_photos(product, data["photo_ids"]), "price": variant.price,
                 "price_label": price_label(variant.price) if variant.price is not None else "Нет предложений", "in_stock": in_stock, "offers": offers})
         if not variants:
             continue
         cover = _available_photos(product, [content["cover_id"]]) if content.get("cover_id") else []
-        result.append({"id": str(product.id), "kind": product.kind, "title": content["title"], "description": content["description"],
+        result.append({"id": str(product.id), "kind": product.kind, "seller_id": str(product.seller_id) if product.seller_id else None,
+            "seller_name": sellers[str(product.seller_id)]["display_name"] if product.seller_id else None,
+            "title": content["title"], "description": content["description"],
             "category_id": content["category_id"], "category": categories[content["category_id"]], "attributes": deepcopy(content["attributes"]),
             "unit": product.unit, "unit_label": UNITS[product.unit], "cover_id": cover[0] if cover else None, "variants": variants})
     return compose_common_cards(result)
 
 
-def get_product(*, product_id, context, variant_id=None, filters=None, category_id=None, from_search=False):
+def product_summary(card):
+    in_stock_prices = [variant["price"] for variant in card["variants"] if variant["in_stock"] and variant["price"] is not None]
+    known_prices = [variant["price"] for variant in card["variants"] if variant["price"] is not None]
+    prices = in_stock_prices or known_prices
+    price = min(prices) if prices else None
+    return {
+        "id": card["id"], "title": card["title"], "category": card["category"], "cover_id": card["cover_id"],
+        "unit_label": card["unit_label"], "price": price, "price_label": price_label(price) if price is not None else "Цена не указана",
+        "in_stock": any(variant["in_stock"] for variant in card["variants"]),
+    }
+
+
+def get_seller_store(*, seller_id, context):
+    seller_id = str(identifier(seller_id))
+    cards = [card for card in public_products(context) if card["kind"] == "physical" and card.get("seller_id") == seller_id]
+    if not cards:
+        raise PermissionDenied(UNAVAILABLE)
+    sellers = get_public_sellers(seller_ids=(identifier(seller_id),))
+    if not sellers:
+        raise PermissionDenied(UNAVAILABLE)
+    return {"seller": {"id": seller_id, "display_name": sellers[0]["display_name"]}, "products": [product_summary(card) for card in cards]}
+
+
+def get_product(*, product_id, context, variant_id=None, filters=None, category_id=None, from_search=False, price_min=None, price_max=None):
     from open_marketplace.catalog.search import validate_filters
 
+    price_min, price_max = price_range(price_min, price_max)
     product_id = str(identifier(product_id))
     cards = public_products(context)
     filters, category_id, _ = validate_filters(cards=cards, categories=list_categories(context=context), filters=filters, category_id=category_id)
     product = next((row for row in cards if row["id"] == product_id), None)
     if product is None:
         raise PermissionDenied(UNAVAILABLE)
+    product["is_saved"] = SavedProduct.objects.filter(account_id=context.actor_account_id, product_id=product_id).exists()
     variants = product["variants"]
+    product["price_min"], product["price_max"] = price_min, price_max
+    priced = {row["id"]: price_limited_variant(row, price_min, price_max)
+              for row in variants if row["price"] is not None}
+    if price_min is not None or price_max is not None:
+        product["price_filter_message"] = "Показаны предложения в выбранном диапазоне цен. Доставка в цену не включена."
     selected = None
     if variant_id is not None:
         requested = str(identifier(variant_id))
         selected = next((row for row in variants if row["id"] == requested), None)
         if selected is None:
             product["selection_message"] = "Указанный вариант недоступен. Другой вариант не выбран автоматически."
+        elif priced.get(selected["id"]) is not None:
+            selected = priced[selected["id"]]
+        elif price_min is not None or price_max is not None:
+            product["selection_message"] = "Указанный вариант вне выбранного диапазона цен или не имеет подходящих предложений в наличии. Выбор сохранён."
     else:
-        matches = [row for row in variants if row["in_stock"] and row["price"] is not None
+        matches = [row for row in priced.values() if row is not None and row["in_stock"] and row["price"] is not None
             and (not from_search or not row.get("grouped"))
             and (category_id is None or product["category_id"] == category_id)
             and all(row["attributes"].get(key) in values for key, values in filters.items())]

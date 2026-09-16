@@ -88,6 +88,7 @@ urlpatterns = [
         seller_views.seller_application_create,
         name="seller-application-create",
     ),
+    path("seller/", seller_views.seller_start, name="seller-start"),
     path(
         "seller/applications/<uuid:application_id>/edit/",
         seller_views.seller_application_edit,

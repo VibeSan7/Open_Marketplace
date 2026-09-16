@@ -73,7 +73,7 @@ def _one(query, name, default=None):
 
 
 def _search_conditions(request, *, include_cursor=True):
-    allowed = {"q", "category", "fragment"}
+    allowed = {"q", "category", "fragment", "price_min", "price_max", "sort"}
     allowed.add("cursor" if include_cursor else "variant")
     if not include_cursor:
         allowed.add("from_search")
@@ -93,10 +93,14 @@ def _search_conditions(request, *, include_cursor=True):
                 raise ValueError("Имя фильтра не может быть пустым.")
             values = request.GET.getlist(key)
             filters[name] = values
-    return query, category_id, filters, cursor
+    minimum, maximum = _one(request.GET, "price_min"), _one(request.GET, "price_max")
+    sort = _one(request.GET, "sort", "relevance")
+    if sort not in {"relevance", "price_asc", "price_desc"}:
+        raise ValueError("Выберите поддерживаемый порядок сортировки.")
+    return query, category_id, filters, cursor, minimum, maximum, sort
 
 
-def _applied_url(request, *, query, category_id, filters, path=None):
+def _applied_url(request, *, query, category_id, filters, path=None, price_min=None, price_max=None, sort="relevance"):
     pairs = []
     if query != "":
         pairs.append(("q", query))
@@ -104,6 +108,11 @@ def _applied_url(request, *, query, category_id, filters, path=None):
         pairs.append(("category", category_id))
     for key in sorted(filters):
         pairs.extend((f"f.{key}", value) for value in filters[key])
+    for name, value in (("price_min", price_min), ("price_max", price_max)):
+        if value is not None:
+            pairs.append((name, str(value)))
+    if sort != "relevance":
+        pairs.append(("sort", sort))
     encoded = urlencode(pairs, doseq=True)
     return (path or request.path) + (f"?{encoded}" if encoded else "")
 
@@ -113,9 +122,13 @@ def _render_search(request, result, *, applied_url):
     if result["category_id"]:
         pairs.append(("category", result["category_id"]))
     pairs.extend((f"f.{key}", value) for key, values in result["filters"].items() for value in values)
+    budget = {name: result[name] for name in ("price_min", "price_max", "sort")}
+    pairs.extend((name, str(budget[name])) for name in ("price_min", "price_max") if budget[name] is not None)
+    if budget["sort"] != "relevance":
+        pairs.append(("sort", budget["sort"]))
     for item in result["items"]:
         item["url"] = reverse("catalog-product", kwargs={"product_id": item["id"]}) + "?" + urlencode(pairs + [("from_search", "1")])
-    suggestion_url = _applied_url(request, query=result["suggestion"], category_id=result["category_id"], filters=result["filters"]) if result["suggestion"] else None
+    suggestion_url = _applied_url(request, query=result["suggestion"], category_id=result["category_id"], filters=result["filters"], **budget) if result["suggestion"] else None
     context = {
         "suggestion_url": suggestion_url,
         "next_url": reverse("catalog-search") + "?" + urlencode(pairs + [("cursor", result["next_cursor"])]),
@@ -131,16 +144,18 @@ def _render_search(request, result, *, applied_url):
 @_login_required
 def catalog_search(request):
     try:
-        query, category_id, filters, cursor = _search_conditions(request)
+        query, category_id, filters, cursor, minimum, maximum, sort = _search_conditions(request)
         result = catalog_public.search_catalog(
             query=query,
             category_id=category_id,
             filters=filters,
             cursor=cursor,
+            price_min=minimum, price_max=maximum, sort=sort,
             context=_context(request),
         )
         return _render_search(request, result, applied_url=_applied_url(
             request, query=query, category_id=category_id, filters=filters,
+            price_min=result["price_min"], price_max=result["price_max"], sort=sort,
         ))
     except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
         return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
@@ -150,17 +165,19 @@ def catalog_search(request):
 @_login_required
 def catalog_product(request, *, product_id):
     try:
-        query, category_id, filters, _ = _search_conditions(request, include_cursor=False)
+        query, category_id, filters, _, minimum, maximum, sort = _search_conditions(request, include_cursor=False)
         variant_id = _one(request.GET, "variant")
         product = catalog_public.get_product(
             product_id=product_id,
             variant_id=variant_id,
             filters=filters,
             category_id=category_id,
-            from_search=_one(request.GET, "from_search") == "1" or bool(query or category_id or filters),
+            from_search=_one(request.GET, "from_search") == "1" or bool(query or category_id or filters or minimum or maximum),
+            price_min=minimum, price_max=maximum,
             context=_context(request),
         )
-        applied = _applied_url(request, query=query, category_id=category_id, filters=filters, path=reverse("catalog-search"))
+        applied = _applied_url(request, query=query, category_id=category_id, filters=filters, path=reverse("catalog-search"),
+            price_min=product["price_min"], price_max=product["price_max"], sort=sort)
         _, _, raw_query = applied.partition("?")
         for item in product["variants"]:
             params = [("variant", item["id"])]
@@ -168,6 +185,13 @@ def catalog_product(request, *, product_id):
                 from urllib.parse import parse_qsl
                 params = parse_qsl(raw_query, keep_blank_values=True) + params
             item["url"] = reverse("catalog-product", kwargs={"product_id": product["id"]}) + ("?" + urlencode(params, doseq=True) if params else "")
+            for offer in item["offers"]:
+                if offer.get("seller_id"):
+                    offer["seller_url"] = reverse("catalog-seller", kwargs={"seller_id": offer["seller_id"]})
+        product["save_url"] = reverse("catalog-save-product", kwargs={"product_id": product["id"]})
+        product["save_action"] = "remove" if product["is_saved"] else "save"
+        if product.get("seller_id"):
+            product["seller_url"] = reverse("catalog-seller", kwargs={"seller_id": product["seller_id"]})
         selected_id = product.get("selected_variant_id")
         share_url = next((item["url"] for item in product["variants"] if item["id"] == selected_id), request.build_absolute_uri())
         return _catalog_render(request, "catalog/product.html", {
@@ -176,6 +200,45 @@ def catalog_product(request, *, product_id):
             "query": query,
             "share_url": share_url,
         })
+    except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
+        return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
+
+
+@require_http_methods(["GET"])
+@_login_required
+def saved_products(request):
+    try:
+        products = catalog_public.list_saved_products(context=_context(request))
+        for product in products:
+            product["url"] = reverse("catalog-product", kwargs={"product_id": product["id"]})
+            product["save_url"] = reverse("catalog-save-product", kwargs={"product_id": product["id"]})
+        return _catalog_render(request, "catalog/saved.html", {"products": products})
+    except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
+        return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
+
+
+@require_http_methods(["POST"])
+@_login_required
+def save_product(request, *, product_id):
+    actions = request.POST.getlist("action")
+    unknown = set(request.POST) - {"action", "csrfmiddlewaretoken"}
+    if len(actions) != 1 or unknown or actions[0] not in {"save", "remove"}:
+        return _error(request, "Форма избранного заполнена неверно.")
+    try:
+        catalog_public.set_saved_product(product_id=product_id, saved=actions[0] == "save", context=_context(request))
+        return _redirect_303(reverse("catalog-saved"))
+    except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
+        return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
+
+
+@require_http_methods(["GET"])
+@_login_required
+def seller_store(request, *, seller_id):
+    try:
+        store = catalog_public.get_seller_store(seller_id=seller_id, context=_context(request))
+        for product in store["products"]:
+            product["url"] = reverse("catalog-product", kwargs={"product_id": product["id"]})
+        return _catalog_render(request, "catalog/seller.html", {"store": store})
     except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
         return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
 
@@ -258,6 +321,7 @@ def _editor_context(request, product, categories, *, forms=None, message=None):
         })
     return {
         "product": product,
+        "readiness": catalog_public.get_publication_readiness(product_id=product["id"], context=_context(request)),
         "categories": categories,
         "product_form": product_form,
         "variants": variants,
@@ -294,6 +358,18 @@ def own_products(request):
         matches = catalog_public.list_match_requests(context=_context(request), own=True) if own else []
         suggestions = catalog_public.list_suggestions(context=_context(request), own=True) if own else []
         return _catalog_render(request, "catalog/own.html", {"products": products, "matches": matches, "suggestions": suggestions})
+    except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
+        return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
+
+
+@require_http_methods(["GET"])
+@_login_required
+def own_product_preview(request, *, product_id):
+    try:
+        readiness = catalog_public.get_publication_readiness(product_id=product_id, context=_context(request))
+        if not readiness["ready"]:
+            return _error(request, "Предпросмотр пока недоступен. " + " ".join(readiness["issues"]))
+        return _catalog_render(request, "catalog/preview.html", {"product": readiness["preview"]})
     except (ApplicationError, ObjectDoesNotExist, ValueError) as error:
         return _application_error(request, error if isinstance(error, ApplicationError) else ApplicationError(str(error)))
 

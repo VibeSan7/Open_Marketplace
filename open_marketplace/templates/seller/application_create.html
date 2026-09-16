@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Seller application{% endblock %}
+{% block title %}Заявка продавца{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Seller application</h1>
-<p>Start a seller application.</p>
+<h1>Заявка продавца</h1>
+<p>Начните заявку, если готовы работать только с тестовыми данными.</p>
 <form method="post">
   {% csrf_token %}
-  <button type="submit">Start application</button>
+  <button type="submit">Начать заявку</button>
 </form>
 {% endblock %}

@@ -278,7 +278,7 @@ class FullFlowTests(TestCase):
         ):
             self.assertEqual(client.get(link).status_code, 303)
             response = self._csrf_post(client, "verify-email-complete")
-        self.assertContains(response, "Unable to complete this request.")
+        self.assertContains(response, "Не удалось выполнить этот запрос.")
 
         email = f"reused-{uuid4().hex}@example.com"
         link = self._register(email)
@@ -287,7 +287,7 @@ class FullFlowTests(TestCase):
         replay = Client(enforce_csrf_checks=True)
         self.assertEqual(replay.get(link).status_code, 303)
         replay_response = self._csrf_post(replay, "verify-email-complete")
-        self.assertContains(replay_response, "Unable to complete this request.")
+        self.assertContains(replay_response, "Не удалось выполнить этот запрос.")
 
     def test_password_reset_revokes_previous_sessions(self):
         email = f"reset-{uuid4().hex}@example.com"
@@ -300,7 +300,7 @@ class FullFlowTests(TestCase):
         reset = Client(enforce_csrf_checks=True)
         self.assertEqual(reset.get(link).status_code, 303)
         response = self._csrf_post(reset, "password-reset-confirm", {"new_password": self.new_password})
-        self.assertContains(response, "Password reset completed.")
+        self.assertContains(response, "Пароль изменён.")
 
         self.assertEqual(first.get(reverse("security")).status_code, 303)
         self.assertEqual(second.get(reverse("security")).status_code, 303)
@@ -492,9 +492,9 @@ class FullFlowTests(TestCase):
         self._login_staff(reviewer)
         profile = self._approve_application(owner, reviewer["client"], application_id)
         self._admin_post(admin["client"], "admin:seller-profile-suspend", {"reason": "Risk review."}, kwargs={"seller_id": profile.id})
-        self.assertContains(owner.get(reverse("seller-status")), "suspended")
+        self.assertContains(owner.get(reverse("seller-status")), "приостановлен")
         self._admin_post(admin["client"], "admin:seller-profile-restore", {"reason": "Risk cleared."}, kwargs={"seller_id": profile.id})
-        self.assertContains(owner.get(reverse("seller-status")), "active")
+        self.assertContains(owner.get(reverse("seller-status")), "активен")
         self.assertEqual(identity_public.get_account_snapshot(owner_id).state, "active")
 
     def test_forbidden_staff_operation_is_denied_and_audited(self):

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Новый тестовый заказ — Open Marketplace{% endblock %}
+{% block content %}
+<section class="form-page">
+  <span class="eyebrow">Демонстрация заказа</span>
+  <h1>Проверка заказа</h1>
+  <p class="notice"><strong>Тестовый заказ — реальные деньги не списываются.</strong> Платёж, доставка и выдача здесь только симулируются.</p>
+  {% include "demo_orders/_offer.html" %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      {% if field.is_hidden %}{{ field }}{{ field.errors }}{% else %}
+      {{ field.errors }}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+      {% endif %}
+    {% endfor %}
+    <button type="submit">Создать тестовый заказ</button>
+  </form>
+</section>
+{% endblock %}

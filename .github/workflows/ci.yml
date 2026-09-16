@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Only trusted numeric run IDs enter shell variables; no deployment credentials or PR text are used.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: omp-readiness-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      DATABASE_NAME: omp_readiness_ci_${{ github.run_id }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+
+      - name: Generate disposable environment
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          import secrets as secret_factory
+          from pathlib import Path
+
+          keys = {
+              "DJANGO_SECRET_KEY": secret_factory.token_urlsafe(48),
+              "DATABASE_PASSWORD": secret_factory.token_urlsafe(32),
+              "TOTP_ENCRYPTION_KEY": base64.urlsafe_b64encode(secret_factory.token_bytes(32)).decode("ascii"),
+              "OUTBOX_ENCRYPTION_KEY": base64.urlsafe_b64encode(secret_factory.token_bytes(32)).decode("ascii"),
+              "LINK_EXCHANGE_ENCRYPTION_KEY": base64.urlsafe_b64encode(secret_factory.token_bytes(32)).decode("ascii"),
+              "THROTTLE_HASH_KEY": base64.urlsafe_b64encode(secret_factory.token_bytes(32)).decode("ascii"),
+          }
+          source = Path(".env.example").read_text(encoding="utf-8").splitlines()
+          rendered = []
+          for line in source:
+              name, separator, _ = line.partition("=")
+              rendered.append(f"{name}={keys[name]}" if separator and name in keys else line)
+          descriptor = os.open(".env", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+          with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
+              output.write("\n".join(rendered) + "\n")
+          PY
+
+      - name: Validate Compose configuration
+        run: docker compose -f compose.yaml -f compose.test.yaml config --quiet
+
+      - name: Build the test image
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml build test
+
+      - name: Start disposable database and mail services
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml up -d --wait postgres-test mailpit
+
+      - name: Check Django configuration
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml run --rm --no-deps -T -e DATABASE_NAME="$DATABASE_NAME" test python manage.py check
+
+      - name: Check migrations
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml run --rm --no-deps -T -e DATABASE_NAME="$DATABASE_NAME" test python manage.py makemigrations --check --dry-run
+
+      - name: Check import boundaries
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml run --rm --no-deps -T -e DATABASE_NAME="$DATABASE_NAME" test lint-imports --no-cache
+
+      - name: Prepare the local semantic-search model
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml run --rm --no-deps -T -e DATABASE_NAME="$DATABASE_NAME" test python manage.py prepare_catalog_search
+
+      - name: Run Django, browser, and semantic tests
+        run: docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml run --rm -T -e DATABASE_NAME="$DATABASE_NAME" test python manage.py test open_marketplace --noinput --verbosity 1
+
+      - name: Validate and run the disposable restore proof
+        run: |
+          bash -n ops/verify_restore.sh
+          bash ops/verify_restore.sh
+
+      - name: Remove disposable CI resources and safe result
+        if: always()
+        run: |
+          docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f compose.test.yaml down --volumes --remove-orphans
+          rm -f -- .env artifacts/restore-result.txt

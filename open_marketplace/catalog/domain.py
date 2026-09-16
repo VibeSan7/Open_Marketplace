@@ -43,6 +43,33 @@ def stock_value(raw, unit, *, allow_empty=False):
     return _decimal_value(raw, 0 if unit == "pc" else 3, allow_empty=allow_empty)
 
 
+def price_range(minimum, maximum):
+    minimum = price_value(minimum, allow_empty=True)
+    maximum = price_value(maximum, allow_empty=True)
+    if minimum is not None and maximum is not None and minimum > maximum:
+        raise InputRejected("Минимальная цена не должна превышать максимальную.")
+    return minimum, maximum
+
+
+def price_limited_variant(variant, minimum, maximum):
+    if minimum is None and maximum is None:
+        return variant
+    if variant["offers"]:
+        offers = [offer for offer in variant["offers"] if offer["in_stock"]
+                  and (minimum is None or offer["price"] >= minimum)
+                  and (maximum is None or offer["price"] <= maximum)]
+        if not offers:
+            return None
+        prices = {offer["price"] for offer in offers}
+        price = min(prices)
+        return {**variant, "offers": offers, "price": price,
+                "price_label": price_label(price, different=len(prices) > 1)}
+    if ((minimum is not None and variant["price"] < minimum)
+            or (maximum is not None and variant["price"] > maximum)):
+        return None
+    return variant
+
+
 def price_label(value, *, different=False):
     if value == 0 and not different:
         return "Бесплатно"

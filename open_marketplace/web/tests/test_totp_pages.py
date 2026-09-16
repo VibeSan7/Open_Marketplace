@@ -113,7 +113,7 @@ class TotpPageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, setup.manual_secret)
-        self.assertContains(response, "Recovery codes")
+        self.assertContains(response, "Резервные коды")
         codes = tuple(response.context["recovery_codes"])
         self.assertEqual(len(codes), 10)
         self.assertEqual(RecoveryCode.objects.filter(account=self.account).count(), 10)

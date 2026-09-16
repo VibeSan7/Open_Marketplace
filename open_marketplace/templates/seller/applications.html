@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Seller applications{% endblock %}
+{% block title %}Заявки продавца{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Seller applications</h1>
+<h1>Заявки продавца</h1>
 {% for application in applications %}
   <article>
-    <p>State: {{ application.state }}</p>
-    {% if application.reason %}<p>Reason: {{ application.reason }}</p>{% endif %}
-    <a href="{% url 'seller-application-detail' application_id=application.id %}">View application</a>
+    <p>Статус: {% if application.state == "draft" %}черновик{% elif application.state == "submitted" %}отправлена{% elif application.state == "under_review" %}на проверке{% elif application.state == "changes_requested" %}нужны изменения{% elif application.state == "approved" %}одобрена{% elif application.state == "rejected" %}отклонена{% elif application.state == "withdrawn" %}отозвана{% endif %}</p>
+    {% if application.reason %}<p>Причина: {{ application.reason }}</p>{% endif %}
+    <a href="{% url 'seller-application-detail' application_id=application.id %}">Открыть заявку</a>
   </article>
 {% empty %}
-  <p>No applications.</p>
+  <p>Заявок пока нет.</p>
 {% endfor %}
 {% endblock %}
