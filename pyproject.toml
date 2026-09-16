@@ -36,6 +36,7 @@ forbidden_modules = [
   "open_marketplace.seller_onboarding",
   "open_marketplace.audit",
   "open_marketplace.outbox",
+  "open_marketplace.commerce",
 ]
 
 [[tool.importlinter.contracts]]
@@ -85,6 +86,7 @@ forbidden_modules = [
   "open_marketplace.web",
   "open_marketplace.staff_admin",
   "open_marketplace.verification",
+  "open_marketplace.commerce",
 ]
 
 [[tool.importlinter.contracts]]
@@ -150,5 +152,27 @@ protected_modules = [
   "open_marketplace.catalog.photos",
   "open_marketplace.catalog.domain",
   "open_marketplace.catalog.semantic",
+  "open_marketplace.catalog.reservations",
 ]
 allowed_importers = ["open_marketplace.catalog"]
+
+[[tool.importlinter.contracts]]
+name = "Payment provider transport is internal"
+type = "protected"
+protected_modules = ["open_marketplace.payments.tbank"]
+allowed_importers = ["open_marketplace.payments"]
+
+[[tool.importlinter.contracts]]
+name = "Shipping provider transport is internal"
+type = "protected"
+protected_modules = ["open_marketplace.shipping.cdek"]
+allowed_importers = ["open_marketplace.shipping"]
+
+[[tool.importlinter.contracts]]
+name = "Commerce internals are protected"
+type = "protected"
+protected_modules = [
+  "open_marketplace.commerce.models",
+  "open_marketplace.commerce.services",
+]
+allowed_importers = ["open_marketplace.commerce"]

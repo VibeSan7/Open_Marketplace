@@ -202,7 +202,7 @@ The [v0.4.0 final report](docs/releases/v0.4.0-verification.md) records the resu
 - Local HTTP uses non-secure cookies. Settings for secure HTTPS cookies exist, but do not enable them without HTTPS: the browser would be unable to sign in over plain HTTP.
 - Approximate search uses a local multilingual model, but relevance can be wrong. It does not merge products automatically or bypass filters, stock checks, or access rules.
 - A photo uploader's authenticity declaration is not an automated verification of the photo's origin.
-- There is no real purchasing, real inventory reservation, delivery cost calculation, or digital file delivery. Demonstration orders use separate simulated balances; no bank cards or payment providers are connected.
+- There is no live purchasing, delivery cost calculation, or digital file delivery. The local commerce foundation persists real PostgreSQL reservations, immutable orders, and a payment ledger, but it makes no provider calls. Demonstration checkout remains separate; no bank cards or payment providers are connected.
 
 ## Documents and modules
 
@@ -213,4 +213,4 @@ The [v0.4.0 final report](docs/releases/v0.4.0-verification.md) records the resu
 - [Completed first phase: identity and access](docs/security/phase-1-review.md).
 - [Code-use and licence status](docs/code-use-status.md).
 
-The domain modules `identity`, `access`, `seller_onboarding`, `catalog`, `audit`, and `outbox` interact through `public.py`. `web` and `staff_admin` provide the pages; `verification` checks test-database restoration and provides the separate synthetic-content import.
+The domain modules `identity`, `access`, `seller_onboarding`, `catalog`, `commerce`, `audit`, and `outbox` interact through `public.py`. `web` and `staff_admin` provide the pages; `verification` checks test-database restoration and provides the separate synthetic-content import.

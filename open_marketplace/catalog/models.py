@@ -111,13 +111,49 @@ class Stock(models.Model):
     variant = models.ForeignKey(Variant, on_delete=models.PROTECT, related_name="stocks")
     location = models.ForeignKey(StorageLocation, on_delete=models.PROTECT, related_name="stocks")
     quantity = models.DecimalField(max_digits=19, decimal_places=3, null=True)
+    reserved_quantity = models.DecimalField(max_digits=19, decimal_places=3, default=0)
     version = models.PositiveIntegerField(default=0)
+
+    @property
+    def available_quantity(self):
+        return None if self.quantity is None else self.quantity - self.reserved_quantity
 
     class Meta:
         ordering = ("location__name", "id")
         constraints = [
             models.UniqueConstraint(fields=("variant", "location"), name="catalog_one_stock_per_location"),
             models.CheckConstraint(condition=(models.Q(quantity__isnull=True) | models.Q(quantity__gte=0)), name="catalog_stock_nonnegative"),
+            models.CheckConstraint(
+                condition=models.Q(reserved_quantity__gte=0) & (
+                    models.Q(quantity__isnull=True, reserved_quantity=0)
+                    | models.Q(quantity__isnull=False, reserved_quantity__lte=models.F("quantity"))
+                ),
+                name="catalog_stock_reserve_valid",
+            ),
+        ]
+
+
+class InventoryReservation(models.Model):
+    id = models.UUIDField(primary_key=True)
+    buyer_id = models.UUIDField(db_index=True)
+    request = models.JSONField()
+    lines = models.JSONField(default=list)
+    state = models.CharField(max_length=12, default="held", choices=(("held", "В резерве"), ("committed", "Продано"), ("released", "Резерв снят")))
+    created_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(state__in=("held", "committed", "released")), name="catalog_reservation_state_valid")]
+
+
+class InventoryAllocation(models.Model):
+    reservation = models.ForeignKey(InventoryReservation, on_delete=models.PROTECT, related_name="allocations")
+    stock = models.ForeignKey(Stock, on_delete=models.PROTECT, related_name="allocations")
+    quantity = models.DecimalField(max_digits=19, decimal_places=3)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("reservation", "stock"), name="catalog_reservation_stock_unique"),
+            models.CheckConstraint(condition=models.Q(quantity__gt=0), name="catalog_allocation_positive"),
         ]
 
 

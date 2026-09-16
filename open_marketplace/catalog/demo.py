@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 
-from django.db.models import Sum
+from django.db.models import F, Sum
 
 from open_marketplace.catalog.models import Participant, Product, Stock, Variant
 from open_marketplace.catalog.policy import buyer
@@ -41,7 +41,7 @@ def get_demo_offer_snapshot(*, variant_id, context, lock=False):
     sellers = get_public_sellers(seller_ids=(product.seller_id,))
     if not sellers or variant.price is None:
         raise PermissionDenied("Заказ недоступен.")
-    quantity = Stock.objects.filter(variant_id=variant.id, quantity__gt=0).aggregate(total=Sum("quantity"))["total"]
+    quantity = Stock.objects.filter(variant_id=variant.id, quantity__gt=F("reserved_quantity")).aggregate(total=Sum(F("quantity") - F("reserved_quantity")))["total"]
     if quantity is None:
         raise PermissionDenied("Заказ недоступен.")
     return {

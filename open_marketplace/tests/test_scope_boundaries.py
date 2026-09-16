@@ -309,7 +309,7 @@ class ScopeBoundaryTests(SimpleTestCase):
                 metadata = " ".join(
                     (model._meta.label_lower, model.__module__)
                 ).casefold()
-                # Isolated demo orders and carts are allowed, not real commerce.
+                # Explicit demo models remain separate from the real inventory slice.
                 allowed_simulation = model._meta.label_lower in {
                     "demo_orders.demoinventory",
                     "demo_orders.demoorder",
@@ -318,7 +318,29 @@ class ScopeBoundaryTests(SimpleTestCase):
                     "demo_orders.cartitem",
                     "demo_orders.cartcheckoutreceipt",
                 } and model.__module__ == "open_marketplace.demo_orders.models"
-                if not allowed_simulation:
+                inventory_fields = {
+                    "catalog.inventoryreservation": {"id", "buyer_id", "request", "lines", "state", "created_at"},
+                    "catalog.inventoryallocation": {"id", "reservation", "stock", "quantity"},
+                }
+                allowed_inventory = (
+                    model._meta.label_lower in inventory_fields
+                    and model.__module__ == "open_marketplace.catalog.models"
+                )
+                commerce_fields = {
+                    "commerce.commerceorder": {"id", "intent_id", "reservation_id", "buyer_id", "lines", "total", "currency", "state", "created_at", "updated_at"},
+                    "commerce.commerceorderevent": {"id", "order", "state", "action", "actor_id", "occurred_at"},
+                    "commerce.paymentintent": {"id", "order", "provider", "provider_order_id", "deal_id", "payment_id", "amount_kopecks", "currency", "state", "created_at", "updated_at"},
+                    "commerce.paymentevent": {"id", "payment", "fingerprint", "provider_status", "amount_kopecks", "payload", "received_at"},
+                }
+                allowed_commerce = (
+                    model._meta.label_lower in commerce_fields
+                    and model.__module__ == "open_marketplace.commerce.models"
+                )
+                if allowed_inventory:
+                    self.assertEqual({field.name for field in model._meta.fields}, inventory_fields[model._meta.label_lower])
+                if allowed_commerce:
+                    self.assertEqual({field.name for field in model._meta.fields}, commerce_fields[model._meta.label_lower])
+                if not (allowed_simulation or allowed_inventory or allowed_commerce):
                     self.assertFalse(
                         any(marker in metadata for marker in FORBIDDEN_MODEL_MARKERS)
                     )

@@ -71,7 +71,7 @@ def get_publication_readiness(*, product_id, context):
                 "variants": [{**deepcopy(data), "id": str(row.id),
                     "attribute_items": [{"label": labels.get(key, key), "value": value} for key, value in data["attributes"].items()],
                     "price_label": price_label(row.price) if row.price is not None else "Цены берутся из предложений продавцов",
-                    "in_stock": any(stock.quantity is not None and stock.quantity > 0 for stock in row.stocks.all())}
+                    "in_stock": any(stock.available_quantity is not None and stock.available_quantity > 0 for stock in row.stocks.all())}
                     for row, data in published_variants]}
         except InputRejected as exc:
             issues.append(str(exc))
@@ -108,7 +108,7 @@ def list_own_products(*, context):
         variants = list(row.variants.all())
         active_variants = [variant for variant in variants if not variant.blocked and variant.state != "withdrawn"]
         prices = [variant.price for variant in active_variants if variant.price is not None]
-        stocks = [stock.quantity for variant in active_variants for stock in variant.stocks.all()]
+        stocks = [stock.available_quantity for variant in active_variants for stock in variant.stocks.all()]
         if row.blocked:
             status = "Заблокирована"
         elif row.published is None:
@@ -204,7 +204,7 @@ def public_products(context):
             if variant.state != "published" or variant.blocked or variant.published is None:
                 continue
             data = variant.published
-            in_stock = any(row.quantity is not None and row.quantity > 0 for row in variant.stocks.all())
+            in_stock = any(row.available_quantity is not None and row.available_quantity > 0 for row in variant.stocks.all())
             offers = []
             if product.seller_id and variant.price is not None:
                 offers.append({"variant_id": str(variant.id), "product_id": str(product.id), "seller_id": str(product.seller_id), "seller_name": sellers[str(product.seller_id)]["display_name"], "price": variant.price, "in_stock": in_stock})
