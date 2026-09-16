@@ -2,7 +2,7 @@
 
 Optional synthetic content: 24 illustrated products, 48 variants, 6 categories and 3 fictional stores. Images have individual [credits and licenses](../demo-image-credits.md); names, prices and configurations are educational. There are no fabricated reviews, sales, discounts or ratings, real payments or shipments.
 
-Complete the ordinary [README installation](../../README.en.md), including migrations and search preparation. Then run:
+Complete the ordinary [README installation](../../README.md), including migrations and search preparation. Then run:
 
 ```bash
 docker compose run --rm -e DEMO_CONTENT_ENABLED=true web python manage.py seed_demo_storefront --confirm-demo

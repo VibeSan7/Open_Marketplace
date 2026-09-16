@@ -1,1594 +1,1594 @@
-# Протокол концепции открытой торговой платформы
+# Open Marketplace Concept Protocol
 
-**Статус:** рабочий протокол продуктовой идеи, не финальная спецификация и не план разработки  
-**Зафиксировано:** 31 августа 2026 года  
-**Назначение:** сохранить решения текущего обсуждения, отделить их от предложений и перечислить вопросы, которые ещё нужно решить.
+**Status:** working product-idea protocol, not a final specification or development plan\
+**Recorded:** 31 August 2026\
+**Purpose:** preserve the decisions from the current discussion, separate them from proposals, and list the questions that still need to be resolved.
 
-**Рабочее название проекта:** Open Marketplace. Оно используется исключительно внутри проекта для обозначения концепции и не должно подаваться как публичный бренд или финальное название продукта.
+**Working project name:** Open Marketplace. It is used exclusively inside the project to designate the concept and must not be presented as the public brand or final product name.
 
-## Обозначения
+## Definitions
 
-- **Утверждено** — решение принято Владиславом.
-- **Рабочая гипотеза** — рекомендуемое направление, которое ещё можно изменить.
-- **Открытый вопрос** — решение пока не принято или требует исследования.
-
----
-
-## 1. Краткое описание продукта
-
-Создаётся российская торговая платформа для независимых продавцов и покупателей. Она объединяет:
-
-1. общий маркетплейс с каталогом, поиском и защищённой покупкой;
-2. индивидуальные бренд-витрины продавцов;
-3. переносимые данные продавца через открытые форматы и документированный API;
-4. AI-инструменты для оформления магазина, создания товарных карточек, изображений и видео;
-5. контроль качества продавцов, разрешение споров и защищённую выплату через платёжного партнёра.
-
-Главная идея — совместить свободу продавца с ответственностью площадки перед покупателем.
-
-### Утверждённое публичное позиционирование
-
-> **Маркетплейс с собственными бренд-витринами продавцов и защищёнными сделками.**
-
-Это главное сообщение для первого знакомства с продуктом. AI-дизайнер, переносимость данных, открытый API и комиссия до 10% объясняются как следующие преимущества, а не смешиваются в одну перегруженную формулировку.
-
-**Рабочий слоган:** «Свобода продавцу. Защита покупателю».
-
-Слоган пока не утверждён как название или рекламная формулировка.
-
-### Утверждено: архитектура публичного бренда
-
-Публичное название должно быть коротким, нейтральным и запоминающимся. Оно не обязано одновременно и буквально содержать все свойства продукта.
-
-Три главных смысла раскрываются слоганом, описанием и презентацией:
-
-1. доверие и защищённая покупка;
-2. свобода и индивидуальность продавца;
-3. открытые форматы данных и документированный API.
-
-Само публичное название ещё не выбрано. Утверждён тип названия: одно существующее английское или международно понятное слово, а не искусственно созданное слово и не описательная фраза. Оно должно без затруднений произноситься русскоязычным пользователем.
-
-Перед утверждением кандидаты нужно проверить на понятность, произношение, нежелательные значения, домены, совпадения с существующими сервисами и возможность правовой охраны товарного знака.
-
-**Отложено:** Владислав решил вернуться к публичному названию позже. Смысловое поле и конкретные кандидаты пока не выбираются; Open Marketplace остаётся только внутренним рабочим названием.
+- **Approved** — a decision made by Vladislav.
+- **Working hypothesis** — a recommended direction that can still be changed.
+- **Open question** — a decision has not yet been made or requires research.
 
 ---
 
-## 2. Терминология и граница открытости
+## 1. Brief Product Description
 
-### Утверждено
+A Russian marketplace is being created for independent sellers and buyers. It combines:
 
-Исходный код официального сервиса остаётся закрытым. Открытыми становятся форматы данных и API.
+1. a common marketplace with a catalog, search, and protected purchasing;
+2. individual branded seller storefronts;
+3. portable seller data through open formats and a documented API;
+4. AI tools for designing a store and creating product cards, images, and video;
+5. seller quality control, dispute resolution, and protected payouts through a payment partner.
 
-Поэтому продукт нельзя называть **Open Source Marketplace**: термин *open source* означает открытый программный код, распространяемый по открытой лицензии.
+The central idea is to combine seller freedom with the platform's responsibility to the buyer.
 
-Корректное рабочее определение:
+### Approved Public Positioning
 
-> **Открытая торговая платформа — закрытый сервис с открытыми форматами данных и документированным API.**
+> **A marketplace with sellers' own branded storefronts and protected transactions.**
 
-API — документированный интерфейс, через который другие программы могут безопасно обмениваться данными с платформой.
+This is the main message for a first introduction to the product. The AI designer, data portability, open API, and commission of up to 10% are explained as subsequent benefits rather than being mixed into one overloaded statement.
 
-### Публичная часть
+**Working slogan:** “Freedom for the seller. Protection for the buyer.”
 
-Планируется открыть:
+The slogan has not yet been approved as a name or advertising statement.
 
-- формат профиля продавца;
-- формат каталога и товарной карточки;
-- формат вариантов товара;
-- формат остатков;
-- формат характеристик и медиа;
-- правила импорта и экспорта;
-- описание API и событий;
-- наборы инструментов для интеграций;
-- историю версий формата.
+### Approved: Public Brand Architecture
 
-### Объём API на первом публичном запуске
+The public name must be short, neutral, and memorable. It does not have to literally contain all of the product's properties at the same time.
 
-К первому публичному запуску API должен поддерживать три уровня:
+The three main meanings are conveyed through the slogan, description, and presentation:
 
-1. чтение разрешённой публичной части каталога;
-2. импорт, экспорт и синхронизацию данных продавца, включая каталог, цены и остатки;
-3. создание сторонним сайтом безопасной ссылки, которая переводит покупателя на защищённое оформление заказа внутри интерфейса платформы.
+1. trust and protected purchasing;
+2. seller freedom and individuality;
+3. open data formats and a documented API.
 
-Сторонний сайт не определяет доверенные цену, остаток и итоговую сумму: перед оплатой платформа повторно получает их из собственной достоверной версии данных и показывает покупателю.
+The public name itself has not yet been chosen. The type of name has been approved: one existing English or internationally understandable word, rather than a coined word or a descriptive phrase. It must be easy for a Russian-speaking user to pronounce.
 
-Полное создание заказов и управление их жизненным циклом, включая исполнение, отмены и возвраты, через сторонний API не входит в первый публичный запуск. Этот уровень проектируется после успешного пилота как отдельный критичный канал с собственной проверкой безопасности и прав доступа.
+Before approval, candidates must be checked for comprehensibility, pronunciation, undesirable meanings, domains, matches with existing services, and the possibility of legal trademark protection.
 
-### Бесплатный базовый API и платные уровни
-
-Документация, машинные схемы, тестовая среда, чтение разрешённой публичной части каталога, создание безопасных ссылок на оформление заказа и работа продавца с собственными переносимыми данными доступны через API бесплатно в разумных безопасных пределах. Полный ручной экспорт собственных переносимых данных остаётся бесплатным независимо от API-тарифа.
-
-Платными могут быть повышенная частота и объём запросов, управляемые коннекторы, очень частая синхронизация, расширенные мониторинг и история операций, а также гарантированный уровень доступности и поддержки. Точные лимиты и цены определяются после измерения нагрузки и стоимости; они не должны превращать получение собственных данных в платный выход из платформы.
-
-Каждое стороннее приложение подключается к продавцу отдельно. Перед подключением продавец видит идентичность приложения и точный набор запрашиваемых прав, например чтение каталога, изменение цен, изменение остатков или получение событий, и явно подтверждает их. Расширение критичных прав требует нового подтверждения. Приложению не передаётся пароль кабинета, и один общий бессрочный ключ не используется для разных интеграций. Продавец видит журнал действий каждого приложения и может немедленно отозвать только его доступ без смены пароля и отключения остальных подключений. Точный технический протокол определяется на этапе архитектуры.
-
-Продавец может создать частную интеграцию только для собственного аккаунта без обязательной ручной очереди площадки, сохраняя общие ограничения прав, лимитов и журналирования. Приложение, которое разработчик предлагает для подключения нескольким независимым продавцам, должно зарегистрироваться и пройти проверку безопасности и соблюдения правил до публичного распространения. Допуск одного приложения не даёт ему прав без отдельного согласия каждого продавца и может быть приостановлен при подтверждённом риске.
-
-Перед допуском приложения для нескольких продавцов площадка проверяет личность и рабочие контакты разработчика, состав и необходимость запрашиваемых прав, техническую безопасность подключения, заявленные правила хранения, передачи и удаления данных, политику приватности, канал поддержки и порядок сообщения об инцидентах. Критичное расширение прав требует повторной проверки. Передача всего исходного кода не является единым обязательным условием для каждого приложения, но при повышенном риске площадка может запросить дополнительные проверяемые материалы и испытания. Допуск подтверждает прохождение опубликованного минимального контроля, но не является гарантией качества бизнеса разработчика.
-
-При правдоподобном инциденте безопасности площадка немедленно ограничивает затронутые права или отключает приложение, если сохранение доступа создаёт существенный риск. Она сохраняет журналы и доказательства, отзывает скомпрометированный доступ, уведомляет разработчика и затронутых продавцов и проводит проверку. Подключение восстанавливается только после подтверждённого исправления и необходимой повторной проверки. Разработчик может обжаловать решение, но обжалование не задерживает срочную защиту пользователей. Первое сообщение само по себе не означает окончательного удаления приложения без проверки.
-
-После допуска приложение остаётся под постоянным автоматическим контролем. Повторная проверка обязательна при критичном расширении прав, смене владельца или существенной смене инфраструктуры, значимом изменении правил хранения, передачи или удаления данных, подтверждённом инциденте либо появлении нового существенного риска. Высокорисковые приложения дополнительно проходят плановую периодическую проверку. Период и критерии риска устанавливаются до запуска на основании модели угроз и эксплуатационных данных.
-
-Минимальные права чтения действуют до отзыва продавцом при постоянной видимости подключения и прекращаются после заранее установленного длительного периода неактивности. Права изменять цены, остатки и другие доверенные данные ограничиваются сроком и требуют периодического явного повторного подтверждения продавца. Отсутствие повторного подтверждения прекращает только истёкшие права приложения и не передаёт контроль разработчику или поддержке. Точные сроки устанавливаются до запуска по уровню риска и данным эксплуатации.
-
-Площадка публикует единую матрицу риска прав: для каждого доступного действия указываются уровень риска, срок действия и необходимость повторного подтверждения. Одинаковые права получают одинаковые правила для сопоставимых интеграций. Матрицу утверждают ответственные за безопасность и продукт, а пересматривают на основании инцидентов, новых угроз и данных эксплуатации. Разработчик приложения, продавец или отдельный сотрудник не может единолично занизить критичность права.
-
-Первая публичная версия API разрешает читать открытый каталог и, после отдельного согласия продавца, управлять только его собственными карточками, ценами и остатками. Она не предоставляет сторонним приложениям доступ к платежам, эскроу, спорам, документам личности и личным сообщениям. Расширение API на эти области требует отдельного продуктового решения, модели угроз, правовой проверки и нового согласия пользователей.
-
-После получения соответствующих прав приложение может автоматически менять цены и остатки только в явно выданной области и в пределах защитных ограничений продавца и площадки. Каждое изменение записывается в неизменяемый журнал, заметно продавцу и имеет понятный источник. Выход за разрешённые пределы блокируется или требует отдельного подтверждения продавца. Продавец получает уведомления о значимых изменениях, может немедленно отозвать доступ и восстановить прежнее значение, если оно ещё допустимо по текущему состоянию товара.
-
-Площадка задаёт обязательные безопасные пределы автоматических изменений и рекомендуемые значения по умолчанию. Продавец может ужесточить их для аккаунта или отдельного приложения, но не может ослабить обязательный предел площадки. Конкретные числовые значения определяются до запуска после моделирования риска и проверяются на пилоте.
-
-Операция, выходящая за защитный предел, отклоняется. При повторных превышениях или другом аномальном поведении площадка автоматически приостанавливает критичные права приложения, уведомляет продавца и разработчика и запускает проверку. Безопасное чтение может продолжаться только тогда, когда оно не связано с выявленным риском. Критичные права восстанавливаются после явного подтверждения продавца для понятной некритичной причины либо после проверки площадки, если причина или риск требуют расследования.
-
-Об изменениях каталога, цены и остатка площадка отправляет приложению подписанные уведомления о событиях. Подпись позволяет приложению проверить источник и целостность сообщения. Периодическая сверка разрешённого состояния восстанавливает пропущенные уведомления. Каждое событие имеет стабильный идентификатор, а повторная доставка того же события не должна повторно применять изменение.
-
-Площадка ведёт публичный каталог допущенных сторонних приложений. Карточка показывает подтверждённого разработчика, назначение, точные запрашиваемые права, правила хранения, передачи и удаления данных, канал поддержки, цену и дату последней проверки. Частные интеграции одного продавца в каталог не публикуются. Допуск и сведения о проверке означают прохождение опубликованного минимального контроля, но не являются гарантией качества бизнеса разработчика.
-
-Оценку и отзыв о приложении может оставить только продавец, который действительно подключал его. Отзыв помечается подтверждённым использованием. Оценки полезности, надёжности и поддержки показываются отдельно от статуса проверки безопасности и не могут его повысить или заменить. Правила против накрутки, удаления и обжалования отзывов применяются по общей проверяемой процедуре площадки.
-
-В первой версии каталога разработчик платного приложения самостоятельно выставляет счёт и принимает оплату вне площадки. Карточка приложения до подключения явно показывает цену, период оплаты, способ оплаты, условия отмены и ответственного за возвраты. Площадка не выступает продавцом такого приложения и не удерживает комиссию с его оплаты. Встроенные подписки, комиссия, возвраты и платёжные споры за приложения требуют отдельного продуктового, правового и технического решения после проверки спроса.
-
-Разработчик отвечает за работоспособность приложения, коммерческую поддержку, выставление счетов, отмену подписки и возврат полученной им оплаты. Площадка отвечает за безопасное подключение, выдачу и отзыв прав, собственные журналы, каталог приложений и рассмотрение жалоб на нарушение правил. Эти границы ответственности и каналы обращения показываются продавцу до подключения. Площадка сохраняет право ограничить приложение при риске или нарушении, но не обещает коммерческий возврат денег, которых не получала.
-
-Если разработчик прекращает поддержку приложения, площадка останавливает новые подключения и заранее уведомляет активных продавцов. При отсутствии существенного риска продавцам предоставляется ограниченный переходный срок для экспорта, отключения и выбора замены. После срока права отзываются, а разработчик должен подтвердить удаление полученных данных по опубликованной процедуре. При существенном риске доступ отключается немедленно, а экспорт выполняется безопасным способом из данных площадки, если это возможно.
-
-### Закрытая часть
-
-Закрытыми остаются:
-
-- сервер официальной площадки;
-- AI-дизайнер;
-- антифрод и внутренняя оценка рисков;
-- система споров и модерации;
-- платёжная логика;
-- эксплуатационная инфраструктура.
-
-### Принцип доступа
-
-Открытый формат не делает сами данные публичными. Доступ к данным получает только владелец или явно уполномоченная им система после проверки прав.
-
-### Отдельный оптовый B2B-поток
-
-#### Утверждено
-
-Оптовая торговля между крупным поставщиком и местными продавцами является отдельным **B2B-потоком** (*business-to-business* — торговля между компаниями и другими субъектами предпринимательской деятельности).
-
-Связка `крупный поставщик → местный продавец` отделяется от розничной связки `продавец → конечный покупатель`. B2B-поток нельзя считать просто крупным заказом в обычной покупательской корзине или автоматически подчинять всем правилам розничной сделки.
-
-Точные роли участников, условия допуска, оптовые цены и партии, документы, платежи, логистика и возвраты пока не определены и должны быть согласованы отдельно.
-
-#### Утверждено: этап появления
-
-Рабочие B2B-сделки не входят в первый публичный розничный запуск. Сначала платформа должна успешно пройти розничный пилот и подтвердить надёжность полного цикла заказа, платежей, возвратов и споров.
-
-При этом модель данных и границы модулей первого запуска не должны исключать последующее добавление B2B-потока или требовать смешать его с правилами розничной сделки. После успешного розничного пилота оптовый B2B-поток проектируется и запускается как отдельный пилот с собственной спецификацией.
+**Deferred:** Vladislav decided to return to the public name later. The semantic field and specific candidates are not being selected yet; Open Marketplace remains only the internal working name.
 
 ---
 
-## 3. Ценности продукта
+## 2. Terminology and the Boundary of Openness
 
-### Для продавца
+### Approved
 
-- собственная индивидуальная витрина;
-- переносимый профиль и каталог;
-- переносимые карточки, варианты, остатки и медиа;
-- прозрачная комиссия;
-- отсутствие зависимости от закрытого внутреннего формата одной площадки;
-- AI-инструменты дизайна и создания контента;
-- аналитика, автоматизация и интеграции.
+The official service's source code remains closed. Data formats and the API are what become open.
 
-### Для покупателя
+Therefore, the product cannot be called **Open Source Marketplace**: the term *open source* means open program code distributed under an open license.
 
-- понятное происхождение рейтинга и отзывов;
-- защищённая оплата;
-- помощь площадки в споре;
-- контроль несоответствия описанию, брака и сроков;
-- единые понятные элементы доверия при любом дизайне витрины;
-- возможность покупать физические и цифровые товары, подписки и услуги.
+The correct working definition is:
 
----
+> **An open marketplace is a closed service with open data formats and a documented API.**
 
-## 4. Состав пилотного публичного запуска
+An API is a documented interface through which other programs can safely exchange data with the platform.
 
-### Термины запуска
+### Public Part
 
-Пилот является первым публичным запуском в статусе **публичной бета-версии**. Регистрация открыта, сделки и платежи реальны, но для участников и операций действуют заранее опубликованные лимиты. Статус беты не позволяет ослаблять защиту денег, заказов, прав доступа и персональных данных.
+The following are planned to be made open:
 
-В публичной бете действует единый временный максимум стоимости одного заказа для физических товаров и скачиваемых файлов. Точная сумма определяется и публикуется до старта после выбора платёжного партнёра, расчёта возможного убытка и проверки схемы возвратов. Предел можно повышать только после подтверждения устойчивой работы; изменение заранее сообщается участникам.
+- seller profile format;
+- catalog and product-card format;
+- product-variant format;
+- inventory format;
+- attributes and media format;
+- import and export rules;
+- API and event description;
+- integration toolkits;
+- format version history.
 
-Для каждого продавца также действует единый временный максимум активных предложений. Черновые и архивные карточки учитываются отдельно и не считаются доступными для покупки. Точное число активных предложений определяется до запуска по результатам нагрузочного теста и оценки возможностей модерации. Во время публичной беты платный тариф не увеличивает этот лимит.
+### API Scope at the First Public Launch
 
-После выполнения критериев успешного пилота, исправления критических ошибок и подтверждения операционной готовности платформа переходит к полноценному общему выпуску без пилотных ограничений. В дальнейшем в этом документе выражения «пилот» и «первый публичный запуск» обозначают одну публичную бету; «полноценный выпуск» обозначает следующий этап.
+By the first public launch, the API must support three levels:
 
-### Утверждено
+1. reading the permitted public part of the catalog;
+2. importing, exporting, and synchronizing seller data, including the catalog, prices, and inventory;
+3. allowing a third-party site to create a secure link that takes the buyer to protected checkout inside the platform interface.
 
-К пилотному публичному запуску должны быть готовы все три направления:
+The third-party site does not determine the trusted price, inventory, or total amount: before payment, the platform retrieves them again from its own authoritative version of the data and displays them to the buyer.
 
-1. **Инструменты продавца** — перенос данных, управление товарами, витрина и продажи.
-2. **Покупательский маркетплейс** — общий каталог, поиск, карточки, корзина, защищённая покупка, заказы, споры и отзывы.
-3. **Открытая инфраструктура данных** — форматы, API, импорт, экспорт и синхронизация.
+Full order creation and lifecycle management, including fulfillment, cancellations, and returns, through a third-party API are not part of the first public launch. This level will be designed after a successful pilot as a separate critical channel with its own security and access-control review.
 
-Это не означает, что все подсистемы нужно разрабатывать одновременно. Внутри проекта они создаются поэтапно и соединяются перед публичным выпуском.
+### Free Basic API and Paid Tiers
 
-### Утверждено: AI-дизайнер на запуске
+Documentation, machine-readable schemas, a test environment, reading the permitted public part of the catalog, creating secure checkout links, and a seller's work with their own portable data are available through the API free of charge within reasonable safe limits. A full manual export of one's own portable data remains free regardless of the API tier.
 
-AI-дизайнер выходит в день публичного запуска как ограниченная бета-версия.
+Higher request frequency and volume, managed connectors, very frequent synchronization, advanced monitoring and operation history, and a guaranteed level of availability and support may be paid features. Exact limits and prices are determined after measuring load and cost; they must not turn obtaining one's own data into a paid exit from the platform.
 
-Доступ к бета-версии предоставляется по заявке отобранным продавцам, которые уже прошли проверку площадки. Отсутствие доступа к AI-дизайнеру не ограничивает обычную публикацию товаров и продажи.
+Each third-party application is connected to a seller separately. Before connecting, the seller sees the application's identity and the exact set of requested permissions, such as reading the catalog, changing prices, changing inventory, or receiving events, and explicitly confirms them. Expanding critical permissions requires a new confirmation. The account password is not given to the application, and one shared, perpetual key is not used for different integrations. The seller can see each application's activity log and immediately revoke only that application's access without changing the password or disabling other connections. The exact technical protocol is determined during the architecture stage.
 
-В начальную бета-версию входят:
+The seller may create a private integration for their own account without a mandatory manual platform queue, while retaining the common constraints on permissions, limits, and logging. An application that a developer offers for connection by several independent sellers must register and pass a security and rules-compliance review before public distribution. Approval of an application does not give it permissions without the separate consent of each seller and may be suspended when a substantiated risk is identified.
 
-- короткое текстовое интервью;
-- несколько визуальных направлений на выбор;
-- создание дизайн-системы продавца;
-- сборка витрины из безопасных блоков;
-- разговорные правки;
-- безопасная обработка реальных фотографий товара: фон, свет, кадрирование и композиция;
-- сравнение результата с исходником и подтверждение продавцом перед публикацией.
+Before approving an application for multiple sellers, the platform checks the developer's identity and business contacts, the scope and necessity of the requested permissions, the technical security of the connection, the stated rules for data storage, transfer, and deletion, the privacy policy, the support channel, and the incident-reporting process. A critical expansion of permissions requires a repeat review. Submission of all source code is not a single mandatory condition for every application, but in the presence of elevated risk the platform may request additional verifiable materials and tests. Approval confirms that the published minimum controls were passed, but it is not a guarantee of the developer's business quality.
 
-Генерация видео, аудио и сложных визуальных эффектов в начальную бету не входит и добавляется позднее после проверки основного цикла.
+When a credible security incident occurs, the platform immediately restricts the affected permissions or disables the application if retaining access creates a significant risk. It preserves logs and evidence, revokes compromised access, notifies the developer and affected sellers, and conducts an investigation. The connection is restored only after a confirmed fix and any required repeat review. The developer may appeal the decision, but an appeal does not delay urgent user protection. The initial report alone does not mean that the application will be permanently removed without an investigation.
 
-Во время ограниченной беты доступ для отобранных участников бесплатный, но действует с жёсткими лимитами использования. Участникам заранее показываются доступный остаток и условия беты; скрытых списаний нет.
+After approval, the application remains under continuous automated monitoring. A repeat review is mandatory after a critical expansion of permissions, a change of ownership or a substantial infrastructure change, a material change in data-storage, transfer, or deletion rules, a confirmed incident, or the emergence of a new significant risk. High-risk applications also undergo scheduled periodic reviews. The interval and risk criteria are established before launch based on the threat model and operational data.
 
-После беты базовая модель оплаты — подписка с включённым лимитом и дополнительные кредиты сверх лимита. Точные лимиты и цена определяются после измерения реальной стоимости и качества генераций.
+Minimum read permissions remain active until revoked by the seller, with the connection continuously visible, and expire after a predetermined prolonged period of inactivity. Permissions to change prices, inventory, and other trusted data are time-limited and require the seller's periodic explicit reconfirmation. Failure to reconfirm ends only the application's expired permissions and does not transfer control to the developer or support. Exact periods are established before launch based on the risk level and operational data.
 
-### Утверждено: условия выхода AI-дизайнера из ограниченной беты
+The platform publishes a single permissions-risk matrix: for each available action, it specifies the risk level, validity period, and need for reconfirmation. The same permissions receive the same rules for comparable integrations. The matrix is approved by those responsible for security and product, and reviewed based on incidents, new threats, and operational data. No application developer, seller, or individual employee may unilaterally downgrade a permission's criticality.
 
-Для открытия AI-дизайнера всем проверенным продавцам должны одновременно выполняться четыре обязательных условия:
+The first public version of the API allows reading the open catalog and, after the seller's separate consent, managing only that seller's own cards, prices, and inventory. It does not give third-party applications access to payments, escrow, disputes, identity documents, or private messages. Extending the API to these areas requires a separate product decision, threat model, legal review, and new user consent.
 
-1. **Качество** — продавец получает пригодный результат без неприемлемого объёма повторных генераций и ручной переделки.
-2. **Безопасность** — система не должна незаметно искажать свойства товара или публиковать запрещённый и опасный контент; продавец подтверждает результат перед публикацией.
-3. **Стабильность** — основной цикл создания, правок, проверки и публикации работает устойчиво и восстанавливается после сбоев без потери проекта.
-4. **Экономика** — измеренная стоимость генераций и поддержки укладывается в будущую подписку, лимиты и дополнительные кредиты без скрытых списаний.
+After receiving the relevant permissions, an application may automatically change prices and inventory only within the explicitly granted scope and the seller's and platform's protective limits. Every change is recorded in an immutable log, made visible to the seller, and has an understandable source. Exceeding the permitted limits is blocked or requires the seller's separate confirmation. The seller receives notifications about significant changes, can immediately revoke access, and can restore the previous value if it is still permissible under the product's current state.
 
-Плановая дата, длительность беты или число участников сами по себе не заменяют эти условия.
+The platform sets mandatory safe limits for automatic changes and recommended default values. The seller may make them stricter for the account or an individual application, but may not weaken a mandatory platform limit. Specific numeric values are determined before launch after risk modeling and are tested during the pilot.
 
-Числовые пороги по качеству, безопасности, стабильности и экономике определяются после внутреннего прототипа и получения первых данных ограниченной беты. Они должны быть зафиксированы до решения открыть AI-дизайнер всем проверенным продавцам, чтобы решение проверялось по заранее установленным критериям, а не по показателям, подобранным задним числом.
+An operation that exceeds a protective limit is rejected. After repeated excesses or other anomalous behavior, the platform automatically suspends the application's critical permissions, notifies the seller and developer, and starts a review. Safe reading may continue only when it is unrelated to the identified risk. Critical permissions are restored after the seller's explicit confirmation for an understandable non-critical reason, or after a platform review when the cause or risk requires investigation.
 
-### Главный критерий успешного российского пилота
+For catalog, price, and inventory changes, the platform sends the application signed event notifications. The signature allows the application to verify the message's source and integrity. Periodic reconciliation of the permitted state recovers missed notifications. Every event has a stable identifier, and redelivery of the same event must not apply the change again.
 
-Главный критерий — надёжность полного цикла заказа, а не оборот или число регистраций.
+The platform maintains a public catalog of approved third-party applications. Each listing shows the verified developer, purpose, exact requested permissions, rules for data storage, transfer, and deletion, support channel, price, and date of the latest review. Private integrations for a single seller are not published in the catalog. Approval and review information mean that the published minimum controls were passed, but are not a guarantee of the developer's business quality.
 
-Пилот должен подтвердить на реальных заказах, что для физических товаров и скачиваемых файлов устойчиво работают:
+Only a seller who actually connected an application may rate and review it. The review is marked as verified use. Ratings for usefulness, reliability, and support are shown separately from the security-review status and cannot raise or replace it. Rules against manipulation, removal, and appeals of reviews are applied through the platform's general verifiable procedure.
 
-- оплата;
-- передача заказа продавцу;
-- исполнение и подтверждение результата;
-- выплата продавцу;
-- отмена и возврат;
-- открытие и разрешение спора;
-- сохранность денег, данных заказа и истории действий.
+In the first version of the catalog, the developer of a paid application independently issues invoices and accepts payment outside the platform. Before connection, the application listing clearly shows the price, payment period, payment method, cancellation terms, and party responsible for refunds. The platform is not the seller of such an application and does not withhold a commission from its payment. Built-in subscriptions, commissions, refunds, and payment disputes for applications require a separate product, legal, and technical decision after demand has been tested.
 
-Критические ошибки в движении денег, правах доступа, выдаче товара или восстановлении состояния должны блокировать признание пилота успешным. Активность продавцов, повторные покупки, оборот и доход площадки остаются обязательными дополнительными показателями.
+The developer is responsible for the application's operation, commercial support, invoicing, subscription cancellation, and refunding payments received by the developer. The platform is responsible for secure connection, granting and revoking permissions, its own logs, the application catalog, and reviewing complaints about rule violations. These boundaries of responsibility and contact channels are shown to the seller before connection. The platform retains the right to restrict an application in response to risk or a violation, but does not promise a commercial refund of money it did not receive.
 
-Точные числовые пороги и период измерения определяются перед началом пилота.
+If the developer stops supporting the application, the platform stops new connections and gives active sellers advance notice. In the absence of a significant risk, sellers receive a limited transition period to export data, disconnect, and choose a replacement. After the period ends, permissions are revoked, and the developer must confirm deletion of the received data under the published procedure. In the presence of a significant risk, access is disabled immediately, and export is performed securely from the platform's data when possible.
 
----
+### Closed Part
 
-## 5. География
+The following remain closed:
 
-### Утверждено
+- the official platform server;
+- the AI designer;
+- anti-fraud and internal risk assessment;
+- the dispute and moderation system;
+- payment logic;
+- operational infrastructure.
 
-Первый публичный запуск — только в России.
+### Access Principle
 
-При этом архитектура сразу должна разделять:
+An open format does not make the data itself public. Only the owner or a system explicitly authorized by the owner receives access to the data after permissions are checked.
 
-- страну;
-- валюту;
-- язык;
-- правила категории;
-- платёжного партнёра;
-- логистического партнёра.
+### Separate Wholesale B2B Flow
 
-Это позволит позднее добавлять другие страны без переделки общего ядра.
+#### Approved
 
-### Утверждено: условия расширения на другие страны
+Wholesale trade between a large supplier and local sellers is a separate **B2B flow** (*business-to-business* — trade between companies and other business entities).
 
-Платформа не назначает календарную дату международного расширения заранее. Сначала она должна подтвердить устойчивую работу в России по критериям пилота и полноценного выпуска. Затем выбирается одна следующая страна, для которой до запуска отдельно проверяются право и налоги, платежи и валюта, локализация, логистика, поддержка и защита покупателей. Выход начинается с ограниченного пилота этой страны; одного технического перевода интерфейса недостаточно.
+The relationship `large supplier → local seller` is separated from the retail relationship `seller → end buyer`. The B2B flow cannot be treated as merely a large order in an ordinary buyer cart or automatically subjected to all retail-transaction rules.
+
+The exact participant roles, admission conditions, wholesale prices and lots, documents, payments, logistics, and returns have not yet been defined and must be agreed separately.
+
+#### Approved: Introduction Stage
+
+Live B2B transactions are not part of the first public retail launch. First, the platform must successfully complete the retail pilot and confirm the reliability of the full order, payment, return, and dispute cycle.
+
+At the same time, the data model and module boundaries of the first launch must not exclude the later addition of a B2B flow or require it to be mixed with the rules of a retail transaction. After a successful retail pilot, the wholesale B2B flow is designed and launched as a separate pilot with its own specification.
 
 ---
 
-## 6. Категории и виды предложений
-
-### Утверждено
-
-Платформа не ограничивается одной узкой товарной нишей. Используется единое ядро с дополнительными полями для разных категорий.
-
-### Допуск продавцов
-
-В первую волну допускается любой продавец, который прошёл проверку и работает в разрешённой категории. Предыдущий опыт продаж на Ozon, Wildberries или другой площадке не обязателен.
-
-В публичной бете каждый продавец автоматически получает возможность продавать сразу после успешного завершения всех применимых проверок. Дополнительная очередь активации, ручной набор партий и платное место в очереди не используются. Заявка, которая ещё проверяется или требует дополнительных документов, не считается успешно завершившей проверку.
-
-Допустимые формы продавца: индивидуальный предприниматель, юридическое лицо или самозанятый.
-
-Проверка продавца строится по трём уровням:
-
-1. **Базовый уровень для всех** — подтверждение личности или организации, действующего статуса, контактных и платёжных данных.
-2. **Требования категории** — документы на товар или право продажи там, где это требуется законом или правилами площадки.
-3. **Усиленная проверка по риску** — ручной разбор и дополнительные подтверждения при подозрительных данных, повышенном риске категории или проблемной истории.
-
-Точный перечень документов и критерии риска должны быть определены после юридической проверки.
-
-### Регистрация и реквизиты для выплат
-
-Продавец регистрируется по официальным данным своего статуса, а не только по обычному пользовательскому профилю.
-
-При регистрации продавец указывает:
-
-- форму деятельности: индивидуальный предприниматель, юридическое лицо или самозанятый;
-- официальное имя или наименование;
-- идентификационные и регистрационные данные, применимые к выбранному статусу;
-- контакт уполномоченного лица;
-- банковские реквизиты для выплаты, допустимые выбранным платёжным партнёром.
-
-После успешного исполнения заказа платёжный партнёр перечисляет продавцу причитающуюся сумму по подтверждённым реквизитам с учётом комиссии и возвратов.
-
-Термин «расчётный счёт» не используется как единое требование для всех форм продавца: точный вид допустимого счёта и способ проверки зависят от статуса продавца и правил платёжного партнёра.
-
-### Регистрация покупателя
-
-Для обычной покупки достаточно подтвердить номер телефона или адрес электронной почты. Полная проверка личности для каждого покупателя не требуется.
-
-Дополнительная проверка применяется только при обоснованном риске, спорной операции или там, где этого требуют правила конкретной категории. Критерии риска и перечень таких операций определяются отдельно.
-
-Примеры расширений:
-
-- одежда — размер, цвет, таблица размеров;
-- мебель — габариты, вес, материал, сборка;
-- другие категории — собственный набор характеристик.
-
-### Физический модуль
-
-Отвечает за:
-
-- варианты товара;
-- остатки;
-- склады;
-- доставку;
-- возвраты;
-- подтверждение получения.
-
-На пилоте товар хранится у продавца; собственный склад или фулфилмент площадки не создаётся.
-
-Разрешены два способа доставки:
-
-1. подключённая к платформе служба доставки;
-2. собственная доставка продавца.
-
-В обоих случаях получение должно подтверждаться проверяемым событием: статусом интегрированной службы, кодом получения или явным подтверждением покупателя. Односторонней отметки продавца «доставлено» недостаточно для автоматической выплаты.
-
-Для собственной доставки основной способ подтверждения — одноразовый код, созданный платформой и доступный покупателю. Покупатель сообщает код продавцу при фактической передаче товара, после чего продавец вводит его в заказ.
-
-Код фиксирует факт и время получения, но не подтверждает качество товара и не лишает покупателя последующего срока для открытия спора. Этот срок начинается после подтверждённой передачи.
-
-### Стоимость обратной доставки
-
-В публичной бете площадка организует обратную доставку физического товара через проверяемый канал и при необходимости авансирует её из ограниченного фонда, чтобы покупателю не приходилось ждать разрешения спора или самостоятельно согласовывать оплату с продавцом.
-
-После установления причины окончательная стоимость относится на ответственную сторону: продавца — при подтверждённом браке, неверном товаре или существенном несоответствии; службу доставки — при подтверждённой её вине и возможности взыскания по договору; покупателя — при допустимом возврате качественного товара по личному решению. Если фактическое взыскание невозможно, непокрытая сумма учитывается как риск площадки в пределах заранее утверждённого лимита ответственности.
-
-До подтверждения обратной отправки покупателю показываются способ доставки, полная стоимость и сторона, которая предварительно считается ответственной. После решения по спору площадка выполняет перерасчёт и записывает его основание в журнал заказа.
-
-Это предварительная продуктовая политика. Её должен проверить профильный юрист; обязательные права покупателя имеют приоритет.
-
-### Момент возврата денег
-
-После одобрения возврата покупатель передаёт товар через проверяемый канал. После подтверждённой доставки продавцу предоставляются 2 рабочих дня на проверку состояния и комплектности.
-
-Если продавец подтверждает возврат или не предъявляет конкретное обоснованное возражение с доказательствами в этот срок, платёжный партнёр автоматически возвращает деньги покупателю. Просьба о дополнительном времени без доказуемой причины срок не продлевает. При своевременном возражении открывается спор, в котором площадка рассматривает доказательства обеих сторон. Молчание продавца не может задерживать возврат.
-
-Минимальный набор для возражения продавца включает номер возврата и данные перевозчика, фотографии внешней упаковки до вскрытия, фотографии товара, комплектности, пломб и доступных уникальных идентификаторов сразу после вскрытия, точное описание расхождения и исходные данные об отправленном товаре для сравнения. При заявленном повреждении в обратной доставке прикладывается акт перевозчика, если его можно оформить. Непрерывное видео вскрытия является дополнительным, но не обязательным доказательством. Ни один материал не имеет заранее установленной решающей силы: модератор сопоставляет весь журнал заказа и доказательства обеих сторон.
-
-Для открытия спора по физическому товару покупатель выбирает конкретную причину, описывает различие между обещанным и полученным и прикладывает доступные фотографии товара, упаковки, маркировки, комплектации и видимого дефекта. Данные или сообщения перевозчика и уникальный идентификатор товара прикладываются, когда они относятся к проблеме. Видео распаковки и заключение специалиста являются дополнительными, но не обязательными материалами. Площадка автоматически добавляет карточку и условия товара на момент покупки, журнал заказа и доступные данные доставки. Для скрытого или технически сложного дефекта модератор может запросить разумную дополнительную проверку, но спор не отклоняется автоматически только из-за отсутствия заранее оплаченной покупателем экспертизы.
-
-Это внутренний предельный срок сервиса. Обязательный более короткий срок по применимому закону имеет приоритет; требования к доказательствам проходят юридическую проверку до запуска.
-
-### Частичный возврат без отправки товара
-
-Частичный возврат разрешён только при явном согласии покупателя оставить физический товар у себя. В заказе фиксируются сумма, причина, инициатор предложения и подтверждение покупателя. После согласия платёжный партнёр возвращает указанную сумму, а оставшаяся выплата продавцу пересчитывается автоматически.
-
-Частичный возврат может предложить продавец или назначить площадка по результату спора, но его нельзя навязать покупателю вместо доступного ему полного возврата. Обязательные права покупателя по закону имеют приоритет.
-
-Точная иерархия доказательств доставки и защита от ложных подтверждений определяются отдельно.
-
-### Цифровой модуль
-
-В публичную бету входит один цифровой способ исполнения — скачиваемый файл.
-
-Целевая модель после пилота должна поддерживать четыре разных цифровых способа исполнения:
-
-1. скачиваемый файл;
-2. лицензионный или активационный ключ;
-3. подписка;
-4. онлайн-услуга.
-
-Ключи, подписки и услуги не входят в публичную бету. Их порядок добавления после успешного пилота определяется отдельно.
-
-Они используют общий заказ и оплату, но отличаются исполнением:
-
-- файл — автоматическая защищённая выдача после подтверждённой оплаты;
-- ключ — автоматическая выдача одного уникального кода из доступного запаса продавца;
-- подписка — автоматическая активация оплаченного периода и последующее продление;
-- услуга — принятие заказа продавцом, согласованные срок и этапы, передача результата и подтверждение приёмки.
-
-Автоматическая выдача цифрового продукта не означает немедленную выплату продавцу. Выплата выполняется после подтверждения соответствующего способа исполнения и с учётом установленного срока для спора.
-
-### Хранение скачиваемых файлов в публичной бете
-
-В публичной бете продавец загружает скачиваемый файл только в управляемое хранилище платформы. Перед публикацией платформа проверяет разрешённый формат и вредоносное содержимое, сохраняет проверенную версию и ведёт журнал выдачи покупателю.
-
-Для одного файла и общего объёма продавца действуют заранее опубликованные лимиты. Точные размеры, разрешённые форматы и процедура проверки определяются до запуска после технических тестов и расчёта стоимости хранения и обработки.
-
-Каждый заказ связывается с точной проверенной версией файла, приобретённой покупателем. Продавец загружает изменение как новую версию и не может незаметно заменить файл в уже совершённом заказе.
-
-До оплаты в карточке явно указывается, включены ли будущие обновления бесплатно. Если включены, покупатель сохраняет доступ к приобретённой версии и получает доступ к последующим проверенным версиям по объявленным условиям. Если не включены, новая версия является отдельным предложением. Зафиксированное для заказа правило нельзя ухудшить задним числом.
-
-Купленная версия остаётся доступной покупателю в личной библиотеке без ограничения числа повторных скачиваний, пока действует аккаунт и платформа обязана хранить покупку. Каждая ссылка на загрузку является временной и выдаётся только авторизованному покупателю.
-
-Снятие товара с продажи не отзывает доступ к уже купленной версии. Доступ может быть заблокирован только по подтверждённому основанию безопасности или закона, включая вредоносное содержимое или нарушение прав третьих лиц. В таком случае покупатель получает уведомление, а вопрос о возврате решается отдельно по заранее установленным правилам.
-
-До первого успешного доступа покупатель может отменить неисполненный заказ по правилам платформы. После успешного доступа простое изменение решения покупателя не создаёт автоматического основания для возврата. Возврат или замена рассматриваются при недоступности, повреждении, подтверждённом вредоносном содержимом или существенном несоответствии проверенной версии описанию карточки.
-
-Для спора платформа сохраняет точную версию и контрольный отпечаток файла, результаты проверки, условия карточки и заявленные системные требования на момент покупки, события выдачи, попыток доступа и ошибок, а также переписку внутри заказа. Для обычного цифрового спора покупатель обязан приложить скриншот или видео проблемы, указать причину и описать шаги её возникновения. Исключение действует, если серверный журнал уже подтверждает невыдачу или сбой либо покупатель конкретно объяснил техническую невозможность сделать запись. Продавец предоставляет относящиеся к спору инструкции, данные версии и объяснение соответствия. Отметка об успешном скачивании доказывает доступ, но сама по себе не доказывает исправность или соответствие описанию. Пользовательское вложение не заменяет серверный журнал и не считается автоматически истинным.
-
-Это предварительная продуктовая политика: до запуска её должен проверить профильный юрист, а обязательные права покупателя по применимому закону имеют приоритет.
-
-После первого успешного доступа к файлу начинается короткий заранее известный период усиленной защиты заказа, в течение которого выплата продавцу остаётся удержанной. Если спор не открыт, платёжный партнёр автоматически выпускает выплату продавцу. Покупатель может явно подтвердить корректность файла и завершить ожидание раньше, но ручное подтверждение не является обязательным.
-
-Если покупатель не открывает доступный файл, предоставлением считается появление проверенной версии в его личной библиотеке и успешная доставка уведомления по подтверждённому каналу. От этого события начинается более длинный заранее известный период удержания выплаты. Первый успешный доступ переключает заказ на обычный короткий период.
-
-Окончание любого из этих периодов прекращает только автоматическое удержание выплаты. Оно не отменяет поздний обоснованный спор, обязательные права покупателя или возможность одобренного возврата через резерв продавца и гарантийный механизм после выплаты. Простой отказ от покупки после успешного доступа сам по себе не создаёт основания для возврата. Обе длительности определяются до запуска, проверяются с платёжным партнёром и юристом и показываются участникам заранее.
-
-Выдача по внешней ссылке, через внешний личный кабинет или сторонний сервис в публичную бету не входит: внешний файл может измениться после проверки. Внешние способы исполнения исследуются после успешного пилота как отдельная возможность для последующих цифровых потоков.
-
-### Ограничения категорий
-
-Утверждено общее направление: на первом этапе все обычные категории доступны по умолчанию при прохождении проверки продавца и требований конкретной категории. Продовольственные, медицинские, опасные, запрещённые и другие сложно регулируемые категории в первый этап не допускаются.
-
-Точный перечень запрещённых и временно ограниченных категорий пока не составлен. Его нужно отдельно проверить для России по законодательству, требованиям платёжного партнёра и возможностям служб доставки; категории нельзя включать или исключать по непроверенному предположению.
+## 3. Product Values
+
+### For the Seller
+
+- their own individual storefront;
+- a portable profile and catalog;
+- portable cards, variants, inventory, and media;
+- a transparent commission;
+- no dependence on one platform's closed internal format;
+- AI tools for design and content creation;
+- analytics, automation, and integrations.
+
+### For the Buyer
+
+- an understandable origin for ratings and reviews;
+- protected payment;
+- platform assistance in a dispute;
+- oversight of discrepancies from the description, defects, and deadlines;
+- consistent, understandable trust elements in any storefront design;
+- the ability to buy physical and digital goods, subscriptions, and services.
 
 ---
 
-## 7. Общая модель данных и переносимость
+## 4. Scope of the Public Pilot Launch
 
-### Утверждено
+### Launch Terms
 
-Единое ядро должно охватывать:
+The pilot is the first public launch, in **public beta** status. Registration is open, and transactions and payments are real, but limits published in advance apply to participants and operations. Beta status does not permit weakening the protection of money, orders, access rights, or personal data.
 
-- продавца;
-- магазин;
-- товар;
-- вариант товара;
-- характеристики;
-- остаток;
-- медиа;
-- отзыв и рейтинг;
-- заказ;
-- способ исполнения;
-- платёжный статус;
-- спор.
+In public beta, a single temporary maximum order value applies to physical goods and downloadable files. The exact amount is determined and published before launch after selecting a payment partner, calculating potential loss, and reviewing the refund scheme. The limit may be increased only after stable operation has been confirmed; participants are notified of the change in advance.
 
-### Продавец и магазины
+Each seller is also subject to a single temporary maximum number of active listings. Draft and archived cards are counted separately and are not considered available for purchase. The exact number of active listings is determined before launch based on load-test results and an assessment of moderation capacity. During public beta, a paid tier does not increase this limit.
 
-Продавец — проверенный субъект деятельности: индивидуальный предприниматель, юридическое лицо или самозанятый. Он является ответственной стороной по заказам и получателем выплат.
+After the successful-pilot criteria have been met, critical bugs have been fixed, and operational readiness has been confirmed, the platform moves to a full general release without pilot restrictions. Hereafter in this document, “pilot” and “first public launch” refer to the same public beta; “full release” refers to the next stage.
 
-Магазин — отдельная публичная бренд-витрина со своим названием, оформлением, каталогом и ссылкой.
+### Approved
 
-Один продавец может владеть несколькими магазинами. Каждый магазин принадлежит только одному официальному продавцу-владельцу.
+All three directions must be ready for the public pilot launch:
 
-На пилоте один проверенный продавец может иметь только одну активную бренд-витрину. Возможность открыть второй и последующие магазины добавляется после успешного пилота. Это временное продуктовое ограничение не меняет модель `один продавец → несколько магазинов`.
+1. **Seller tools** — data portability, product management, storefront, and sales.
+2. **Buyer marketplace** — common catalog, search, cards, cart, protected purchasing, orders, disputes, and reviews.
+3. **Open data infrastructure** — formats, API, import, export, and synchronization.
 
-### Доступ к кабинету на первом запуске
+This does not mean that all subsystems must be developed simultaneously. Within the project, they are created in stages and connected before public release.
 
-На первом публичном запуске кабинет продавца доступен только подтверждённому владельцу или официально уполномоченному лицу продавца. Общий логин для нескольких сотрудников не допускается.
+### Approved: AI Designer at Launch
 
-Приглашение сотрудников, фиксированные роли и настраиваемые права не входят в первый запуск и добавляются после пилота. При этом серверная модель действий должна сохранять автора каждого действия и не должна мешать последующему добавлению отдельных учётных записей сотрудников.
+The AI designer launches on the day of the public launch as a limited beta.
 
-### Закрытие магазина и аккаунта продавца
+Access to the beta is granted by application to selected sellers who have already passed the platform's review. Lack of access to the AI designer does not limit ordinary product publication or sales.
 
-Закрытие отдельного магазина и прекращение работы официального продавца являются разными действиями. При закрытии магазина его витрина перестаёт принимать новые заказы, но другие магазины того же продавца могут продолжать работу.
+The initial beta includes:
 
-При прекращении работы продавца новые продажи останавливаются, а активные заказы, возвраты, выплаты, споры и другие обязательства должны быть завершены. Продавцу предоставляется бесплатный экспорт принадлежащих ему данных.
+- a short text interview;
+- several visual directions to choose from;
+- creation of the seller's design system;
+- assembly of the storefront from safe blocks;
+- conversational edits;
+- safe processing of real product photographs: background, lighting, cropping, and composition;
+- comparison of the result with the source and seller confirmation before publication.
 
-Подтверждённая репутация и записи, необходимые для сделок, учёта, защиты покупателей и предотвращения обхода санкций, не стираются фактом закрытия. Они сохраняются только в необходимом объёме и на установленный срок, после чего удаляются или обезличиваются, если дальнейшее хранение не требуется. Закрытая витрина не остаётся бессрочно доступным действующим магазином.
+Video, audio, and complex visual effects generation are not included in the initial beta and are added later after the core cycle has been tested.
 
-Повторная регистрация связывается с тем же проверенным субъектом деятельности. Подтверждённая история качества, санкции, споры и незавершённые обязательства не обнуляются созданием нового аккаунта или магазина. Новый бренд и новая витрина не создают новую официальную личность продавца.
+During the limited beta, access is free for selected participants, but strict usage limits apply. Participants are shown their available remaining allowance and the beta terms in advance; there are no hidden charges.
 
-При смене собственника перенос магазина, данных и репутации не выполняется автоматически. Он требует отдельной проверки передачи прав и обязательств.
+After the beta, the basic payment model is a subscription with an included allowance and additional credits beyond the allowance. Exact allowances and pricing are determined after measuring the actual cost and quality of generations.
 
-### Товар и публикации в магазинах
+### Approved: Conditions for the AI Designer to Exit Limited Beta
 
-Основная карточка товара принадлежит продавцу и содержит общие данные товара, его варианты, характеристики и медиа.
+To open the AI designer to all verified sellers, four mandatory conditions must be met simultaneously:
 
-Продавец может опубликовать товар в одном или нескольких принадлежащих ему магазинах. Публикация связывает товар с конкретной витриной и управляет его видимостью в ней. Дублировать основную карточку для каждого магазина не требуется.
+1. **Quality** — the seller receives a usable result without an unacceptable amount of repeated generation and manual reworking.
+2. **Safety** — the system must not invisibly distort product properties or publish prohibited and dangerous content; the seller confirms the result before publication.
+3. **Stability** — the core cycle of creation, editing, review, and publication operates reliably and recovers from failures without losing the project.
+4. **Economics** — the measured cost of generation and support fits within the future subscription, allowances, and additional credits without hidden charges.
 
-Общий маркетплейс индексирует опубликованные предложения. Для уникальных, авторских и ещё не сопоставленных предложений основная карточка остаётся у продавца.
+The planned date, beta duration, or number of participants do not replace these conditions on their own.
 
-### Эталонный товар и ценовой ориентир
+Numeric thresholds for quality, safety, stability, and economics are determined after the internal prototype and the first limited-beta data have been obtained. They must be recorded before the decision to open the AI designer to all verified sellers, so that the decision is assessed against criteria established in advance rather than metrics selected after the fact.
 
-#### Утверждено
+### Main Criterion for a Successful Russian Pilot
 
-Главная проблема, которую должен решать ценовой механизм для идентичного товара, — дать покупателю прозрачную и предсказуемую цену.
+The main criterion is the reliability of the full order cycle, not turnover or the number of registrations.
 
-Для доказанно идентичного физического серийного товара может создаваться единая эталонная карточка, к которой подключаются предложения проверенных продавцов. Для признания идентичности должны совпадать производитель, модель или артикул, вариант, цвет или запах, объём, размер или фасовка, комплектация и состояние. Отличающийся вариант является отдельным эталонным товаром.
+The pilot must confirm through real orders that the following work reliably for physical goods and downloadable files:
 
-Платформа показывает необязательный ценовой ориентир, а каждый продавец самостоятельно назначает фактическую цену своего предложения. Продавцы могут конкурировать ценой, наличием, территорией обслуживания, способом, стоимостью и сроком доставки, качеством сервиса и репутацией.
+- payment;
+- handoff of the order to the seller;
+- fulfillment and confirmation of the result;
+- payout to the seller;
+- cancellation and refund;
+- opening and resolution of a dispute;
+- preservation of money, order data, and action history.
 
-Ценовой ориентир вводится в два этапа:
+Critical errors in the movement of money, access rights, product delivery, or state recovery must prevent the pilot from being deemed successful. Seller activity, repeat purchases, turnover, and platform revenue remain mandatory additional metrics.
 
-1. Пока по эталонному товару недостаточно подтверждённых завершённых сделок внутри платформы, ориентир можно показывать только по проверенному внешнему источнику, например по рекомендованной цене производителя или официального поставщика. Рядом обязательно указываются источник и дата его проверки. Если подходящего подтверждённого источника нет, ориентир временно не показывается.
-2. После накопления достаточного объёма свежих подтверждённых данных платформа переходит на прозрачную рыночную формулу. Её главным основанием являются фактические цены подтверждённых завершённых сделок внутри платформы. Актуальные предложения продавцов используются только как дополнительная проверка состояния рынка и сами по себе не получают равного веса с совершёнными покупками.
-
-Основное значение второго этапа рассчитывается как медиана подходящих цен за недавний период. Медиана — цена, расположенная посередине упорядоченного набора; она не позволяет отдельной крайне высокой или низкой сделке так же сильно сдвинуть ориентир, как обычное среднее арифметическое.
-
-В расчёт допускаются только полностью завершённые сделки без возврата, подтверждённой манипуляции или признанного существенного нарушения. Отменённые, полностью или частично возвращённые и подтверждённо искусственные сделки в расчёт не входят. Стоимость доставки учитывается и показывается отдельно от цены товара. AI может выявлять подозрительные события и готовить материалы, но исключение сделки выполняется только по заранее установленным проверяемым правилам.
-
-Для медианы используется сумма, причитающаяся продавцу за сам товар до вычета комиссии площадки. Скидка, которую финансирует продавец, уменьшает учитываемую цену сделки. Купон, бонус или иная временная субсидия, которую финансирует платформа или другой партнёр без снижения суммы продавца, не уменьшает учитываемую цену. Источник каждой скидки должен сохраняться в данных заказа отдельно.
-
-Переход от проверенного внешнего источника к внутренней медиане выполняется автоматически только после достижения заранее установленного минимума подходящих свежих сделок от нескольких независимых покупателей и нескольких продавцов. Порог и длительность свежего периода могут различаться по категориям, но должны быть определены до включения внутреннего ориентира для этой категории. Ручное решение сотрудника или AI не заменяет выполнение порога.
-
-Если после перехода свежие внутренние данные перестают удовлетворять установленному порогу, медиана больше не показывается как текущий ориентир. Платформа автоматически возвращается к свежему проверенному внешнему источнику, а при его отсутствии временно скрывает ориентир. Последняя медиана может сохраняться в истории и аналитике, но не выдаётся покупателю за актуальное значение.
-
-Актуальные предложения не изменяют медиану напрямую. Если их цены расходятся с внутренней медианой сильнее заранее установленного для категории порога, ориентир временно скрывается от покупателей и запускается проверка свежести, сопоставимости и качества данных. После проверки система либо снова публикует ориентир по общим правилам, либо возвращается к свежему проверенному внешнему источнику, а при его отсутствии оставляет ориентир скрытым. Сотрудник или AI не вводят вместо него произвольное число.
-
-Рядом с ориентиром покупателю показываются его значение, тип и название источника, дата обновления, период расчёта, число учтённых сделок и ссылка на краткое описание методики. Для внешнего источника явно указывается, кто предоставил значение и когда оно проверено; для внутренней медианы — что она основана на подходящих завершённых покупках. Имена участников и сведения об отдельных заказах не раскрываются.
-
-Покупатель может сообщить о возможной ошибке в ориентире. Продавец может подать формальное обращение по сопоставлению товара, внешнему источнику, учёту собственной сделки или применению опубликованных правил. Сотрудник проверяет исходные данные и методику; подтверждённая ошибка исправляется, после чего ориентир пересчитывается автоматически. Сотрудник не назначает новое значение вручную и не раскрывает заявителю чужие заказы или личности участников.
-
-Само отклонение фактической цены продавца от ориентира не блокирует публикацию или продажу, не вызывает санкцию, не снижает репутацию и не создаёт скрытого понижения в обычной выдаче. Покупатель видит фактическую цену, отклонение, стоимость доставки и полную стоимость и может явно включить сортировку по цене или полной стоимости. Изменение порядка по такому выбору покупателя не считается санкцией продавцу. Меры против мошенничества, ложного описания и других нарушений применяются отдельно и не обосновываются одним отклонением цены.
-
-Условия перехода ко второму этапу, состав данных, точная формула, период расчёта и правила исключения подозрительных значений ещё не определены. Они должны быть установлены заранее и применяться одинаково к сопоставимым товарам; ценовая комиссия или AI не назначают ориентир произвольно.
-
-Покупатель видит одну карточку идентичного товара и доступные предложения продавцов. Для каждого предложения показываются фактическая цена продавца, её отклонение от ориентира, стоимость и срок доставки, а также полная стоимость покупки.
-
-Ценовой ориентир не заменяет цену продавца и не является обязательным условием публикации или продажи. Платформа не скрывает фактическую цену продавца.
-
-Юридическим продавцом по заказу остаётся независимый магазин, а не платформа. Платформа объединяет предложения в общем каталоге, рассчитывает и показывает ориентир, организует поиск и защищённую сделку. Она не становится собственником товара или единым продавцом из-за общей карточки и ценового ориентира.
-
-Авторские и уникальные изделия, товары без надёжного сопоставления, а также цифровые товары, подписки и услуги пока используют собственную карточку и цену продавца без автоматического ценового ориентира.
-
-### Правовая оговорка
-
-В актуальной на 31 августа 2026 года редакции статьи 11 Федерального закона № 135-ФЗ «О защите конкуренции» запрещены соглашения между конкурентами, если они приводят или могут привести к установлению либо поддержанию цен.[1] Та же статья отдельно ограничивает вертикальные соглашения, ведущие к установлению цены перепродажи, и координацию экономической деятельности, приводящую к перечисленным в законе последствиям, если она не подпадает под предусмотренные исключения.[1]
-
-Статья 12 допускает отдельные виды соглашений только при установленных законом условиях, включая некоторые вертикальные соглашения.[2] Применимость этих исключений к задуманной модели платформы не подтверждена.
-
-Обязательная единая цена больше не выбрана основным механизмом. Если к ней вернутся позднее, до реализации антимонопольный юрист должен проверить конкретную договорную схему, роли платформы и продавцов, механизм принятия ценового решения и применимость исключений. Наличие возможных исключений нельзя заранее считать юридическим разрешением такой модели.
-
-Необязательный ценовой ориентир также требует юридической и экономической проверки: правила выдачи, санкции или ограничения не должны скрыто превращать его в фактически обязательную цену.
-
-### Выдача идентичных товаров
-
-Продавец не может купить повышение позиции своего предложения в обычной выдаче идентичного товара. Для таких товаров платные позиции и рекламный аукцион не используются.
-
-До сортировки платформа исключает предложения без остатка, не обслуживающие адрес покупателя, а также предложения продавцов, которым ограничены продажи. Основное направление — показывать подходящих продавцов по удалённости от покупателя, отдельно и прозрачно отображая стоимость и срок доставки, наличие, репутацию и качество исполнения.
-
-Покупатель может перейти из общего результата в индивидуальную бренд-витрину продавца. Качество витрины помогает объяснить бренд и сервис, но не покупает продавцу более высокое место в общей выдаче идентичного товара.
-
-После исключения недоступных предложений порядок по умолчанию учитывает возможность доставки по адресу, полную стоимость с доставкой, срок доставки, расстояние и подтверждённое качество исполнения заказов. Порядок и его факторы публикуются; комиссия площадки, платёж за позицию и качество оформления витрины не повышают предложение. Покупатель может явно переключиться на отдельную сортировку по полной стоимости, сроку, расстоянию или рейтингу.
-
-Факторы и запрет коммерческого влияния закрепляются до реализации. Точные числовые веса определяются до публичного запуска после моделирования и пилотной проверки на данных, а затем публикуются как версия правил. Одна версия одинаково применяется к сопоставимым условиям. Изменение весов получает обоснование, запись в журнале версий и предварительное уведомление; AI и сотрудник не меняют порядок тайно для отдельного продавца.
-
-В первом публичном запуске порядок продавцов не персонализируется по скрытому поведенческому профилю покупателя. Учитываются только явно заданные условия: адрес доставки, выбранные фильтры и способ сортировки. При одинаковых условиях применяется одинаковый порядок. Поведенческая персонализация может исследоваться позже только как прозрачная и отключаемая функция с отдельным согласием и объяснением используемых данных.
-
-### Общий поиск и каталог
-
-В публичной бете платное размещение в каталоге и поиске не используется. После успешного пилота реклама может появиться только в отдельных явно помеченных блоках, которые визуально отделены и не меняют органический порядок. В рекламу допускаются только предложения, соответствующие обычным правилам безопасности, доступности и качества данных. Оплата рекламы не повышает органическую позицию товара или продавца.
-
-При упорядочивании разных товаров система сначала учитывает соответствие поисковому запросу, категории и явно выбранным характеристикам, затем доступность для адреса покупателя, условия доставки и подтверждённое качество исполнения. Факторы публикуются, а коммерческое вознаграждение площадке не влияет на органический порядок. Покупатель может отдельно сортировать результаты по полной стоимости, новизне, сроку доставки или рейтингу.
-
-Отсутствие истории у нового продавца или товара считается нейтральным, а не отрицательным показателем. Покупателю показывается пометка «недостаточно данных» без выдуманного рейтинга. В порядке продолжают учитываться релевантность, доступность и доставка, а к новому продавцу применяется усиленный начальный контроль по опубликованным правилам. Новизна сама по себе не отправляет предложение в конец и не даёт искусственного первого места.
-
-### Варианты и остатки
-
-Вариант товара — конкретная продаваемая единица с собственным набором значений, например цветом, размером или комплектацией.
-
-Остаток физического товара учитывается для варианта по местам хранения продавца. Все публикации этого варианта в магазинах продавца используют один реальный запас; публикация не создаёт отдельный остаток.
-
-Для цифровых предложений доступность зависит от способа исполнения: файл и подписка могут иметь неограниченную доступность, ключ использует ограниченный запас уникальных кодов, а услуга — доступную ёмкость исполнения.
-
-Обычное добавление в корзину не резервирует доступность. При переходе к онлайн-оплате платформа повторно проверяет цену и наличие и создаёт короткий временный резерв физического варианта, уникального ключа или ограниченной ёмкости услуги. Успешная оплата закрепляет резерв за заказом; ошибка, отмена или истечение времени оплаты освобождает его. Точная длительность резерва определяется после выбора платёжного партнёра.
-
-### Перенос данных
-
-Продавец должен иметь возможность переносить собственные:
-
-- профиль;
-- каталог;
-- карточки;
-- варианты;
-- остатки;
-- принадлежащие ему изображения и видео;
-- настройки витрины;
-- историю происхождения импортированных данных.
-
-### Первая версия открытого формата
-
-Первая версия открытого документированного формата содержит минимальное рабочее ядро для реального переноса каталога и витрины: товары, варианты, характеристики, цены, остатки, принадлежащие продавцу медиа, категории, коллекции, настройки витрины и происхождение данных. Записи имеют стабильные идентификаторы и содержат версию применённой схемы.
-
-Собственные заказы продавца и подтверждённые отзывы описываются отдельными связанными схемами с собственными правилами доступа и приватности. Платёжные секреты, закрытые материалы споров, внутренняя аналитика, антифрод-сигналы и риск-баллы не смешиваются со схемой каталога. Коннекторы к конкретным внешним площадкам преобразуют данные в общий формат или из него, но не заменяют его отдельными несовместимыми экспортами.
-
-Каждая выгрузка явно содержит версию применённой схемы. Совместимые дополнения, например новое необязательное поле, не меняют смысл существующих полей и не ломают обработку поддерживаемой версии. Несовместимое изменение получает новую основную версию. Для прекращения поддержки старой основной версии заранее публикуются срок, описание различий, правила перехода и средство миграции; импорт поддерживаемых старых файлов не отключается внезапно.
-
-Импорт выполняется безопасной операцией в два этапа. Сначала система проверяет файл без изменения рабочих данных, предлагает сопоставление с существующими товарами и вариантами и показывает продавцу будущие создания, обновления, пропуски и конфликты. Неоднозначные совпадения требуют явного выбора продавца. Только после подтверждения применяется весь согласованный набор изменений. Операция, исходные значения, решения по конфликтам и результат сохраняются в журнале; продавец может откатить всю операцию импорта к состоянию до её применения. Импорт не выполняет безусловное перезаписывание и не создаёт дубликаты при каждом совпадении.
-
-На первом запуске автоматическая синхронизация допускается только в одном направлении: из явно выбранного продавцом внешнего источника в Open Marketplace. Для каждой подключённой группы полей фиксируется главный источник. Площадка не отправляет изменения обратно во внешнюю систему автоматически; обратный перенос выполняется отдельным подтверждённым экспортом. Полная двусторонняя синхронизация откладывается до успешного пилота и отдельного проектирования конфликтов и восстановления. Правило «последнее изменение побеждает» не применяется как скрытый универсальный механизм.
-
-Поле или логическая группа полей, управляемые внешним источником, явно помечаются в кабинете. Перед ручным изменением продавец видит предупреждение и должен выбрать действие «взять управление». После этого синхронизация только выбранного поля или группы приостанавливается, а остальные подключённые данные продолжают обновляться. Для повторного включения система сначала показывает изменения внешнего источника и возможные конфликты. Ручная правка не перезаписывается следующей синхронизацией молча и не отключает без необходимости всё подключение магазина.
-
-При сбое источника или недопустимом обновлении площадка не очищает поля и не применяет повреждённый пакет частично внутри связанной логической группы. Сохраняется последняя подтверждённая версия, синхронизация получает видимый статус задержки, а продавцу отправляются причина и отчёт по затронутым данным. Краткая задержка некритичных полей, например описания, сама по себе не останавливает продажу. Если цена или остаток остаются неподтверждёнными дольше заранее установленного безопасного срока, затронутые предложения временно перестают принимать новые заказы до успешной проверки свежего обновления или явного перехода под ручное управление. Точные сроки определяются после выбора источников и пилота.
-
-Спецификация открытого формата, машинно-проверяемые схемы, примеры, предложения изменений, обсуждения, решения и журнал версий ведутся в публичном репозитории. Любой участник может предложить изменение. Первоначальными ответственными сопровождающими выступает команда платформы: она принимает или отклоняет предложения по опубликованным критериям совместимости, безопасности, приватности и практической необходимости и публикует обоснование. Тайные изменения и изменение уже опубликованной версии задним числом запрещены. Общее голосование всех пользователей по каждому техническому изменению не требуется; возможность передачи управления независимой организации рассматривается позже при наличии зрелого сообщества и работающего процесса.
-
-Спецификация формата, машинно-проверяемые схемы и эталонные примеры публикуются под разрешительной открытой лицензией, которая прямо допускает использование, независимую реализацию, изменение и распространение, включая применение в коммерческих продуктах. Конкретная лицензия или сочетание лицензий для документации и машинных файлов выбираются после отдельной правовой проверки; публикация без явных условий использования не считается выполнением требования открытости.
-
-### Данные заказов и покупателей при экспорте продавцом
-
-Продавец может экспортировать только собственные заказы и минимальный набор данных покупателя, необходимый для исполнения этих заказов, поддержки и обязательного учёта. Точный состав полей и сроки доступности экспорта должны пройти правовую проверку.
-
-Контактные данные для маркетинговых сообщений включаются в экспорт только при отдельном согласии покупателя. Просмотры, поисковые запросы, покупки у других продавцов, внутренние оценки риска и служебные данные платформы продавцу не передаются.
-
-### Личная выгрузка покупателя
-
-Покупатель может бесплатно получить полную личную выгрузку собственных данных после усиленной проверки доступа. В неё входят профиль, заказы, доступные платёжные документы, собственные отзывы, обращения, споры, согласия и личная переписка.
-
-В выгрузку не входят внутренние оценки риска и антифрода, данные других покупателей, закрытые служебные записи продавцов и площадки и сведения, к которым у покупателя нет права доступа. Точный формат и сроки подготовки выгрузки определяются отдельно.
-
-### Удаление аккаунта покупателя
-
-При подтверждённом удалении аккаунта публичный профиль закрывается, маркетинговые согласия отзываются, а необязательные персональные данные удаляются. Записи, необходимые для незавершённых обязательств, заказов, возвратов, споров и обязательного учёта, сохраняются только в необходимом объёме и на установленный срок.
-
-Сообщения и действия, вошедшие в доказательства заказа, не исчезают из истории сделки из-за удаления аккаунта. После окончания применимого срока сохранённые данные удаляются или обезличиваются. Точные основания, состав и сроки хранения определяются после правовой проверки и заранее сообщаются пользователю.
-
-### Важное ограничение
-
-Нельзя обещать автоматический перенос из любой внешней площадки до проверки её официального экспорта, API и разрешённых способов интеграции.
-
-### Утверждено: граница бесплатной переносимости и платной автоматизации
-
-Полный ручной экспорт принадлежащих продавцу переносимых данных всегда доступен бесплатно в открытом документированном формате, а не только при закрытии аккаунта. Площадка не урезает переносимые поля искусственно ради платного тарифа.
-
-Платными могут быть непрерывная автоматическая синхронизация, готовые коннекторы, повышенные частоты и объёмы операций, очистка и сопоставление сложных данных и перенос с настройкой «под ключ». Плата взимается за автоматизацию и дополнительную работу сервиса, но не за само право продавца получить свои данные.
+Exact numeric thresholds and the measurement period are determined before the pilot begins.
 
 ---
 
-## 8. Отзывы и репутация
+## 5. Geography
 
-### Утверждено
+### Approved
 
-Используется двухуровневая репутация.
+The first public launch is in Russia only.
 
-#### Основной рейтинг
+At the same time, the architecture must immediately separate:
 
-- формируется только отзывами по подтверждённым заказам внутри нашей площадки;
-- является главным показателем доверия;
-- не смешивается с внешней репутацией.
+- country;
+- currency;
+- language;
+- category rules;
+- payment partner;
+- logistics partner.
 
-#### Внешняя репутация
+This will allow other countries to be added later without reworking the common core.
 
-- показывается отдельным блоком;
-- содержит название источника, дату и исходную оценку;
-- не влияет на основной рейтинг;
-- сохраняет происхождение при дальнейшем экспорте;
-- не получает отметку подтверждения, если источник невозможно проверить.
+### Approved: Conditions for Expansion to Other Countries
 
-Это позволяет продавцу показать прежнюю историю, не выдавая внешние отзывы за подтверждённые нашей площадкой.
-
-#### Публичные показатели качества продавца
-
-На первом запуске покупателю показывается ограниченный проверяемый набор операционных показателей: число завершённых заказов, доля своевременно исполненных заказов, отмены по вине продавца, подтверждённые проблемы и возвраты по вине продавца. Рядом указываются период расчёта и число заказов, на которых основана статистика. Если данных недостаточно, платформа прямо сообщает об этом и не создаёт видимость точного рейтинга.
-
-Средняя оценка, число подтверждённых отзывов и сами отзывы показываются отдельно от операционных показателей. Внутренние антифрод-сигналы, правила выявления манипуляций и закрытый риск-балл публично не раскрываются и не включаются в экспорт продавца или покупателя.
-
-Жалоба, открытый спор, запрошенный возврат или предварительное решение сами по себе не ухудшают публичные показатели продавца. Событие учитывается только после окончательного подтверждения факта и ответственности продавца: как бесспорное системное событие, ставшее окончательным по опубликованным правилам, либо как итоговое решение человека-модератора после завершения обычного обжалования. Отменённые и отклонённые жалобы, решения без установленной ответственности продавца и проблемы по вине покупателя, перевозчика или площадки в показатели продавца не включаются.
-
-Полная и недавняя история показываются раздельно. Общее число завершённых заказов отражает опыт продавца за всё время. Доли своевременного исполнения, отмен, подтверждённых проблем и возвратов рассчитываются за явно указанный недавний скользящий период; рядом показываются даты периода и число учтённых заказов. Эти данные не объединяются в единый непрозрачный балл. Точная длительность периода и минимальный размер выборки определяются после моделирования данных пилота и фиксируются до публичного применения.
-
-Публичный профиль содержит общий обзор продавца. При достаточной выборке дополнительно показываются отдельные показатели для физических товаров, цифровых продуктов и услуг. В карточке предложения приоритетно отображаются показатели соответствующего типа исполнения, а общий обзор остаётся доступен. Если выборки для отдельного типа недостаточно, платформа не показывает ненадёжный процент и прямо сообщает о недостатке данных. Точный минимальный размер выборки определяется по данным пилота до публичного применения.
-
-В закрытом кабинете продавец видит опубликованную методику, период расчёта, собственные заказы и окончательные события, вошедшие в каждый показатель, а также причину их включения. Продавец может подать формальное обращение по ошибке данных, отнесению ответственности или применению методики. Подтверждённая ошибка исправляет исходные данные и вызывает автоматический пересчёт; основание, прежнее и новое значение сохраняются в журнале изменений. Поддержка не может назначать или исправлять итоговый показатель произвольно без исправления исходного события и проверяемого основания. Покупателям не раскрываются личности участников, содержимое заказов и закрытые материалы споров.
-
-Подтверждённые публичные показатели качества могут использоваться в обычной выдаче только как ограниченный прозрачный фактор по заранее опубликованной методике; соответствие предложения запросу остаётся основой. Покупателю доступны явные фильтры и сортировка по показателям качества, а продавцу — объяснение используемых публичных факторов. Закрытые антифрод-сигналы и внутренний риск-балл не подмешиваются как тайное понижение. Ограничение продаж, скрытие предложений и исключение продавца применяются только через отдельные правила безопасности и санкций с фиксированным основанием и правом обжалования.
-
-#### Экспорт подтверждённых отзывов нашей площадки
-
-Продавец может бесплатно экспортировать все относящиеся к нему подтверждённые отзывы нашей площадки в открытом проверяемом формате. Запись должна сохранять текст, оценку, дату, тип подтверждённого заказа, происхождение и проверяемое подтверждение платформы.
-
-Экспорт не содержит контактные данные покупателя. Продавец не может исключить только неудобные отзывы, изменить их содержание или представить их как внутренние отзывы другой площадки. Допустимый публичный идентификатор покупателя, настройки видимости и точный состав полей определяются после правовой проверки.
+The platform does not set a calendar date for international expansion in advance. First, it must confirm stable operation in Russia according to the criteria for the pilot and full release. Then one next country is selected, for which law and taxes, payments and currency, localization, logistics, support, and buyer protection are separately checked before launch. Entry begins with a limited pilot in that country; a technical interface translation alone is insufficient.
 
 ---
 
-## 9. Индивидуальная витрина продавца
+## 6. Categories and Types of Listings
 
-### Утверждено
+### Approved
 
-Каждый проверенный продавец бесплатно получает базовую рабочую бренд-витрину. В неё входят адаптированный для мобильных устройств безопасный шаблон, название и логотип, базовые цвета, каталог и подборки, а также единые элементы цены, доставки, рейтинга, возврата и защищённой покупки.
+The platform is not limited to one narrow product niche. A common core with additional fields for different categories is used.
 
-Базовую витрину можно настроить вручную без AI. Доступ к AI-дизайнеру, расширенным вариантам оформления и ресурсоёмкой генерации медиа является отдельной дополнительной возможностью и не ограничивает обычную публикацию товаров или продажи.
+### Seller Admission
 
-Выбран вариант безопасной бренд-витрины.
+The first wave admits any seller who has passed the review and operates in an allowed category. Previous sales experience on Ozon, Wildberries, or another platform is not required.
 
-Продавцу разрешаются:
+In public beta, each seller automatically becomes able to sell immediately after successfully completing all applicable reviews. There is no additional activation queue, manual batch selection, or paid place in the queue. An application that is still under review or requires additional documents is not considered to have successfully completed the review.
 
-- собственные цвета;
-- шрифты из разрешённого набора;
-- композиция из безопасных блоков;
-- обложки;
-- подборки;
-- история бренда;
-- изображения и видео;
-- мягкие анимации;
-- сезонное оформление;
-- индивидуальная публичная ссылка внутри домена платформы.
+Permitted seller forms are: individual entrepreneur, legal entity, or self-employed person.
 
-На пилоте собственные домены продавцов не подключаются. Каждая витрина получает адрес внутри домена платформы. Подключение собственного домена добавляется после успешного пилота с проверкой владения и безопасной настройкой; внутренний адрес платформы при этом сохраняется.
+Seller review has three levels:
 
-Едиными остаются:
+1. **Basic level for everyone** — verification of the person or organization, active status, contact details, and payment details.
+2. **Category requirements** — product documents or proof of the right to sell where required by law or platform rules.
+3. **Risk-based enhanced review** — manual analysis and additional confirmations for suspicious data, a higher-risk category, or a problematic history.
 
-- карточка товара и критичные сведения;
-- единый формат показа цены и полной стоимости покупки;
-- доставка;
-- возврат;
-- рейтинг и статус проверки;
-- корзина;
-- безопасная оплата;
-- требования к скорости и мобильной версии.
+The exact list of documents and risk criteria must be defined after legal review.
 
-Продавец не получает возможность загружать произвольный исполняемый код.
+### Registration and Payout Details
+
+The seller registers using the official data for their status, not only an ordinary user profile.
+
+During registration, the seller provides:
+
+- business form: individual entrepreneur, legal entity, or self-employed person;
+- official name or designation;
+- identification and registration data applicable to the selected status;
+- contact details for an authorized person;
+- bank details for payouts accepted by the selected payment partner.
+
+After successful fulfillment of an order, the payment partner transfers the amount due to the seller using the verified details, taking commissions and refunds into account.
+
+The term “settlement account” is not used as a single requirement for all seller forms: the exact type of permitted account and the verification method depend on the seller's status and the payment partner's rules.
+
+### Buyer Registration
+
+For an ordinary purchase, confirming a phone number or email address is sufficient. Full identity verification is not required for every buyer.
+
+Additional verification is applied only in the presence of a substantiated risk, a disputed transaction, or where the rules of a specific category require it. The risk criteria and list of such transactions are defined separately.
+
+Examples of extensions:
+
+- clothing — size, color, size chart;
+- furniture — dimensions, weight, material, assembly;
+- other categories — their own set of attributes.
+
+### Physical Module
+
+It is responsible for:
+
+- product variants;
+- inventory;
+- warehouses;
+- delivery;
+- returns;
+- confirmation of receipt.
+
+During the pilot, products are stored by the seller; the platform does not create its own warehouse or fulfillment operation.
+
+Two delivery methods are allowed:
+
+1. a delivery service connected to the platform;
+2. the seller's own delivery.
+
+In both cases, receipt must be confirmed by a verifiable event: the integrated service's status, a pickup code, or the buyer's explicit confirmation. The seller's one-sided “delivered” mark is not sufficient for an automatic payout.
+
+For the seller's own delivery, the primary confirmation method is a one-time code created by the platform and available to the buyer. The buyer gives the code to the seller when the product is actually handed over, after which the seller enters it into the order.
+
+The code records the fact and time of receipt, but does not confirm product quality or deprive the buyer of the subsequent period for opening a dispute. This period begins after the handover is confirmed.
+
+### Return-Shipping Cost
+
+In public beta, the platform arranges return shipping for a physical product through a verifiable channel and, when necessary, advances the cost from a limited fund so that the buyer does not have to wait for dispute resolution or arrange payment with the seller independently.
+
+After the cause is established, the final cost is assigned to the responsible party: the seller in the event of a confirmed defect, wrong product, or material discrepancy; the delivery service in the event of its confirmed fault and the ability to recover the cost under the contract; or the buyer in the event of an allowed return of an undamaged product based on a personal decision. If actual recovery is impossible, the uncovered amount is treated as platform risk within the pre-approved liability limit.
+
+Before return shipment is confirmed, the buyer is shown the delivery method, full cost, and the party provisionally considered responsible. After the dispute is decided, the platform recalculates the amount and records the basis in the order log.
+
+This is a preliminary product policy. A specialist lawyer must review it; the buyer's mandatory rights take priority.
+
+### Timing of the Refund
+
+After the return is approved, the buyer hands over the product through a verifiable channel. After confirmed delivery, the seller has 2 business days to check its condition and completeness.
+
+If the seller confirms the return or does not submit a specific, substantiated objection with evidence within this period, the payment partner automatically refunds the buyer. A request for additional time without a demonstrable reason does not extend the period. A timely objection opens a dispute in which the platform reviews both parties' evidence. The seller's silence cannot delay the refund.
+
+The minimum set for a seller's objection includes the return number and carrier details, photographs of the outer packaging before opening, photographs of the product, its completeness, seals, and available unique identifiers immediately after opening, an exact description of the discrepancy, and the original data about the shipped product for comparison. If damage during return shipping is alleged, the carrier's report is attached when it can be obtained. Continuous opening video is additional but not mandatory evidence. No item has predetermined decisive force: the moderator compares the entire order log and the evidence from both parties.
+
+To open a dispute about a physical product, the buyer selects a specific reason, describes the difference between what was promised and what was received, and attaches available photographs of the product, packaging, markings, contents, and visible defect. Carrier data or messages and the product's unique identifier are attached when they relate to the problem. An unboxing video and an expert opinion are additional but not mandatory materials. The platform automatically adds the product listing and terms at the time of purchase, the order log, and available delivery data. For a concealed or technically complex defect, the moderator may request a reasonable additional check, but the dispute is not automatically rejected solely because the buyer did not obtain a prepaid expert examination.
+
+This is an internal maximum service period. A mandatory shorter period under applicable law takes priority; evidence requirements undergo legal review before launch.
+
+### Partial Refund Without Shipping the Product
+
+A partial refund is allowed only with the buyer's explicit consent to keep the physical product. The order records the amount, reason, initiator of the offer, and buyer confirmation. After consent, the payment partner refunds the specified amount, and the remaining seller payout is recalculated automatically.
+
+The seller may propose a partial refund, or the platform may assign one as the result of a dispute, but it cannot be imposed on the buyer instead of a full refund available to them. The buyer's mandatory statutory rights take priority.
+
+The exact hierarchy of delivery evidence and protection against false confirmations are defined separately.
+
+### Digital Module
+
+The public beta includes one digital fulfillment method — a downloadable file.
+
+After the pilot, the target model must support four different digital fulfillment methods:
+
+1. downloadable file;
+2. license or activation key;
+3. subscription;
+4. online service.
+
+Keys, subscriptions, and services are not included in public beta. The order in which they are added after a successful pilot is determined separately.
+
+They use a common order and payment, but differ in fulfillment:
+
+- file — automatic protected delivery after confirmed payment;
+- key — automatic delivery of one unique code from the seller's available stock;
+- subscription — automatic activation of the paid period and subsequent renewal;
+- service — seller acceptance of the order, an agreed schedule and stages, delivery of the result, and acceptance confirmation.
+
+Automatic delivery of a digital product does not mean an immediate payout to the seller. The payout is made after the relevant fulfillment method is confirmed and taking the established dispute period into account.
+
+### Storage of Downloadable Files in Public Beta
+
+In public beta, the seller uploads a downloadable file only to the platform's managed storage. Before publication, the platform checks the permitted format and malicious content, stores the verified version, and keeps a log of delivery to the buyer.
+
+Pre-published limits apply to the size of one file and the seller's total volume. Exact sizes, permitted formats, and the review procedure are determined before launch after technical tests and calculation of storage and processing costs.
+
+Each order is linked to the exact verified version of the file purchased by the buyer. The seller uploads a change as a new version and cannot silently replace the file in an order that has already been completed.
+
+Before payment, the listing clearly states whether future updates are included free of charge. If they are included, the buyer retains access to the purchased version and receives access to subsequent verified versions under the announced terms. If they are not included, the new version is a separate listing. The rule recorded for an order cannot be worsened retroactively.
+
+The purchased version remains available to the buyer in their personal library without a limit on the number of repeat downloads while the account is active and the platform is required to retain the purchase. Each download link is temporary and issued only to the authorized buyer.
+
+Removing a product from sale does not revoke access to an already purchased version. Access may be blocked only on a confirmed security or legal ground, including malicious content or infringement of third-party rights. In that case, the buyer is notified, and the question of a refund is decided separately under rules established in advance.
+
+Before the first successful access, the buyer may cancel an unfulfilled order under the platform's rules. After successful access, a simple change of the buyer's mind does not create automatic grounds for a refund. A refund or replacement is considered in the event of unavailability, corruption, confirmed malicious content, or a material discrepancy between the verified version and the listing description.
+
+For a dispute, the platform retains the exact version and checksum of the file, review results, the listing terms and stated system requirements at the time of purchase, delivery events, access attempts and errors, and correspondence within the order. For an ordinary digital dispute, the buyer must attach a screenshot or video of the problem, state the reason, and describe the steps that caused it. An exception applies if the server log already confirms non-delivery or a failure, or if the buyer specifically explains why creating a recording was technically impossible. The seller provides instructions relevant to the dispute, version data, and an explanation of compliance. A successful-download mark proves access, but by itself does not prove that the file works or matches the description. A user attachment does not replace the server log and is not automatically treated as true.
+
+This is a preliminary product policy: a specialist lawyer must review it before launch, and the buyer's mandatory rights under applicable law take priority.
+
+After the first successful access to the file, a short, predetermined period of enhanced order protection begins, during which the seller's payout remains held. If no dispute is opened, the payment partner automatically releases the payout to the seller. The buyer may explicitly confirm that the file is correct and end the waiting period early, but manual confirmation is not mandatory.
+
+If the buyer does not access the available file, fulfillment is considered to have occurred when the verified version appears in their personal library and a notification is successfully delivered through a confirmed channel. A longer, predetermined payout-holding period begins from this event. The first successful access switches the order to the ordinary short period.
+
+The end of either period ends only the automatic holding of the payout. It does not cancel a later substantiated dispute, the buyer's mandatory rights, or the possibility of an approved refund through the seller's reserve and the guarantee mechanism after payout. A simple change of mind after successful access does not by itself create grounds for a refund. Both durations are determined before launch, reviewed with the payment partner and a lawyer, and shown to participants in advance.
+
+Delivery through an external link, external personal account, or third-party service is not included in public beta: an external file may change after review. External fulfillment methods are investigated after a successful pilot as a separate possibility for subsequent digital flows.
+
+### Category Restrictions
+
+The general direction is approved: at the first stage, all ordinary categories are available by default after the seller review and the requirements for the specific category have been passed. Food, medical, hazardous, prohibited, and other highly regulated categories are not admitted in the first stage.
+
+The exact list of prohibited and temporarily restricted categories has not yet been compiled. It must be separately checked for Russia against legislation, the payment partner's requirements, and delivery-service capabilities; categories must not be included or excluded based on an unverified assumption.
 
 ---
 
-## 10. AI-дизайнер витрины
+## 7. Common Data Model and Portability
 
-### Источник идеи
+### Approved
 
-Механика исследована на локально установленном Open Design версии 0.13.0.
+The common core must cover:
 
-Проверенные сценарии Open Design:
+- seller;
+- store;
+- product;
+- product variant;
+- attributes;
+- inventory;
+- media;
+- review and rating;
+- order;
+- fulfillment method;
+- payment status;
+- dispute.
 
-- свободный текстовый запрос;
-- уточняющие вопросы;
-- выбор направления;
-- создание результата;
-- автоматическая критика и повторное улучшение;
-- точечная доводка существующего дизайна;
-- генерация изображений, видео и аудио;
-- извлечение визуальных эффектов с референсного сайта;
-- дизайн-системы и плагины.
+### Seller and Stores
 
-Просмотренные локальные сценарии находятся в:
+The seller is a verified business entity: an individual entrepreneur, legal entity, or self-employed person. The seller is the responsible party for orders and the recipient of payouts.
+
+A store is a separate public branded storefront with its own name, design, catalog, and link.
+
+One seller may own multiple stores. Each store belongs to only one official seller-owner.
+
+During the pilot, one verified seller may have only one active branded storefront. The ability to open a second and subsequent stores is added after a successful pilot. This temporary product restriction does not change the model `one seller → multiple shops`.
+
+### Account Access at the First Launch
+
+At the first public launch, the seller account is available only to the verified owner or an officially authorized representative of the seller. A shared login for several employees is not allowed.
+
+Employee invitations, fixed roles, and configurable permissions are not included in the first launch and are added after the pilot. At the same time, the server-side action model must retain the author of every action and must not hinder the later addition of separate employee accounts.
+
+### Closing a Store and Seller Account
+
+Closing an individual store and ending the official seller's operations are different actions. When a store is closed, its storefront stops accepting new orders, but other stores belonging to the same seller may continue operating.
+
+When the seller ends operations, new sales stop, and active orders, returns, payouts, disputes, and other obligations must be completed. The seller is provided with a free export of the data belonging to them.
+
+Verified reputation and records necessary for transactions, accounting, buyer protection, and preventing circumvention of sanctions are not erased by closure. They are retained only to the necessary extent and for the established period, after which they are deleted or anonymized unless further retention is required. A closed storefront does not remain an indefinitely available active store.
+
+Re-registration is linked to the same verified business entity. Verified quality history, sanctions, disputes, and unfinished obligations are not reset by creating a new account or store. A new brand and a new storefront do not create a new official seller identity.
+
+When ownership changes, the store, data, and reputation are not transferred automatically. This requires a separate review of the transfer of rights and obligations.
+
+### Products and Store Publications
+
+The primary product card belongs to the seller and contains the product's common data, variants, attributes, and media.
+
+The seller may publish a product in one or more stores belonging to them. The publication links the product to a specific storefront and controls its visibility there. The primary product card does not need to be duplicated for each store.
+
+The common marketplace indexes published listings. For unique, original, and not-yet-matched listings, the primary card remains with the seller.
+
+### Reference Product and Price Benchmark
+
+#### Approved
+
+The main problem the pricing mechanism for an identical product must solve is giving the buyer a transparent and predictable price.
+
+For a demonstrably identical physical mass-produced product, a single reference card may be created to which verified sellers' listings are connected. To recognize identity, the manufacturer, model or SKU, variant, color or scent, volume, size or packaging, contents, and condition must match. A differing variant is a separate reference product.
+
+The platform displays an optional price benchmark, while each seller independently sets the actual price of their listing. Sellers may compete on price, availability, service area, delivery method, cost and time, service quality, and reputation.
+
+The price benchmark is introduced in two stages:
+
+1. While there are not enough confirmed completed transactions for the reference product within the platform, the benchmark may be shown only from a verified external source, such as the manufacturer's or official supplier's recommended price. The source and the date it was checked must be shown next to it. If there is no suitable verified source, the benchmark is temporarily not shown.
+2. After a sufficient volume of fresh, confirmed data has accumulated, the platform switches to a transparent market formula. Its primary basis is the actual prices of confirmed completed transactions within the platform. Current seller listings are used only as an additional check on market conditions and do not themselves receive equal weight with completed purchases.
+
+The main value in the second stage is calculated as the median of suitable prices over a recent period. The median is the price in the middle of an ordered set; it prevents one extremely high or low transaction from shifting the benchmark as strongly as an ordinary arithmetic mean would.
+
+Only fully completed transactions without a refund, confirmed manipulation, or a recognized material violation are included in the calculation. Canceled, fully or partially refunded, and confirmed artificial transactions are excluded. Delivery cost is accounted for and shown separately from the product price. AI may identify suspicious events and prepare materials, but excluding a transaction is done only under verifiable rules established in advance.
+
+The median uses the amount due to the seller for the product itself before deduction of the platform commission. A discount funded by the seller reduces the transaction price counted. A coupon, bonus, or other temporary subsidy funded by the platform or another partner without reducing the seller's amount does not reduce the counted price. The source of each discount must be stored separately in the order data.
+
+The transition from a verified external source to the internal median is performed automatically only after reaching a predetermined minimum of suitable recent transactions from several independent buyers and several sellers. The threshold and duration of the recent period may differ by category, but must be defined before the internal benchmark is enabled for that category. A manual decision by an employee or AI does not replace meeting the threshold.
+
+If, after the transition, fresh internal data no longer meets the established threshold, the median is no longer shown as the current benchmark. The platform automatically returns to a fresh verified external source, or temporarily hides the benchmark if none is available. The last median may be retained in history and analytics, but is not presented to the buyer as a current value.
+
+Current listings do not directly change the median. If their prices diverge from the internal median beyond a category-specific threshold established in advance, the benchmark is temporarily hidden from buyers and a review of data freshness, comparability, and quality is initiated. After the review, the system either publishes the benchmark again under the general rules or returns to a fresh verified external source, leaving the benchmark hidden if none is available. An employee or AI does not enter an arbitrary number in its place.
+
+Next to the benchmark, the buyer is shown its value, source type and name, update date, calculation period, number of transactions included, and a link to a brief description of the methodology. For an external source, who provided the value and when it was checked are stated explicitly; for the internal median, it is stated that it is based on suitable completed purchases. Participant names and information about individual orders are not disclosed.
+
+The buyer may report a possible error in the benchmark. The seller may submit a formal request concerning product matching, the external source, inclusion of their own transaction, or application of the published rules. An employee checks the source data and methodology; a confirmed error is corrected, after which the benchmark is recalculated automatically. The employee does not assign a new value manually or disclose other people's orders or participant identities to the requester.
+
+The seller's actual price deviating from the benchmark does not by itself block publication or sale, trigger a sanction, lower reputation, or create a hidden demotion in ordinary results. The buyer sees the actual price, deviation, delivery cost, and total cost and may explicitly select sorting by price or total cost. A change in order resulting from this buyer choice is not considered a seller sanction. Measures against fraud, false descriptions, and other violations are applied separately and are not justified by a price deviation alone.
+
+The conditions for moving to the second stage, data composition, exact formula, calculation period, and rules for excluding suspicious values have not yet been defined. They must be established in advance and applied equally to comparable products; the pricing committee or AI does not assign the benchmark arbitrarily.
+
+The buyer sees one card for the identical product and the available seller listings. For each listing, the seller's actual price, its deviation from the benchmark, the delivery cost and time, and the total purchase cost are shown.
+
+The price benchmark does not replace the seller's price and is not a mandatory condition for publication or sale. The platform does not hide the seller's actual price.
+
+The independent store, not the platform, remains the legal seller for the order. The platform combines listings in the common catalog, calculates and displays the benchmark, and organizes search and the protected transaction. It does not become the owner of the product or the single seller because of the common card and price benchmark.
+
+Original and unique products, products without reliable matching, and digital products, subscriptions, and services currently use their own card and the seller's price without an automatic price benchmark.
+
+### Legal Caveat
+
+In the version of Article 11 of Federal Law No. 135-FZ “On Protection of Competition” current as of 31 August 2026, agreements between competitors are prohibited if they result or may result in establishing or maintaining prices.[1] The same article separately restricts vertical agreements leading to the establishment of a resale price and coordination of economic activity leading to the consequences listed in the law, unless it falls under the provided exceptions.[1]
+
+Article 12 allows certain types of agreements only under conditions established by law, including some vertical agreements.[2] The applicability of these exceptions to the intended platform model has not been confirmed.
+
+An obligatory single price is no longer selected as the primary mechanism. If it is revisited later, an antitrust lawyer must check the specific contractual scheme, the roles of the platform and sellers, the mechanism for making the pricing decision, and the applicability of the exceptions before implementation. The existence of possible exceptions cannot be treated in advance as legal permission for such a model.
+
+An optional price benchmark also requires legal and economic review: delivery rules, sanctions, or restrictions must not covertly turn it into a de facto mandatory price.
+
+### Ranking Identical Products
+
+The seller cannot buy a higher position for their listing in ordinary results for an identical product. Paid positions and an advertising auction are not used for such products.
+
+Before sorting, the platform excludes listings with no inventory, those that do not serve the buyer's address, and listings from sellers whose sales are restricted. The main direction is to show suitable sellers by distance from the buyer while separately and transparently displaying delivery cost and time, availability, reputation, and fulfillment quality.
+
+The buyer may go from the common result to the seller's individual branded storefront. Storefront quality helps explain the brand and service, but does not buy the seller a higher position in the common results for an identical product.
+
+After unavailable listings are excluded, the default order considers the ability to deliver to the address, total cost including delivery, delivery time, distance, and verified order-fulfillment quality. The order and its factors are published; the platform commission, payment for position, and quality of storefront design do not raise a listing. The buyer may explicitly switch to separate sorting by total cost, time, distance, or rating.
+
+The factors and prohibition on commercial influence are fixed before implementation. Exact numeric weights are determined before public launch after modeling and pilot testing on data, and are then published as a version of the rules. One version is applied equally to comparable conditions. A change in weights receives a rationale, an entry in the version log, and advance notice; neither AI nor an employee secretly changes the order for an individual seller.
+
+In the first public launch, seller order is not personalized according to the buyer's hidden behavioral profile. Only explicitly specified conditions are considered: delivery address, selected filters, and sorting method. The same order is applied under the same conditions. Behavioral personalization may be researched later only as a transparent and disableable feature with separate consent and an explanation of the data used.
+
+### Common Search and Catalog
+
+In public beta, paid placement in the catalog and search is not used. After a successful pilot, advertising may appear only in separate, clearly marked blocks that are visually distinct and do not change the organic order. Only listings that comply with the ordinary rules for safety, availability, and data quality are allowed in advertising. Payment for advertising does not raise the organic position of a product or seller.
+
+When ordering different products, the system first considers relevance to the search query, category, and explicitly selected attributes, then availability for the buyer's address, delivery terms, and verified fulfillment quality. The factors are published, and commercial compensation to the platform does not affect the organic order. The buyer may separately sort results by total cost, recency, delivery time, or rating.
+
+The absence of history for a new seller or product is considered neutral, not a negative indicator. The buyer is shown an “insufficient data” label without an invented rating. Relevance, availability, and delivery continue to be considered in ordering, while the new seller is subject to enhanced initial monitoring under the published rules. Newness alone does not send a listing to the end or give it an artificial first place.
+
+### Variants and Inventory
+
+A product variant is a specific saleable unit with its own set of values, such as color, size, or contents.
+
+Physical-product inventory is tracked for a variant by the seller's storage locations. All publications of this variant in the seller's stores use one actual stock; a publication does not create separate inventory.
+
+For digital listings, availability depends on the fulfillment method: a file and subscription may have unlimited availability, a key uses a limited stock of unique codes, and a service uses available fulfillment capacity.
+
+Ordinary addition to the cart does not reserve availability. When proceeding to online payment, the platform rechecks the price and availability and creates a short temporary reservation of the physical variant, unique key, or limited service capacity. Successful payment attaches the reservation to the order; an error, cancellation, or expiration of the payment period releases it. The exact reservation duration is determined after selecting the payment partner.
+
+### Data Portability
+
+The seller must be able to port their own:
+
+- profile;
+- catalog;
+- cards;
+- variants;
+- inventory;
+- images and video belonging to them;
+- storefront settings;
+- provenance history of imported data.
+
+### First Version of the Open Format
+
+The first version of the open documented format contains the minimum working core for actual catalog and storefront portability: products, variants, attributes, prices, inventory, seller-owned media, categories, collections, storefront settings, and data provenance. Records have stable identifiers and contain the version of the schema applied.
+
+The seller's own orders and verified reviews are described by separate related schemas with their own access and privacy rules. Payment secrets, closed dispute materials, internal analytics, anti-fraud signals, and risk scores are not mixed into the catalog schema. Connectors to specific external platforms convert data to or from the common format, but do not replace it with separate incompatible exports.
+
+Every export explicitly contains the version of the schema applied. Compatible additions, such as a new optional field, do not change the meaning of existing fields or break processing of the supported version. An incompatible change receives a new major version. To end support for an old major version, the deadline, description of differences, transition rules, and migration tool are published in advance; import of supported old files is not switched off suddenly.
+
+Import is performed as a safe two-stage operation. First, the system checks the file without changing working data, proposes matches to existing products and variants, and shows the seller the future creations, updates, skips, and conflicts. Ambiguous matches require the seller's explicit choice. Only after confirmation is the entire agreed set of changes applied. The operation, original values, conflict decisions, and result are stored in the log; the seller can roll back the entire import operation to the state before it was applied. Import does not perform unconditional overwrites or create duplicates for every match.
+
+At the first launch, automatic synchronization is allowed in only one direction: from an external source explicitly selected by the seller to Open Marketplace. A primary source is recorded for each connected field group. The platform does not automatically send changes back to the external system; reverse portability is performed through a separate confirmed export. Full two-way synchronization is deferred until after a successful pilot and separate design of conflicts and recovery. The rule “last change wins” is not applied as a hidden universal mechanism.
+
+In the account, a field or logical group of fields managed by an external source is explicitly marked. Before making a manual change, the seller sees a warning and must choose “take control.” After that, synchronization of only the selected field or group is suspended, while the other connected data continue to update. To re-enable it, the system first shows changes from the external source and possible conflicts. A manual edit is not silently overwritten by the next synchronization and does not unnecessarily disable the entire store connection.
+
+If the source fails or an invalid update occurs, the platform does not clear fields or partially apply a damaged package within a related logical group. The last confirmed version is retained, synchronization receives a visible delayed status, and the seller is sent the reason and a report on the affected data. A brief delay in non-critical fields, such as a description, does not by itself stop sales. If the price or inventory remains unconfirmed longer than a safe period established in advance, the affected listings temporarily stop accepting new orders until a fresh update is successfully checked or control is explicitly transferred to manual management. Exact periods are determined after selecting sources and conducting the pilot.
+
+The open-format specification, machine-verifiable schemas, examples, change proposals, discussions, decisions, and version log are maintained in a public repository. Any participant may propose a change. The platform team initially serves as the responsible maintainers: it accepts or rejects proposals according to published criteria of compatibility, security, privacy, and practical necessity and publishes the reasoning. Secret changes and retroactive changes to an already published version are prohibited. A general vote of all users on every technical change is not required; transferring governance to an independent organization may be considered later if there is a mature community and a functioning process.
+
+The format specification, machine-verifiable schemas, and reference examples are published under a permissive open license that expressly allows use, independent implementation, modification, and distribution, including use in commercial products. The specific license or combination of licenses for documentation and machine files is selected after a separate legal review; publication without explicit terms of use does not count as satisfying the openness requirement.
+
+### Order and Buyer Data in a Seller Export
+
+The seller may export only their own orders and the minimum set of buyer data necessary to fulfill those orders, provide support, and perform mandatory accounting. The exact set of fields and the period for which the export is available must undergo legal review.
+
+Contact details for marketing messages are included in the export only with the buyer's separate consent. Views, search queries, purchases from other sellers, internal risk assessments, and the platform's service data are not transferred to the seller.
+
+### Buyer Personal Export
+
+The buyer may obtain a complete personal export of their own data free of charge after enhanced access verification. It includes the profile, orders, available payment documents, their own reviews, requests, disputes, consents, and private correspondence.
+
+The export does not include internal risk and anti-fraud assessments, other buyers' data, closed service records of sellers and the platform, or information to which the buyer has no right of access. The exact format and preparation periods for the export are determined separately.
+
+### Deletion of a Buyer Account
+
+After confirmed account deletion, the public profile is closed, marketing consents are withdrawn, and non-essential personal data are deleted. Records necessary for unfinished obligations, orders, returns, disputes, and mandatory accounting are retained only to the necessary extent and for the established period.
+
+Messages and actions included in the order evidence do not disappear from the transaction history because of account deletion. After the applicable retention period ends, retained data are deleted or anonymized. The exact grounds, composition, and retention periods are determined after legal review and communicated to the user in advance.
+
+### Important Limitation
+
+Automatic portability from any external platform must not be promised before its official export, API, and permitted integration methods have been checked.
+
+### Approved: Boundary Between Free Portability and Paid Automation
+
+A full manual export of portable data belonging to the seller is always available free of charge in the open documented format, not only when the account is closed. The platform does not artificially reduce portable fields for the sake of a paid tier.
+
+Paid features may include continuous automatic synchronization, ready-made connectors, increased operation frequencies and volumes, cleaning and matching complex data, and turnkey portability setup. The fee is charged for automation and additional service work, not for the seller's right to obtain their own data.
+
+---
+
+## 8. Reviews and Reputation
+
+### Approved
+
+Two-tier reputation is used.
+
+#### Primary Rating
+
+- is formed only by reviews of verified orders within our platform;
+- is the main trust indicator;
+- is not mixed with external reputation.
+
+#### External Reputation
+
+- is shown in a separate block;
+- contains the source name, date, and original rating;
+- does not affect the primary rating;
+- preserves provenance in subsequent exports;
+- is not marked as verified if the source cannot be checked.
+
+This allows the seller to show their previous history without presenting external reviews as verified by our platform.
+
+#### Public Seller Quality Metrics
+
+At the first launch, the buyer is shown a limited verifiable set of operational metrics: number of completed orders, share of orders fulfilled on time, cancellations attributable to the seller, confirmed problems, and returns attributable to the seller. The calculation period and number of orders on which the statistics are based are shown next to them. If there is insufficient data, the platform states this directly and does not create the appearance of an exact rating.
+
+The average rating, number of verified reviews, and the reviews themselves are shown separately from operational metrics. Internal anti-fraud signals, rules for detecting manipulation, and the closed risk score are not disclosed publicly and are not included in a seller or buyer export.
+
+A complaint, open dispute, requested return, or preliminary decision does not by itself worsen the seller's public metrics. An event is counted only after the fact and the seller's responsibility have been finally confirmed: as an undisputed system event that became final under the published rules, or as a final decision by a human moderator after ordinary appeal has concluded. Canceled and rejected complaints, decisions without established seller responsibility, and problems attributable to the buyer, carrier, or platform are not included in the seller's metrics.
+
+Total and recent history are shown separately. The total number of completed orders reflects the seller's experience over all time. Shares of timely fulfillment, cancellations, confirmed problems, and returns are calculated over an explicitly stated recent rolling period; the period dates and number of orders counted are shown next to them. These data are not combined into a single opaque score. The exact period length and minimum sample size are determined after modeling pilot data and recorded before public use.
+
+The public profile contains a general seller overview. With a sufficient sample, separate metrics for physical products, digital products, and services are also shown. The listing prioritizes metrics for the relevant fulfillment type, while the general overview remains available. If the sample for an individual type is insufficient, the platform does not show an unreliable percentage and states the lack of data directly. The exact minimum sample size is determined from pilot data before public use.
+
+In the private account, the seller sees the published methodology, calculation period, their own orders and final events included in each metric, and the reason for their inclusion. The seller may submit a formal request concerning a data error, attribution of responsibility, or application of the methodology. A confirmed error corrects the source data and triggers automatic recalculation; the basis, previous value, and new value are retained in the change log. Support may not arbitrarily assign or correct a final metric without correcting the source event and providing verifiable grounds. Participant identities, order contents, and closed dispute materials are not disclosed to buyers.
+
+Verified public quality metrics may be used in ordinary results only as a limited transparent factor under a methodology published in advance; listing relevance remains the basis. The buyer has explicit filters and sorting by quality metrics, while the seller receives an explanation of the public factors used. Closed anti-fraud signals and the internal risk score are not mixed in as a hidden demotion. Sales restrictions, hiding listings, and excluding a seller are applied only through separate security and sanctions rules with a recorded basis and a right of appeal.
+
+#### Export of Our Platform's Verified Reviews
+
+The seller may export all verified reviews from our platform relating to them free of charge in an open, verifiable format. The record must retain the text, rating, date, type of verified order, provenance, and verifiable platform confirmation.
+
+The export does not contain the buyer's contact details. The seller cannot exclude only inconvenient reviews, change their content, or present them as internal reviews of another platform. The permitted public buyer identifier, visibility settings, and exact set of fields are determined after legal review.
+
+---
+
+## 9. Individual Seller Storefront
+
+### Approved
+
+Every verified seller receives a basic working branded storefront free of charge. It includes a mobile-adapted safe template, name and logo, basic colors, catalog and collections, and consistent elements for price, delivery, rating, returns, and protected purchasing.
+
+The basic storefront can be configured manually without AI. Access to the AI designer, advanced design options, and resource-intensive media generation is a separate additional capability and does not limit ordinary product publication or sales.
+
+The safe branded storefront option has been selected.
+
+The seller is allowed:
+
+- custom colors;
+- fonts from the permitted set;
+- composition from safe blocks;
+- covers;
+- collections;
+- brand story;
+- images and video;
+- subtle animations;
+- seasonal design;
+- an individual public link within the platform domain.
+
+During the pilot, sellers' own domains are not connected. Each storefront receives an address within the platform domain. Connecting a custom domain is added after a successful pilot with ownership verification and safe configuration; the platform's internal address is retained.
+
+The following remain consistent:
+
+- product card and critical information;
+- a consistent format for showing price and total purchase cost;
+- delivery;
+- returns;
+- rating and review status;
+- cart;
+- secure payment;
+- performance and mobile-version requirements.
+
+The seller does not gain the ability to upload arbitrary executable code.
+
+---
+
+## 10. AI Storefront Designer
+
+### Source of the Idea
+
+The mechanics were researched using the locally installed Open Design version 0.13.0.
+
+Open Design scenarios reviewed:
+
+- free-form text prompt;
+- clarifying questions;
+- direction selection;
+- result creation;
+- automated critique and iterative improvement;
+- targeted refinement of an existing design;
+- image, video, and audio generation;
+- extraction of visual effects from a reference website;
+- design systems and plugins.
+
+The reviewed local scenarios are located in:
 
 `C:\Users\Vladislav\AppData\Local\Programs\Open Design\resources\open-design\plugins\_official\scenarios\`
 
-### Утверждённый пользовательский поток
+### Approved User Flow
 
-`текст и референсы → короткое интервью → несколько направлений → выбор → дизайн-система → живая витрина → разговорные правки → проверка → публикация`
+`text and references → short interview → several design directions → selection → design system → live storefront → conversational edits → verification → publication`
 
-### Входные данные
+### Inputs
 
-Продавец может передать:
+The seller may provide:
 
-- текстовое описание;
-- логотип;
-- фирменные материалы;
-- фотографии и видео товаров;
-- скриншоты понравившихся страниц;
-- ссылки на сайты-примеры;
-- примеры цветов, шрифтов и изображений;
-- пояснение, что именно нравится в каждом примере.
+- a text description;
+- a logo;
+- brand materials;
+- product photographs and video;
+- screenshots of pages they like;
+- links to example websites;
+- examples of colors, fonts, and images;
+- an explanation of what exactly they like in each example.
 
-Референс служит направлением, а не разрешением копировать чужую страницу целиком.
+A reference serves as direction, not permission to copy someone else's page in full.
 
-### Дизайн-система продавца
+### Seller Design System
 
-AI формирует единый набор правил:
+AI forms a unified set of rules:
 
-- палитра;
-- типографика;
-- отступы;
-- формы элементов;
-- стиль фотографий;
-- композиция;
-- допустимая интенсивность анимаций.
+- palette;
+- typography;
+- spacing;
+- element shapes;
+- photography style;
+- composition;
+- permitted animation intensity.
 
-Последующие правки должны сохранять эту систему, а не превращать страницу в случайный набор блоков.
+Subsequent edits must preserve this system rather than turn the page into a random collection of blocks.
 
-### Проверка результата
+### Result Review
 
-Рабочие критерии:
+Working criteria:
 
-- визуальное качество;
-- понятность покупки;
-- доверие;
-- скорость загрузки;
-- мобильная версия;
-- доступность;
-- соблюдение правил площадки.
-
----
-
-## 11. AI-изображения, видео и товарные карточки
-
-### Утверждено
-
-Обработка реальных изображений и сборка товарных карточек входят в ограниченную бета-версию в день публичного запуска. Генерация видео остаётся целевой возможностью продукта, но появляется позднее и не входит в начальную бету.
-
-Разрешённые применения:
-
-1. улучшение подачи реального товара;
-2. создание рекламных баннеров, обложек и коротких роликов;
-3. сборка товарной карточки из исходных материалов.
-
-### Правило неизменности товара
-
-AI не должен менять:
-
-- форму;
-- цвет;
-- маркировку;
-- комплектацию;
-- заметные свойства реального товара.
-
-AI может улучшать:
-
-- фон;
-- свет;
-- кадрирование;
-- размер;
-- композицию;
-- окружение и рекламную подачу.
-
-Для каждой товарной позиции нужен исходный материал реального товара. Перед публикацией продавец сравнивает исходник и результат и подтверждает корректность.
-
-Публичная отметка об AI-обработке обязательна, если AI создал или существенно заменил видимый фон, окружение, объект либо иное синтетическое содержимое, а также для полностью сгенерированного изображения. Если AI выполнил только техническую коррекцию света, кадрирования или размера без создания нового видимого содержания и изменения свойств товара, отдельная публичная отметка не требуется, но исходник, история обработки и результат сохраняются для проверки.
-
-Если в карточке используется изображение с созданным AI видимым содержимым, в галерее обязательно остаётся хотя бы одно реальное изображение товара без синтетических добавлений; его свет, кадрирование и размер можно корректировать технически без изменения свойств товара. Для каждой помеченной AI-версии покупателю доступно сравнение с конкретным исходником. AI-версия не может быть единственным визуальным доказательством внешнего вида товара.
-
-Полностью с нуля разрешено генерировать декоративные материалы бренда, узоры, баннеры, иллюстрации, сезонное оформление, рекламный фон и окружение. Если в сгенерированной сцене показан продаваемый товар, изображение самого товара должно происходить из реального исходного материала и не менять его форму, цвет, маркировку, комплектацию и заметные свойства. Полностью выдуманное изображение товара нельзя использовать как изображение реального продукта. Полностью сгенерированная сцена получает публичную отметку AI.
-
-Помеченное изображение с AI-содержимым можно использовать как главную обложку товарной карточки, если сам товар взят из реального исходника и не изменён, отметка AI видна уже на обложке и в общем каталоге, в галерее доступно реальное изображение без синтетических добавлений и покупатель может сравнить AI-обложку с её исходником.
-
-Исходник и каждая опубликованная версия AI-обработки сохраняются как отдельные неизменяемые записи. Откат не перезаписывает и не удаляет историю: он создаёт новое действие, которое снова делает выбранную прежнюю версию активной. Каждый заказ сохраняет снимок карточки и медиа, доступных покупателю на момент покупки. Неопубликованные черновые генерации могут удаляться по отдельным правилам. Точные сроки хранения исходников, черновиков и опубликованных версий после снятия товара с продажи определяются после правовой проверки и расчёта стоимости.
-
-Перед публикацией система автоматически сравнивает AI-результат с исходником по форме, цвету, маркировке, комплектации и другим заметным свойствам товара. После проверки продавец явно подтверждает корректность и публикацию. Существенное расхождение или недостаточная уверенность автоматической проверки блокирует публикацию до исправления либо человеческой проверки. Результат низкого риска не требует обязательной ручной очереди. AI не публикует изображение самостоятельно без подтверждения продавца.
-
-Если после публикации предварительная проверка подтверждает правдоподобный риск существенного искажения товара, спорное AI-изображение временно скрывается из публичной карточки, но сохраняется как доказательство; обложкой становится доступное реальное изображение. Продавец получает уведомление, а человек проверяет исходник, AI-версию, историю публикации и сообщение о проблеме. При ложной тревоге изображение восстанавливается. При подтверждённом искажении публикуется исправленная версия, а последствия определяются общими правилами с правом обжалования. Одна жалоба сама по себе не блокирует продавца и не удаляет всю карточку.
-
-### Открытые вопросы
-
-- лимиты изображений и видео;
-- точные сроки хранения исходников, черновиков и опубликованных версий;
-- пороги автоматического сравнения и передачи на человеческую проверку.
+- visual quality;
+- clarity of the purchase process;
+- trust;
+- loading speed;
+- mobile version;
+- accessibility;
+- compliance with platform rules.
 
 ---
 
-## 12. Защищённая сделка и выплаты
+## 11. AI Images, Video, and Product Cards
 
-### Граница защищённой покупки
+### Approved
 
-Покупка, начатая из общего каталога, карточки товара или бренд-витрины платформы, оформляется только через защищённую сделку платформы. Кнопки покупки, призывы оплатить переводом и ссылки на внешний кассовый поток внутри этих интерфейсов не допускаются.
+Processing real images and assembling product cards are included in the limited beta on the day of public launch. Video generation remains a target product capability, but appears later and is not included in the initial beta.
 
-Официальные контакты продавца и каналы поддержки могут отображаться там, где это необходимо, но они не должны использоваться для обхода оплаты, комиссии, спора или правил подтверждённых отзывов. Сделка вне платформы не получает защиту платформы и не формирует внутренний подтверждённый отзыв.
+Permitted uses:
 
-Это ограничение не отменяет переносимость данных. Продавец может бесплатно экспортировать принадлежащие ему данные и независимо использовать их на собственном сайте или в другой системе, но такая внешняя торговля не выдаётся за сделку платформы.
+1. improving the presentation of a real product;
+2. creating advertising banners, covers, and short clips;
+3. assembling a product card from source materials.
 
-### Личные чаты покупателя и продавца
+### Product Invariance Rule
 
-В первый публичный запуск входит внутренний мессенджер в форме личных чатов `покупатель ↔ продавец`. Личный чат становится доступен только после первой успешной оплаты заказа у этого продавца; до оплаты покупатель не может начать личную переписку с ним. После завершения заказа чат остаётся постоянным и может использоваться для поддержки и последующих заказов.
+AI must not change:
 
-Продавец может отправлять рекламные предложения в этот чат только при отдельном согласии покупателя. Покупатель может запретить рекламные сообщения или полностью заблокировать новые сообщения продавца, не уничтожая сохранённую историю заказов и доказательств.
+- shape;
+- color;
+- markings;
+- contents;
+- noticeable properties of the real product.
 
-Чат поддерживает:
+AI may improve:
 
-- историю переписки;
-- вложения;
-- поиск по сообщениям;
-- уведомления;
-- ссылки на товары и заказы.
+- background;
+- lighting;
+- cropping;
+- size;
+- composition;
+- surroundings and advertising presentation.
 
-Сообщения, вложения, связи с товарами и заказами и время действий хранятся на сервере. Часть переписки, связанная с заказом, может использоваться как доказательство условий и исполнения сделки при споре.
+Each product listing requires source material of the real product. Before publication, the seller compares the source with the result and confirms its correctness.
 
-Отправленное сообщение разрешено исправлять, но участникам показывается факт изменения, а история версий сохраняется. Сообщения, вошедшие в историю заказа, нельзя удалить из записи сделки. Пользователь может скрыть чат из собственного списка, но это не удаляет переписку у другого участника и не уничтожает доказательства. Точные сроки хранения определяются отдельно после правовой проверки.
+A public AI-processing label is mandatory if AI created or substantially replaced the visible background, surroundings, object, or other synthetic content, as well as for a fully generated image. If AI performed only a technical correction of lighting, cropping, or size without creating new visible content or changing the product's properties, a separate public label is not required, but the source, processing history, and result are retained for review.
 
-Групповые чаты, публичные каналы, аудио- и видеозвонки и платформы ботов в первый запуск не входят.
+If a card uses an image with visible content created by AI, the gallery must retain at least one real image of the product without synthetic additions; its lighting, cropping, and size may be corrected technically without changing the product's properties. For each labeled AI version, the buyer can compare it with the specific source. An AI version cannot be the only visual evidence of the product's appearance.
 
-### Вопросы до оплаты и AI-поддержка
+It is permitted to generate brand decorative materials, patterns, banners, illustrations, seasonal design, advertising backgrounds, and surroundings entirely from scratch. If a product being sold is shown in a generated scene, the image of the product itself must come from real source material and must not change its shape, color, markings, contents, or noticeable properties. A completely fictional image of a product may not be used as an image of a real product. A fully generated scene receives a public AI label.
 
-До оплаты покупатель может задать публичный вопрос у товара. Ответ публикуется в разделе вопросов и ответов и доступен другим покупателям; публикация персональных данных в этом разделе запрещена. Для услуг и индивидуальных предложений до оплаты используется структурированная форма требований.
+A labeled image with AI content may be used as the main cover of a product card if the product itself is taken from real source material and has not been changed, the AI label is already visible on the cover and in the common catalog, a real image without synthetic additions is available in the gallery, and the buyer can compare the AI cover with its source.
 
-AI-поддержка отвечает только на основании подтверждённых данных карточки, правил платформы и ранее подтверждённых ответов. Покупателю всегда показывается, что ответ сформирован AI. Если подтверждённых данных недостаточно, вопрос о товаре передаётся продавцу, а вопрос об оплате, защите или правилах — сотруднику площадки. AI не должен придумывать свойства товара, обещания продавца или правила сделки.
+The source and each published version of AI processing are stored as separate immutable records. A rollback does not overwrite or delete history: it creates a new action that makes the selected previous version active again. Each order retains a snapshot of the card and media available to the buyer at the time of purchase. Unpublished draft generations may be deleted under separate rules. Exact retention periods for sources, drafts, and published versions after a product is removed from sale are determined after legal review and cost calculation.
 
-### Способ оплаты на пилоте
+Before publication, the system automatically compares the AI result with the source by shape, color, markings, contents, and other noticeable product properties. After the check, the seller explicitly confirms correctness and publication. A material discrepancy or insufficient confidence in the automated check blocks publication until correction or human review. A low-risk result does not require a mandatory manual queue. AI does not publish an image independently without the seller's confirmation.
 
-На пилоте используется онлайн-предоплата до начала исполнения заказа. Деньги принимает и удерживает платёжный партнёр по правилам защищённой сделки.
+If a preliminary check after publication confirms a credible risk of material product distortion, the disputed AI image is temporarily hidden from the public card but retained as evidence; an available real image becomes the cover. The seller is notified, and a person checks the source, AI version, publication history, and problem report. In the event of a false alarm, the image is restored. In the event of confirmed distortion, a corrected version is published, and the consequences are determined under the general rules with a right of appeal. A single complaint does not by itself block the seller or delete the entire card.
 
-Оплата при получении в пилот не входит. Позднее она исследуется как отдельный платёжный поток: резерв суммы на карте с окончательным списанием после получения и непосредственная оплата курьеру или продавцу требуют разных правил комиссии, возврата и доказательств.
+### Open Questions
 
-### Утверждено
-
-1. Покупатель оплачивает заказ.
-2. Деньги удерживает платёжный партнёр, а не сама платформа.
-3. Продавец исполняет заказ.
-4. После подтверждения исполнения партнёр переводит деньги продавцу.
-5. При споре площадка собирает доказательства и принимает решение о выплате или возврате.
-
-### Направление денежного возврата
-
-В публичной бете любой полный или частичный денежный возврат выполняется платёжным партнёром через исходный платёжный канал, использованный покупателем для оплаты заказа. Площадка не выпускает собственный денежный баланс и не заменяет возврат уплаченных денег невыводимыми бонусами.
-
-Если возврат через исходный канал технически невозможен, платёжный партнёр после усиленной проверки доступа переводит деньги на другой подтверждённый банковский счёт или карту того же покупателя. Операция остаётся связанной с исходным заказом и журналом возврата. Ручной перевод продавцом и замена денег внутренним балансом запрещены.
-
-Выводимый электронный кошелёк лицензированного платёжного партнёра может быть добавлен после публичной беты как отдельный продукт. До этого обязательны юридическая проверка, проверка лицензии и договора партнёра, правил идентификации, вывода, лимитов и комиссий.
-
-### Возврат после выплаты продавцу
-
-Если возврат одобрен после завершения выплаты продавцу, покупатель не ждёт добровольного погашения продавцом. Платёжный партнёр выполняет возврат из предусмотренного схемой обеспечения, а соответствующая сумма становится задолженностью продавца перед расчётным контуром.
-
-Задолженность погашается из резерва продавца, его будущих выплат или отдельным взысканием. Резерв и денежные операции ведёт платёжный партнёр, а не сама площадка. Обжалование продавцом не должно бессрочно блокировать уже одобренный возврат покупателю.
-
-В публичной бете платёжный партнёр удерживает единый базовый резерв из выплат каждого продавца. Резерв не является комиссией или доходом площадки: неиспользованная сумма освобождается в скользящем порядке отдельно по каждому заказу после окончания применимых сроков возврата и спора.
-
-Открытый спор продлевает удержание только суммы, связанной с соответствующим заказом, а не всего резерва продавца. При закрытии магазина остаток удерживается только до завершения действующих сроков и открытых споров.
-
-После накопления достаточной проверяемой истории размер резерва может изменяться по подтверждённому риску продавца, включая категорию, стоимость заказов, долю возвратов и обоснованных споров. Точные процент, денежный предел и сроки удержания определяются до запуска после предложений платёжного партнёра, экономического расчёта и юридической проверки.
-
-Если резерва конкретного продавца недостаточно, одобренный возврат временно покрывает ограниченный гарантийный фонд площадки, размещённый в расчётном контуре платёжного партнёра. Долг полностью сохраняется за продавцом и погашается из будущих выплат или отдельным взысканием. Резервы других продавцов для этого не используются.
-
-Размер гарантийного фонда и предел общей ответственности площадки определяются до публичной беты вместе с максимумом стоимости заказа и допустимым убытком. При приближении к пределу площадка снижает операционные лимиты или приостанавливает новые рисковые продажи, а не отменяет уже одобренные возвраты.
-
-При возникновении долга продавца перед гарантийным фондом новые продажи и новые выплаты этого продавца временно приостанавливаются. Уже оплаченные заказы он обязан исполнить; доступ к исполнению, возвратам, спорам, документам и поддержке сохраняется.
-
-Будущие доступные выплаты направляются на погашение долга. Ограничения снимаются после полного погашения и восстановления требуемого резерва. Признаки мошенничества или отказ от погашения рассматриваются отдельно в усиленной проверке и процедуре взыскания.
-
-### Корзина с несколькими продавцами
-
-Покупатель может добавить в одну корзину товары нескольких продавцов и выполнить один общий платёж.
-
-После оформления платформа создаёт общий заказ покупателя и отдельный подзаказ для каждого продавца. Для каждого подзаказа независимо учитываются:
-
-- товары и сумма;
-- доставка;
-- исполнение;
-- подтверждение получения;
-- спор;
-- возврат;
-- выплата продавцу.
-
-Платёжный партнёр должен поддерживать автоматическое распределение общего платежа, отдельное удержание долей продавцов и частичные возвраты по конкретному подзаказу. Обычный приём единого платежа без такого раздельного учёта не подходит.
-
-Это обязательная возможность при выборе платёжного партнёра. Юридическая и техническая реализуемость схемы в России должна быть подтверждена до фиксации реализации.
-
-### Подтверждение исполнения
-
-- физический товар — доставка и короткий срок для заявления проблемы;
-- файл или ключ — защищённая выдача и проверка доступности;
-- подписка — отдельное исполнение за каждый период;
-- услуга — принятый результат или согласованный этап.
-
-Если покупатель не отвечает и спор не открыт, заказ после заранее известного срока автоматически считается исполненным. Точные сроки ещё не определены.
-
-### Открытые вопросы
-
-- подходящий платёжный партнёр;
-- юридическая реализуемость выбранной схемы в России;
-- сроки удержания и автоматического принятия;
-- технические ограничения, чеки и учёт частичных возвратов;
-- работа с этапами услуг;
-- точные ставка, денежный предел и сроки освобождения резерва продавца, а также размер гарантийного фонда площадки.
+- image and video limits;
+- exact retention periods for sources, drafts, and published versions;
+- thresholds for automated comparison and referral for human review.
 
 ---
 
-## 13. Споры, качество и санкции
+## 12. Protected Transactions and Payouts
 
-### Утверждённое направление
+### Boundary of Protected Purchasing
 
-Площадка берёт на себя контроль порядка и помощь в спорных ситуациях.
+A purchase started from the common catalog, a product card, or a platform branded storefront is completed only through the platform's protected transaction. Purchase buttons, requests to pay by transfer, and links to an external checkout flow are not allowed within these interfaces.
 
-Отслеживаемые показатели:
+The seller's official contacts and support channels may be displayed where necessary, but must not be used to bypass payment, commission, disputes, or the rules for verified reviews. A transaction outside the platform does not receive platform protection and does not create an internal verified review.
 
-- подтверждённое несоответствие описанию;
-- подтверждённый брак;
-- просрочки;
-- отмены по вине продавца;
-- доля обоснованных споров и возвратов;
-- невыполненные цифровые заказы и услуги.
+This restriction does not cancel data portability. The seller may export data belonging to them free of charge and use it independently on their own website or in another system, but such external trade is not presented as a platform transaction.
 
-### Рабочая политика санкций
+### Buyer–Seller Private Chats
 
-`сбор доказательств → предупреждение → временные ограничения → человеческий разбор → решение → обжалование`
+The first public launch includes an internal messenger in the form of private chats `buyer ↔ seller`. A private chat becomes available only after the first successful payment for an order from that seller; before payment, the buyer cannot start a private conversation with the seller. After the order is completed, the chat remains permanent and may be used for support and subsequent orders.
 
-Автоматическая вечная блокировка только по количеству жалоб не рекомендуется: жалобы могут быть ошибочными или злонамеренными.
+The seller may send promotional offers in this chat only with the buyer's separate consent. The buyer may prohibit promotional messages or completely block new messages from the seller without destroying the retained history of orders and evidence.
 
-### Решение по спору в публичной бете
+The chat supports:
 
-Заранее определённые бесспорные технические события обрабатываются автоматически, например истечение срока ответа, подтверждённая системой невыдача файла или официальная отмена доставки. Автоматическое действие и его основание записываются в журнал заказа.
+- conversation history;
+- attachments;
+- message search;
+- notifications;
+- links to products and orders.
 
-AI собирает материалы, формирует хронологию, связывает утверждения с исходными доказательствами и отмечает противоречия. Он не может придумывать отсутствующие факты, скрывать исходные материалы или выносить окончательное решение.
+Messages, attachments, links to products and orders, and action times are stored on the server. Part of the correspondence related to an order may be used as evidence of the transaction's terms and fulfillment in a dispute.
 
-Любое решение, изменяющее выплату, возврат, подтверждённую репутацию или санкции участника, принимает человек-модератор. В решении фиксируются применённое правило, проверенные доказательства и обоснование.
+An uploaded message may be edited, but participants are shown that it was changed, and the version history is retained. Messages included in the order history cannot be deleted from the transaction record. A user may hide a chat from their own list, but this does not delete the correspondence for the other participant or destroy evidence. Exact retention periods are determined separately after legal review.
 
-В публичной бете обычный модератор выбирает решение и код причины только из заранее опубликованного закрытого перечня. Нестандартное исключение требует решения старшего модератора, юридической проверки и полной записи основания в журнале. Если нестандартный случай становится повторяемым, новый тип решения сначала добавляется в общие правила, а не применяется как скрытый прецедент.
+Group chats, public channels, audio and video calls, and bot platforms are not included in the first launch.
 
-Закрытый перечень решений по исполнению и деньгам включает:
+### Pre-Payment Questions and AI Support
 
-- отклонить требование и разблокировать удержанную выплату;
-- одобрить полный денежный возврат;
-- одобрить частичный денежный возврат только при явном согласии покупателя по ранее установленным правилам;
-- для физического товара назначить обратную отправку с последующим полным возвратом денег; при подтверждённой вине продавца допустимые расходы на обратную доставку несёт продавец;
-- предложить замену, исправление или повторное исполнение только с явным согласием покупателя и зафиксированным сроком;
-- при невыполнении согласованного исправления в срок перейти к применимому денежному возврату.
+Before payment, the buyer may ask a public question about the product. The answer is published in the questions-and-answers section and is available to other buyers; publishing personal data in this section is prohibited. For services and custom listings, a structured requirements form is used before payment.
 
-В публичной бете модератор не назначает произвольные штрафы или компенсации покупателю сверх суммы заказа и предусмотренных правилами расходов на первоначальную и обратную доставку. Обязательные права участника по применимому закону имеют приоритет над внутренним перечнем.
+AI support answers only on the basis of verified card data, platform rules, and previously verified answers. The buyer is always shown that the answer was generated by AI. If verified data are insufficient, a product question is passed to the seller, while a question about payment, protection, or rules is passed to a platform employee. AI must not invent product properties, seller promises, or transaction rules.
 
-### Апелляция
+### Payment Method During the Pilot
 
-Каждой стороне доступна одна обычная апелляция на решение по спору. Её рассматривает другой человек-модератор, который не принимал первоначальное решение; AI снова используется только для подготовки проверяемой сводки материалов.
+During the pilot, online prepayment is used before order fulfillment begins. The payment partner accepts and holds the money under the protected-transaction rules.
 
-В апелляции сторона указывает новое доказательство, ошибку в установленных фактах, нарушение процедуры или неверно применённое правило. Повторное рассмотрение после апелляции допускается только при новых существенных обстоятельствах, которые объективно не могли быть рассмотрены ранее.
+Payment on delivery is not included in the pilot. It is later investigated as a separate payment flow: reserving an amount on a card with final capture after receipt and paying the courier or seller directly require different rules for commissions, refunds, and evidence.
 
-Подача апелляции не останавливает одобренный возврат покупателю и временные меры безопасности. Обратимые ограничения применяются с отметкой о продолжающемся обжаловании. Необратимые санкции, включая окончательное закрытие аккаунта и публичную отметку о тяжёлом нарушении, исполняются после окончания срока апелляции либо решения второй инстанции. Они могут быть применены немедленно только при непосредственной угрозе безопасности или прямом требовании закона.
+### Approved
 
-Апелляцию можно подать в течение 3 календарных дней. Площадка рассматривает её не дольше 3 рабочих дней. Срок подачи начинается после публикации решения в личном кабинете и успешной доставки уведомления хотя бы по одному подтверждённому каналу участника; подтверждение прочтения не требуется. Если доставка не удалась, площадка повторяет отправку или использует другой подтверждённый канал, а срок не начинается. Подтверждённый технический сбой площадки продлевает срок на длительность сбоя. Это внутренние целевые сроки сервиса; они не ограничивают законные способы и сроки обращения участника во внешние органы.
+1. The buyer pays for the order.
+2. The payment partner, not the platform itself, holds the money.
+3. The seller fulfills the order.
+4. After fulfillment is confirmed, the partner transfers the money to the seller.
+5. In a dispute, the platform collects evidence and decides on payout or refund.
 
-### Открытые вопросы
+### Refund Route
 
-- состав доказательств для каждого типа заказа;
-- сроки ответа продавца;
-- уровни санкций;
-- публичность показателей качества;
-- защита от манипуляций жалобами.
+In public beta, any full or partial monetary refund is performed by the payment partner through the original payment channel used by the buyer to pay for the order. The platform does not issue its own monetary balance or replace a refund of paid money with non-withdrawable bonuses.
 
----
+If a refund through the original channel is technically impossible, the payment partner transfers the money, after enhanced access verification, to another verified bank account or card belonging to the same buyer. The operation remains linked to the original order and the refund log. A manual transfer by the seller and replacing money with an internal balance are prohibited.
 
-## 14. Монетизация
+An withdrawable electronic wallet of a licensed payment partner may be added after public beta as a separate product. Before that, legal review and review of the partner's license and agreement, identification, withdrawal, limit, and commission rules are mandatory.
 
-### Утверждено
+### Refund After Seller Payout
 
-1. Комиссия берётся только с успешно завершённых заказов.
-2. Общая сумма обязательных удержаний площадки и платёжного партнёра не превышает 10% стоимости заказа.
-3. На пилоте действует единая ставка для всех заказов независимо от источника покупателя, типа товара, способа исполнения и размера продавца.
-4. Доставка рассчитывается и показывается отдельно и прозрачно.
-5. Налоги продавца и добровольно подключённые платные услуги, включая AI-функции, не входят в комиссию и отображаются отдельно.
-6. Точная единая ставка определяется после расчёта платежей, поддержки, споров, возвратов и других расходов.
-7. AI-дизайнер, расширенное оформление витрины и ресурсоёмкая генерация медиа являются платными функциями после бесплатной ограниченной беты. Бесплатная базовая бренд-витрина сохраняется для каждого проверенного продавца.
-8. Третье раннее направление дохода — аналитика, автоматизация и интеграции.
+If a refund is approved after the seller payout has been completed, the buyer does not wait for the seller to repay it voluntarily. The payment partner performs the refund from the security provided by the scheme, and the corresponding amount becomes the seller's debt to the settlement system.
 
-### Возможные платные AI-функции
+The debt is repaid from the seller's reserve, future payouts, or through separate collection. The payment partner, not the platform itself, manages the reserve and monetary operations. A seller appeal must not indefinitely block an already approved refund to the buyer.
 
-- подписка на AI-дизайнера;
-- пакеты изображений;
-- отдельные кредиты на видео;
-- создание товарной карточки;
-- генерация описаний и характеристик;
-- рекламные баннеры и ролики;
-- сезонное оформление;
-- постоянный разговорный редактор витрины.
+In public beta, the payment partner withholds a single basic reserve from each seller's payouts. The reserve is not a platform commission or revenue: the unused amount is released on a rolling basis separately for each order after the applicable refund and dispute periods end.
 
-Во время ограниченной беты AI-функции бесплатны для отобранных участников при жёстких лимитах. После беты используется подписка с включённым лимитом и дополнительные платные кредиты. Точные цены и объём лимитов пока не определены.
+An open dispute extends the hold only for the amount associated with the relevant order, not the seller's entire reserve. When a store is closed, the balance is held only until the applicable periods and open disputes are complete.
 
-### Аналитика, автоматизация и интеграции
+After sufficient verifiable history has accumulated, the reserve size may vary according to the seller's confirmed risk, including category, order value, share of returns, and substantiated disputes. The exact percentage, monetary limit, and holding periods are determined before launch after proposals from the payment partner, economic calculation, and legal review.
 
-Приоритетные идеи:
+If a particular seller's reserve is insufficient, an approved refund is temporarily covered by a limited platform guarantee fund placed within the payment partner's settlement system. The debt remains fully owed by the seller and is repaid from future payouts or through separate collection. Other sellers' reserves are not used for this.
 
-- расчёт прибыли;
-- прогноз остатков;
-- предупреждения о росте возвратов;
-- AI-рекомендации по ассортименту;
-- массовое редактирование;
-- роли сотрудников;
-- несколько магазинов;
-- синхронизация остатков;
-- интеграции с учётом, складом, CRM и доставкой;
-- расширенные лимиты API;
-- платный сложный перенос «под ключ».
+The guarantee fund size and the limit of the platform's total liability are determined before public beta together with the maximum order value and permissible loss. As the limit is approached, the platform reduces operational limits or suspends new risky sales rather than canceling already approved refunds.
 
-### Более поздние источники дохода
+When a seller incurs a debt to the guarantee fund, that seller's new sales and new payouts are temporarily suspended. The seller must fulfill orders that have already been paid for; access to fulfillment, returns, disputes, documents, and support is retained.
 
-- явно отмеченное рекламное продвижение;
-- покупательская подписка и программа лояльности;
-- логистические и финансовые услуги через партнёров;
-- корпоративные и фирменные версии платформы.
+Future available payouts are directed toward repaying the debt. Restrictions are lifted after full repayment and restoration of the required reserve. Signs of fraud or refusal to repay are handled separately through enhanced review and the collection procedure.
 
-### Рекомендуемые запреты монетизации
+### Multi-Seller Cart
 
-Не следует брать деньги за:
+The buyer may add products from several sellers to one cart and make one combined payment.
 
-- базовый экспорт собственных данных;
-- удаление плохого отзыва;
-- покупку рейтинга или доверительного статуса;
-- преимущество в споре;
-- базовую безопасность;
-- скрытое повышение в обычной выдаче;
-- продажу персональных данных.
+After checkout, the platform creates a common buyer order and a separate suborder for each seller. The following are tracked independently for each suborder:
 
-Эти ограничения пока являются продуктовой рекомендацией и должны быть отдельно утверждены.
+- products and amount;
+- delivery;
+- fulfillment;
+- confirmation of receipt;
+- dispute;
+- refund;
+- seller payout.
+
+The payment partner must support automatic distribution of the combined payment, separate holding of sellers' shares, and partial refunds for a specific suborder. Ordinary acceptance of a single payment without this separate accounting is unsuitable.
+
+This is a mandatory capability when selecting the payment partner. The legal and technical feasibility of the scheme in Russia must be confirmed before implementation is fixed.
+
+### Fulfillment Confirmation
+
+- physical product — delivery and a short period to report a problem;
+- file or key — protected delivery and availability check;
+- subscription — separate fulfillment for each period;
+- service — an accepted result or agreed stage.
+
+If the buyer does not respond and no dispute is opened, the order is automatically considered fulfilled after a period known in advance. Exact periods have not yet been determined.
+
+### Open Questions
+
+- suitable payment partner;
+- legal feasibility of the selected scheme in Russia;
+- holding and automatic-acceptance periods;
+- technical limitations, receipts, and accounting for partial refunds;
+- handling service stages;
+- exact rate, monetary limit, and release periods for the seller reserve, as well as the size of the platform guarantee fund.
 
 ---
 
-## 15. Внутренняя разработка и публичный запуск
+## 13. Disputes, Quality, and Sanctions
 
-### Утверждено
+### Approved Direction
 
-Все три направления должны быть готовы к публичному запуску.
+The platform takes responsibility for maintaining order and assisting in disputed situations.
 
-### Базовая архитектура
+Tracked metrics:
 
-Выбрано модульное единое серверное ядро с отдельными фоновыми исполнителями.
+- confirmed discrepancy from the description;
+- confirmed defect;
+- delays;
+- cancellations attributable to the seller;
+- share of substantiated disputes and returns;
+- unfulfilled digital orders and services.
 
-Внутри ядра выделяются самостоятельные модули:
+### Working Sanctions Policy
 
-- пользователи и проверка;
-- продавцы и магазины;
-- витрины и дизайн-системы;
-- каталог, варианты и остатки;
-- корзина, общий заказ и подзаказы продавцов;
-- учёт платежей, удержаний, возвратов и выплат;
-- физическое исполнение;
-- цифровое исполнение;
-- споры, качество и репутация;
-- открытые форматы, API и интеграции.
+`evidence collection → warning → temporary restrictions → human review → decision → appeal`
 
-AI-генерация, обработка медиа, импорт каталогов, синхронизация, уведомления и другие долгие операции выполняются отдельными фоновыми исполнителями и не блокируют обычную работу сайта.
+Automatic permanent blocking based only on the number of complaints is not recommended: complaints may be mistaken or malicious.
 
-Заказы, остатки, движение денег, права доступа к цифровым товарам и история действий хранятся на сервере как единая достоверная версия. Браузер и будущие мобильные приложения только показывают данные и отправляют действия пользователя, но не являются единственным местом хранения состояния.
+### Dispute Decision in Public Beta
 
-Платёжные и логистические партнёры подключаются через отдельные адаптеры с единым внутренним интерфейсом. Замена партнёра не должна требовать изменения правил заказа во всех модулях.
+Predetermined indisputable technical events are processed automatically, such as expiration of the response period, system-confirmed non-delivery of a file, or official cancellation of delivery. The automatic action and its basis are recorded in the order log.
 
-Микросервисы на старте не используются. Отдельный модуль может быть вынесен в самостоятельный сервис позднее, только если появится подтверждённая потребность в независимом масштабировании или изоляции.
+AI collects materials, builds a chronology, links claims to source evidence, and marks contradictions. It cannot invent missing facts, hide source materials, or issue a final decision.
 
-Конкретные технологии, схема развёртывания и детальные интерфейсы модулей пока не выбраны.
+Any decision that changes a participant's payout, refund, verified reputation, or sanctions is made by a human moderator. The decision records the rule applied, the evidence reviewed, and the rationale.
 
-### Рабочая декомпозиция внутренней разработки
+In public beta, an ordinary moderator selects the decision and reason code only from a closed list published in advance. A non-standard exception requires a senior moderator's decision, legal review, and a complete record of the grounds in the log. If a non-standard case becomes recurring, the new type of decision is first added to the general rules rather than applied as a hidden precedent.
 
-1. серверная основа транзакционного ядра: идентичность, роли, права, продавцы, журнал действий и единая достоверная версия состояния;
-2. каталог, варианты, остатки, общий поиск и покупательский интерфейс;
-3. корзина, заказ, платёжные адаптеры, защищённая сделка, физическое и цифровое исполнение, возвраты и споры;
-4. полноценный кабинет продавца, импорт и экспорт данных, бренд-витрины;
-5. открытый формат, документированный API, синхронизация и сторонние интеграции;
-6. AI-дизайнер и медиа как ограниченная бета с лимитами и отдельными критериями готовности;
-7. аналитика и автоматизация в минимальном составе публичной беты;
-8. объединённая проверка безопасности, права, экономики и операционной готовности российского публичного пилота.
+The closed list of fulfillment and monetary decisions includes:
 
-Это утверждённая последовательность проектирования и проверки крупных частей, но ещё не детальный план реализации. Все направления, включённые в утверждённый состав публичной беты, объединяются и проходят общую проверку до её открытия.
+- reject the claim and release the held payout;
+- approve a full monetary refund;
+- approve a partial monetary refund only with the buyer's explicit consent under rules established previously;
+- for a physical product, order return shipment followed by a full refund; when the seller's fault is confirmed, the seller bears permissible return-shipping costs;
+- offer a replacement, correction, or re-performance only with the buyer's explicit consent and a recorded deadline;
+- if the agreed correction is not completed on time, proceed to the applicable monetary refund.
 
----
+In public beta, the moderator does not assign arbitrary fines or compensation to the buyer beyond the order amount and the rule-provided costs of initial and return shipping. The participant's mandatory rights under applicable law take priority over the internal list.
 
-## 16. Основные риски
+### Appeal
 
-1. **Слишком большой публичный запуск.** Одновременная готовность всех подсистем увеличивает срок, стоимость и количество точек отказа.
-2. **Платёжная модель.** Нужно подтвердить доступность требуемого удержания и возврата у подходящего партнёра.
-3. **Перенос с внешних площадок.** Возможности зависят от официальных экспортов, API и условий конкретных источников.
-4. **Отзывы.** Нужно проверять происхождение и правила допустимого отображения внешнего контента.
-5. **Широкий каталог.** Универсальное ядро потребует управляемых схем характеристик по категориям.
-6. **Услуги и подписки.** Они сложнее обычной выдачи файла и требуют этапов, периодов и правил приёмки.
-7. **Стоимость AI.** Видео и многократная генерация могут сделать безлимитную модель убыточной.
-8. **Модерация.** Ответственность площадки требует реальной операционной команды, а не только алгоритма.
-9. **Двусторонний рынок.** Для продаж одновременно нужны продавцы и покупатели.
-10. **Доверие.** Ошибки в спорах, рейтинге или выплатах могут разрушить главную ценность продукта.
-11. **Манипуляция ценовым ориентиром и скрытая обязательность.** Непрозрачный или управляемый заинтересованными участниками расчёт может вводить покупателя в заблуждение. Санкции, блокировки или ранжирование, фактически принуждающие продавцов следовать ориентиру, требуют отдельной антимонопольной проверки и не должны внедряться без заключения профильного юриста.[1][2]
+Each party has one ordinary appeal of a dispute decision. It is reviewed by a different human moderator who did not make the initial decision; AI is again used only to prepare a verifiable summary of the materials.
+
+In the appeal, the party identifies new evidence, an error in the established facts, a procedural violation, or an incorrectly applied rule. Further review after the appeal is allowed only when there are new material circumstances that objectively could not have been considered earlier.
+
+Filing an appeal does not stop an approved refund to the buyer or temporary security measures. Reversible restrictions are applied with a note that the appeal is ongoing. Irreversible sanctions, including permanent account closure and a public mark of a serious violation, are enforced after the appeal period ends or the second-instance decision is made. They may be applied immediately only in the presence of an immediate security threat or a direct legal requirement.
+
+An appeal may be filed within 3 calendar days. The platform reviews it within no more than 3 business days. The filing period begins after the decision is published in the private account and a notification is successfully delivered through at least one confirmed participant channel; read confirmation is not required. If delivery fails, the platform resends it or uses another confirmed channel, and the period does not begin. A confirmed technical failure of the platform extends the period by the duration of the failure. These are internal target service periods; they do not limit the participant's lawful methods or periods for applying to external authorities.
+
+### Open Questions
+
+- evidence set for each order type;
+- seller response periods;
+- sanction levels;
+- public visibility of quality metrics;
+- protection against complaint manipulation.
 
 ---
 
-## 17. Сквозной результат, к которому должен прийти продукт
+## 14. Monetization
 
-Продавец должен суметь:
+### Approved
 
-1. зарегистрироваться и пройти проверку;
-2. импортировать или создать профиль и каталог;
-3. добавить физический или цифровой товар, подписку либо услугу;
-4. передать AI текст, материалы и референсы;
-5. получить и отредактировать бренд-витрину;
-6. опубликовать магазин и товары;
-7. принять защищённый заказ;
-8. исполнить его подходящим способом;
-9. получить выплату после подтверждения;
-10. получить внутренний отзыв;
-11. увидеть аналитику;
-12. экспортировать переносимые данные в открытом формате.
+1. A commission is charged only on successfully completed orders.
+2. The total of mandatory withholdings by the platform and payment partner does not exceed 10% of the order value.
+3. During the pilot, a single rate applies to all orders regardless of the buyer's source, product type, fulfillment method, or seller size.
+4. Delivery is calculated and shown separately and transparently.
+5. Seller taxes and voluntarily enabled paid services, including AI features, are not included in the commission and are shown separately.
+6. The exact single rate is determined after calculating payment, support, dispute, refund, and other costs.
+7. The AI designer, advanced storefront design, and resource-intensive media generation are paid features after the free limited beta. A free basic branded storefront remains available to every verified seller.
+8. The third early revenue direction is analytics, automation, and integrations.
 
-Покупатель должен суметь:
+### Possible Paid AI Features
 
-1. найти товар в общем каталоге или перейти по ссылке продавца;
-2. понять цену, условия, рейтинг и происхождение отзывов;
-3. безопасно оплатить;
-4. получить товар, файл, ключ, подписку или услугу;
-5. открыть спор при проблеме;
-6. получить решение и возможный возврат;
-7. оставить подтверждённый отзыв.
+- subscription to the AI designer;
+- image packages;
+- separate video credits;
+- product-card creation;
+- generation of descriptions and attributes;
+- advertising banners and clips;
+- seasonal design;
+- continuous conversational storefront editor.
+
+During the limited beta, AI features are free for selected participants subject to strict limits. After the beta, a subscription with an included allowance and additional paid credits is used. Exact prices and allowance sizes have not yet been determined.
+
+### Analytics, Automation, and Integrations
+
+Priority ideas:
+
+- profit calculation;
+- inventory forecasting;
+- warnings about rising returns;
+- AI assortment recommendations;
+- bulk editing;
+- employee roles;
+- multiple stores;
+- inventory synchronization;
+- integrations with accounting, warehouse, CRM, and delivery;
+- expanded API limits;
+- paid complex turnkey portability.
+
+### Later Revenue Sources
+
+- clearly labeled advertising promotion;
+- buyer subscription and loyalty program;
+- logistics and financial services through partners;
+- corporate and branded versions of the platform.
+
+### Recommended Monetization Prohibitions
+
+Money should not be charged for:
+
+- basic export of one's own data;
+- removal of a bad review;
+- purchase of a rating or trust status;
+- an advantage in a dispute;
+- basic security;
+- hidden elevation in ordinary results;
+- sale of personal data.
+
+These restrictions are currently a product recommendation and must be separately approved.
 
 ---
 
-## 18. Следующие решения по приоритету
+## 15. Internal Development and Public Launch
 
-### Непосредственно следующий вопрос
+### Approved
 
-Провести ли техническое исследование вариантов стека и развёртывания перед подчинённой спецификацией первой фазы транзакционного ядра?
+All three directions must be ready for public launch.
 
-Рассматриваемые варианты:
+### Basic Architecture
 
-1. провести сравнительное исследование и принести обоснованную рекомендацию без создания продуктового кода;
-2. Владислав сам задаст технологический стек и условия развёртывания;
-3. приостановить проект на утверждённой общей спецификации.
+A modular common server core with separate background workers has been selected.
 
-### Письменная спецификация утверждена
+The following independent modules are distinguished within the core:
 
-- Владислав подтвердил спецификацию без изменений 2026-09-02.
-- Утверждение не разрешает начинать реализацию без подчинённой спецификации и плана первой фазы.
-- Проверка объёма подтвердила, что общий документ охватывает несколько независимых подсистем и не должен превращаться в один гигантский план.
-- До плана первой фазы необходимо выбрать технологический стек, схему развёртывания и создать либо явно определить репозиторий проекта.
+- users and verification;
+- sellers and stores;
+- storefronts and design systems;
+- catalog, variants, and inventory;
+- cart, common order, and seller suborders;
+- accounting for payments, holds, refunds, and payouts;
+- physical fulfillment;
+- digital fulfillment;
+- disputes, quality, and reputation;
+- open formats, API, and integrations.
 
-### Итоговая концепция — раздел 7 подтверждён
+AI generation, media processing, catalog import, synchronization, notifications, and other long-running operations are performed by separate background workers and do not block ordinary site operation.
 
-- Критичные изменения атомарны, повторные запросы не создают дубликаты, а неизвестное состояние партнёра требует сверки.
-- При сбое импорта или синхронизации сохраняется последняя подтверждённая версия.
-- Инцидент ограничивает затронутый риск, сохраняет доказательства и допускает восстановление только после подтверждённого исправления.
-- До выпуска обязательны модульные, интеграционные, контрактные, сквозные, безопасностные, нагрузочные и восстановительные проверки.
-- Публичная бета открывается только после правовой, платёжной, безопасностной и операционной готовности и отсутствия критических ошибок.
+Orders, inventory, movement of money, access rights to digital products, and action history are stored on the server as a single authoritative version. The browser and future mobile applications only display data and send user actions; they are not the sole place where state is stored.
 
-### Письменная спецификация подготовлена и проверена
+Payment and logistics partners are connected through separate adapters with a common internal interface. Replacing a partner must not require changing order rules in every module.
 
-- Путь: `D:\Open_Marketplace\docs\superpowers\specs\2026-09-02-open-marketplace-design.md`.
-- Все семь разделов итоговой концепции подтверждены Владиславом.
-- Самопроверка заглушек, противоречий, двусмысленностей и объёма выполнена.
-- Спецификация ожидает отдельного подтверждения Владислава перед переходом к первой подчинённой спецификации и плану реализации.
+Microservices are not used at the start. An individual module may later be extracted into a standalone service only if a confirmed need for independent scaling or isolation arises.
 
-### Итоговая концепция — раздел 6 подтверждён
+The specific technologies, deployment architecture, and detailed module interfaces have not yet been selected.
 
-- AI-дизайнер подтверждён как необязательная ограниченная бета для отобранных проверенных продавцов.
-- AI не публикует материалы без явного подтверждения продавца.
-- Реальный товар должен происходить из реального исходника и не искажаться; синтетическое содержание маркируется по утверждённым правилам.
-- Исходники, опубликованные версии и снимок карточки заказа сохраняются для сравнения, отката и споров.
-- Существенное расхождение блокируется или направляется человеку; выход из беты требует качества, безопасности, стабильности и приемлемой экономики.
+### Working Decomposition of Internal Development
 
-### Итоговая концепция — раздел 5 подтверждён
+1. server foundation of the transaction core: identity, roles, permissions, sellers, action log, and a single authoritative version of state;
+2. catalog, variants, inventory, common search, and buyer interface;
+3. cart, order, payment adapters, protected transaction, physical and digital fulfillment, refunds, and disputes;
+4. full seller account, data import and export, and branded storefronts;
+5. open format, documented API, synchronization, and third-party integrations;
+6. AI designer and media as a limited beta with limits and separate readiness criteria;
+7. analytics and automation in the minimum public-beta scope;
+8. combined review of the security, legal, economic, and operational readiness of the Russian public pilot.
 
-- Подтверждены прозрачные правила выдачи идентичных и разных товаров без платного органического влияния и скрытой персонализации.
-- Новые продавцы и товары получают нейтральный статус «недостаточно данных» и усиленный начальный контроль.
-- В публичной бете рекламы нет; после пилота возможны только отдельные помеченные блоки без влияния на органическую выдачу.
-- Ценовой ориентир остаётся необязательным, объяснимым и защищённым от произвольного назначения.
-- Отзывы и публичные показатели основаны на подтверждённых событиях; окончательные спорные решения принимает человек по опубликованным правилам.
-
-### Итоговая концепция — раздел 4 подтверждён
-
-- Подтверждены проверка продавца, бесплатная базовая бренд-витрина и отсутствие влияния оформления на органическую позицию.
-- Собственные переносимые данные доступны продавцу бесплатно в открытом документированном формате.
-- API первого запуска ограничен каталогом, собственными карточками, ценами, остатками и безопасными ссылками на оформление внутри платформы.
-- Подтверждены отдельные минимальные права приложений, сроки критичных прав, обязательные пределы, журналы, отзыв доступа и проверка по риску.
-- Подтверждены правила частных интеграций, публичного каталога приложений, внешней оплаты, поддержки и прекращения работы приложения.
-
-### Итоговая концепция — раздел 3 подтверждён
-
-- Подтверждены общие карточки доказанно идентичных товаров и отдельные карточки уникальных предложений.
-- Цена и остаток повторно проверяются сервером перед оплатой, после чего создаётся короткий резерв.
-- Общая покупка разделяется на независимо исполняемые части продавцов.
-- Деньги, удержания и возвраты обрабатывает платёжный партнёр по проверенной до реализации схеме.
-- Публичная бета подтверждает полный цикл физических товаров и скачиваемых файлов с точной версией цифрового товара.
-
-### Итоговая концепция — раздел 2 подтверждён
-
-- Подтверждён модульный монолит с самостоятельными внутренними модулями и без стартовых микросервисов.
-- Сервер является единственным достоверным источником заказов, остатков, денег, прав, цифровой выдачи и истории действий.
-- Долгие операции выполняются фоновыми исполнителями.
-- Платёжные и логистические партнёры подключаются через отдельные адаптеры.
-- Архитектурная последовательность подготовки подтверждена без изменений.
-
-### Итоговая концепция — раздел 1 подтверждён
-
-- Назначение и публичное позиционирование подтверждены без изменений.
-- Первый публичный запуск остаётся российской публичной бетой с реальными сделками и опубликованными ограничениями.
-- К запуску объединяются инструменты продавца, покупательский маркетплейс и открытая инфраструктура данных.
-- AI-дизайнер запускается как ограниченная бета и не является условием обычной продажи.
-- Главный критерий успеха — надёжность полного цикла заказа для физических товаров и скачиваемых файлов.
-
-### Утверждено по последовательности подготовки продукта
-
-- Сначала проектируется и проверяется транзакционное ядро: идентичность, права, каталог, заказы, платёжный контур, исполнение, споры и аудит.
-- Затем добавляются полноценный кабинет продавца, импорт, экспорт и бренд-витрины.
-- После этого подключаются открытый формат, API, синхронизация и сторонние интеграции.
-- AI-дизайнер и медиа подключаются последними как ограниченная бета.
-- Все утверждённые направления объединяются и проходят общую проверку до публичного запуска.
-
-### Утверждено по международному расширению
-
-- Дата выхода в новую страну заранее не назначается.
-- Сначала подтверждается устойчивый запуск в России.
-- Страны добавляются по одной.
-- Для каждой страны отдельно закрываются право, налоги, платежи, валюта, локализация, логистика, поддержка и защита покупателей.
-- Выход начинается с ограниченного пилота; одного перевода интерфейса недостаточно.
-
-### Утверждено по новым продавцам и товарам без истории
-
-- Отсутствие истории считается нейтральным, а не отрицательным показателем.
-- Показывается пометка «недостаточно данных» без выдуманного рейтинга.
-- Учитываются релевантность, доступность и доставка.
-- Действует усиленный начальный контроль по опубликованным правилам.
-- Новизна не отправляет предложение в конец и не даёт искусственного первого места.
-
-### Утверждено по общему поиску разных товаров
-
-- Сначала учитывается соответствие запросу, категории и выбранным характеристикам.
-- Затем учитываются доступность для адреса, условия доставки и подтверждённое качество исполнения.
-- Факторы публикуются; коммерческое вознаграждение не влияет на органический порядок.
-- Покупатель может сортировать по полной стоимости, новизне, сроку доставки или рейтингу.
-
-### Утверждено по рекламе в каталоге и поиске
-
-- В публичной бете платное размещение отсутствует.
-- После успешного пилота реклама возможна только в отдельных явно помеченных блоках.
-- Рекламные блоки визуально отделены и не меняют органический порядок.
-- Рекламируемое предложение должно соответствовать обычным правилам безопасности, доступности и качества данных.
-- Оплата не повышает органическую позицию товара или продавца.
-
-### Утверждено по персонализации порядка продавцов
-
-- В первом публичном запуске скрытая поведенческая персонализация не используется.
-- Учитываются только явно заданные адрес, фильтры и способ сортировки.
-- При одинаковых условиях применяется одинаковый порядок.
-- Персонализация может исследоваться позже только как прозрачная, объяснимая и отключаемая функция с отдельным согласием.
-
-### Утверждено по числовым весам порядка предложений
-
-- Факторы и запрет коммерческого влияния закрепляются до реализации.
-- Точные веса определяются после моделирования и пилотной проверки на данных до публичного запуска.
-- Версия правил публикуется и одинаково применяется к сопоставимым условиям.
-- Изменения получают обоснование, запись в журнале версий и предварительное уведомление.
-- AI и сотрудники не могут тайно менять порядок отдельного продавца.
-
-### Утверждено по порядку предложений идентичного товара
-
-- Сначала исключаются предложения без остатка, доставки по адресу или права продажи.
-- По умолчанию учитываются возможность доставки, полная стоимость с доставкой, срок, расстояние и подтверждённое качество исполнения.
-- Правила и факторы публикуются.
-- Комиссия, плата за позицию и оформление витрины не повышают предложение.
-- Покупатель может выбрать сортировку по полной стоимости, сроку, расстоянию или рейтингу.
-
-### Утверждено по прекращению поддержки приложения
-
-- Новые подключения прекращаются, а активные продавцы заранее уведомляются.
-- При отсутствии существенного риска предоставляется ограниченный срок для экспорта, отключения и выбора замены.
-- После переходного срока права отзываются, а разработчик подтверждает удаление полученных данных.
-- При существенном риске доступ отключается немедленно; доступный безопасный экспорт выполняется из данных площадки.
-
-### Утверждено по ответственности за стороннее приложение
-
-- Разработчик отвечает за работу приложения, коммерческую поддержку, оплату, отмену и возвраты полученных им денег.
-- Площадка отвечает за подключение, права, собственные журналы, каталог и жалобы на нарушение правил.
-- Границы ответственности и каналы обращения видны до подключения.
-- Площадка может ограничить риск или нарушение, но не обещает возврат денег, которых не получала.
-
-### Утверждено по оплате сторонних приложений
-
-- В первой версии разработчик принимает оплату вне площадки.
-- До подключения показываются цена, период и способ оплаты, условия отмены и ответственный за возвраты.
-- Площадка не выступает продавцом приложения и не удерживает комиссию с его оплаты.
-- Встроенные подписки, комиссия, возвраты и платёжные споры проектируются отдельно после проверки спроса.
-
-### Утверждено по отзывам о приложениях
-
-- Отзыв может оставить только продавец, который действительно подключал приложение.
-- Отзыв отмечается подтверждённым использованием.
-- Полезность, надёжность и поддержка оцениваются отдельно от статуса проверки безопасности.
-- Пользовательские оценки не повышают и не заменяют проверку безопасности.
-- Модерация и обжалование следуют общей проверяемой процедуре площадки.
-
-### Утверждено по публичному каталогу приложений
-
-- Каталог содержит только допущенные сторонние приложения.
-- Карточка показывает разработчика, назначение, точные права, обращение с данными, поддержку, цену и дату последней проверки.
-- Частные интеграции одного продавца не публикуются.
-- Допуск означает прохождение минимального контроля, но не гарантирует качество бизнеса разработчика.
-
-### Утверждено по доставке событий приложениям
-
-- Площадка отправляет подписанные уведомления об изменениях каталога, цены и остатка.
-- Подпись подтверждает источник и целостность уведомления.
-- Периодическая сверка разрешённого состояния восстанавливает пропущенные события.
-- Стабильный идентификатор события предотвращает повторное применение изменения при повторной доставке.
-
-### Утверждено по аномальному поведению приложения
-
-- Операции за защитными пределами отклоняются.
-- Повторные превышения или иное аномальное поведение автоматически приостанавливают критичные права и запускают проверку.
-- Продавец и разработчик получают уведомление.
-- Безопасное чтение сохраняется только при отсутствии связанного риска.
-- Критичные права восстанавливаются после подтверждения продавца для понятной некритичной причины либо после проверки площадки.
-
-### Утверждено по защитным пределам автоматизации
-
-- Площадка задаёт обязательные безопасные пределы и рекомендуемые значения по умолчанию.
-- Продавец может ужесточить пределы для аккаунта или приложения, но не может ослабить обязательный предел площадки.
-- Точные числовые значения определяются до запуска после моделирования риска и проверяются на пилоте.
-
-### Утверждено по автоматическим изменениям через API
-
-- Приложение может автоматически менять цены и остатки только после выдачи соответствующих прав.
-- Автоматизация действует в явно выданной области и защитных пределах продавца и площадки.
-- Каждое изменение журналируется, имеет понятный источник и показывается продавцу.
-- Выход за пределы блокируется или требует отдельного подтверждения продавца.
-- Значимые изменения вызывают уведомление; продавец может немедленно отозвать доступ и при допустимости восстановить прежнее значение.
-
-### Утверждено по границам первой публичной версии API
-
-- Приложения могут читать открытый каталог.
-- После отдельного согласия продавца приложение может управлять только его собственными карточками, ценами и остатками.
-- Доступ к платежам, эскроу, спорам, документам личности и личным сообщениям не предоставляется.
-- Расширение на исключённые области требует отдельного решения, модели угроз, правовой проверки и нового согласия пользователей.
-
-### Утверждено по классификации риска прав
-
-- Площадка публикует единую матрицу риска с уровнем риска, сроком действия и правилами повторного подтверждения каждого права.
-- Одинаковые права получают одинаковые правила для сопоставимых интеграций.
-- Матрицу утверждают ответственные за безопасность и продукт и пересматривают по инцидентам, новым угрозам и эксплуатационным данным.
-- Разработчик, продавец или отдельный сотрудник не может единолично занизить критичность права.
-
-### Утверждено по сроку прав приложения
-
-- Минимальные права чтения действуют до отзыва продавцом при видимом контроле подключения.
-- После заранее установленной длительной неактивности доступ прекращается.
-- Права изменять цены, остатки и другие доверенные данные ограничены сроком и требуют периодического явного повторного подтверждения продавца.
-- Если подтверждение не получено, прекращаются только истёкшие права конкретного приложения.
-- Точные сроки определяются до запуска по уровню риска и эксплуатационным данным.
-
-### Утверждено по повторной проверке приложений
-
-- После допуска действует постоянный автоматический контроль.
-- Существенные изменения прав, владельца, инфраструктуры или обращения с данными, подтверждённый инцидент и новый существенный риск запускают повторную проверку.
-- Высокорисковые приложения дополнительно проходят плановую периодическую проверку.
-- Точные периоды и критерии риска определяются до запуска по модели угроз и эксплуатационным данным.
-
-### Утверждено по инцидентам сторонних приложений
-
-- При существенном риске площадка срочно ограничивает затронутые права или отключает приложение.
-- Журналы и доказательства сохраняются, скомпрометированный доступ отзывается, разработчик и затронутые продавцы уведомляются.
-- Доступ восстанавливается только после подтверждённого исправления и необходимой повторной проверки.
-- Обжалование доступно, но не задерживает срочную защиту пользователей.
-- Первое сообщение не означает автоматического окончательного удаления без проверки.
-
-### Утверждено по сторонним интеграциям
-
-- Частная интеграция продавца работает только с его аккаунтом без обязательной ручной очереди площадки, но соблюдает общие права, лимиты и журналирование.
-- Приложение для нескольких независимых продавцов регистрируется и проходит проверку до публичного распространения; каждый продавец отдельно подтверждает его доступ.
-- Проверяются разработчик и контакты, права, безопасность подключения, обращение с данными, приватность, поддержка и порядок сообщения об инцидентах. Критичное расширение прав требует повторной проверки.
-- Передача всего исходного кода не является обязательной для каждого приложения; дополнительные материалы и испытания запрашиваются по риску. Допуск не считается гарантией качества бизнеса разработчика.
-
-**Утверждено по ценовому ориентиру:** ориентир является необязательным, каждый продавец назначает собственную цену, а ориентир вводится в два этапа. До накопления достаточной внутренней истории допускается только отдельно подписанный проверенный источник; при его отсутствии ориентир не показывается. Затем платформа переходит на прозрачную рыночную формулу с защитой от манипуляций. Главным основанием формулы являются цены подтверждённых завершённых сделок внутри платформы; актуальные предложения используются только как дополнительная проверка рынка. Основное значение рассчитывается как медиана подходящих цен за недавний период. В расчёт входят только полностью завершённые сделки без возврата, подтверждённой манипуляции или признанного существенного нарушения; стоимость доставки учитывается отдельно. Скидка продавца уменьшает учитываемую цену, а субсидия платформы или партнёра без снижения суммы продавца — нет. Переход на внутреннюю медиану выполняется автоматически после достижения заранее установленного для категории порога свежих подходящих сделок от нескольких независимых покупателей и продавцов. Если данные перестают проходить порог, платформа возвращается к свежему проверенному внешнему источнику, а при его отсутствии скрывает ориентир. Сильное расхождение актуальных предложений и медианы временно скрывает ориентир и запускает проверку данных, но не изменяет значение напрямую. Покупателю показываются значение, источник, дата обновления, период, число учтённых сделок и краткая методика без данных участников и отдельных заказов. Покупатель может сообщить об ошибке, а продавец подать формальное обращение; подтверждённая ошибка исправляет данные и вызывает автоматический пересчёт, но не ручное назначение цены. Отклонение от ориентира само по себе не влияет на доступ к продажам, санкции, репутацию или обычную выдачу; покупатель может явно сортировать предложения по цене или полной стоимости.
-
-**Утверждено по AI-маркировке и генерации:** публичная отметка обязательна для созданного или существенно заменённого AI видимого содержания и полностью сгенерированных изображений. Простая техническая коррекция света, кадрирования или размера без нового видимого содержания не требует публичной отметки, но история обработки сохраняется. Если карточка содержит AI-содержимое, в галерее обязательно остаётся реальное изображение товара без синтетических добавлений, а каждую помеченную AI-версию можно сравнить с её конкретным исходником. Полностью генерировать можно декоративные материалы, рекламный фон и окружение; изображение самого продаваемого товара должно происходить из реального исходника и не изменять его свойства. AI-изображение можно использовать как обложку при видимой маркировке, неизменности товара, наличии реального изображения в галерее и доступном сравнении с исходником. Исходник и опубликованные версии неизменяемы; откат повторно активирует прежнюю версию без стирания истории, а заказ сохраняет снимок карточки на момент покупки. Перед публикацией выполняются автоматическое сравнение с исходником и явное подтверждение продавца; спорные результаты блокируются до исправления или человеческой проверки. Правдоподобный риск существенного искажения после публикации временно скрывает только спорное изображение и запускает человеческую проверку; одна жалоба сама по себе не блокирует продавца и не удаляет карточку.
-
-**Утверждено по публичным показателям продавца:** на первом запуске показываются число завершённых заказов, своевременность исполнения, отмены по вине продавца, подтверждённые проблемы и возвраты по вине продавца. Указываются период и размер выборки; при недостатке данных это сообщается прямо. Оценка и подтверждённые отзывы показываются отдельно. Внутренние антифрод-сигналы и закрытый риск-балл не публикуются.
-
-Проблемное событие влияет на публичные показатели только после окончательного подтверждения факта и ответственности продавца. Открытые споры, необработанные жалобы, предварительные решения и продолжающееся обычное обжалование показатель не ухудшают.
-
-Опыт и текущее качество показываются раздельно: число завершённых заказов — за всё время, а доли качества — за явно указанный недавний скользящий период с размером выборки. Единого скрытого балла нет; точная длительность периода определяется после моделирования пилота.
-
-Профиль содержит общий обзор продавца и, при достаточной выборке, отдельные показатели для физических товаров, цифровых продуктов и услуг. В карточке приоритетен соответствующий тип исполнения; ненадёжный процент при малой выборке не показывается.
-
-Продавец получает закрытую расшифровку по собственным заказам и событиям, опубликованную методику, формальное обращение об ошибке и журнал пересчётов. Подтверждённая ошибка исправляет исходные данные и запускает автоматический пересчёт; ручное назначение итогового показателя без основания запрещено.
-
-Показатели качества влияют на обычную выдачу только как ограниченный прозрачный фактор с опубликованной методикой и пользовательскими фильтрами. Релевантность остаётся основой; закрытый риск-балл не используется для тайного понижения, а ограничения применяются отдельной процедурой санкций.
-
-Первая версия открытого формата охватывает рабочее ядро каталога и витрины: товары, варианты, характеристики, цены, остатки, медиа, категории, коллекции, настройки и происхождение данных. Заказы и подтверждённые отзывы используют отдельные связанные схемы; закрытые платёжные, спорные и риск-данные в каталог не входят.
-
-Каждая выгрузка содержит версию схемы. Совместимые дополнения не ломают старые поля; несовместимые изменения получают новую основную версию, заранее объявленный период поддержки, правила перехода и средство миграции.
-
-Импорт сначала проходит проверку и предварительный просмотр сопоставлений, изменений и конфликтов. Запись выполняется только после явного подтверждения продавца, сохраняется в журнале и допускает откат всей операции; безусловное перезаписывание и автоматическое создание дубликатов запрещены.
-
-На первом запуске автоматическая синхронизация выполняется только из выбранного внешнего источника в площадку с явно назначенными владельцами групп полей. Обратный перенос выполняется отдельным экспортом; двусторонняя синхронизация откладывается до отдельного проектирования после пилота.
-
-Продавец может явно забрать управление полем или логической группой, после чего их синхронизация приостанавливается без отключения остальных данных. Повторное включение проходит через предварительный просмотр; молчаливое перезаписывание ручной правки запрещено.
-
-При сбое сохраняется последняя подтверждённая версия, продавец получает уведомление, а повреждённая связанная группа не применяется частично. После безопасного срока затронутые предложения с неподтверждённой ценой или остатком временно перестают принимать новые заказы; точные сроки определяются после пилота.
-
-Открытый формат управляется через публичный репозиторий, открытые предложения и обсуждения. На старте ответственными сопровождающими является команда платформы; решения принимаются по опубликованным критериям и сопровождаются открытым обоснованием и журналом версий.
-
-Спецификация формата, схемы и эталонные примеры публикуются под разрешительной открытой лицензией, допускающей независимые и коммерческие реализации. Точную лицензию выбирают после правовой проверки.
-
-Базовый безопасный API бесплатен для документации, разрешённого публичного чтения, ссылок на оформление и разумного объёма работы продавца со своими данными. Повышенные лимиты, управляемые коннекторы, частая синхронизация и гарантированный сервис могут быть платными; ручной полный экспорт остаётся бесплатным.
-
-Каждое приложение получает отдельные минимальные права после явного подтверждения продавца, ведёт собственный журнал и может быть немедленно отключено. Пароль кабинета и общий бессрочный ключ приложениям не передаются; расширение критичных прав требует нового согласия.
-
-Частная интеграция продавца может работать только с его аккаунтом без ручной очереди. Приложение для нескольких независимых продавцов регистрируется и проходит проверку безопасности и правил до публичного распространения; каждый продавец всё равно отдельно подтверждает доступ.
-
-Перед массовым допуском проверяются разработчик, запрашиваемые права, безопасность подключения, правила хранения и удаления данных, приватность, поддержка и готовность к инцидентам. Критичное расширение прав требует повторной проверки; исходный код запрашивается не всегда, а по риску.
-
-При правдоподобном инциденте существенный риск немедленно ограничивается, журналы сохраняются, участники уведомляются, а доступ восстанавливается только после подтверждённого исправления. Разработчик может обжаловать решение, но обжалование не задерживает временную защиту пользователей.
-
-После допуска приложение постоянно контролируется и повторно проверяется при существенных изменениях или новом риске; высокорисковые приложения дополнительно проходят плановую проверку. Точные периоды и критерии устанавливаются до запуска.
-
-Минимальные права чтения действуют до отзыва и прекращаются после длительной неактивности. Критичные права изменения доверенных данных ограничены сроком и требуют периодического повторного подтверждения продавца; точные сроки определяются до запуска по риску.
-
-Критичность и срок действия прав задаются единой опубликованной матрицей площадки. Она одинаково применяется к сопоставимым интеграциям и пересматривается ответственными за безопасность и продукт по фактическим данным риска.
-
-Первая публичная версия API охватывает чтение открытого каталога и управление собственными карточками, ценами и остатками подключившего продавца. Платежи, эскроу, споры, документы личности и личные сообщения исключены.
-
-Автоматическое изменение цен и остатков разрешено только в выданной области и защитных пределах. Все изменения журналируются и показываются продавцу; превышения блокируются или требуют отдельного подтверждения, а доступ можно немедленно отозвать.
-
-Обязательные безопасные пределы задаёт площадка. Продавец может только ужесточить их; точные числа определяются после моделирования риска и пилота.
-
-Операции за пределами отклоняются. Повторные или аномальные нарушения временно приостанавливают критичные права, уведомляют участников и запускают проверку; безопасное чтение сохраняется только при отсутствии связанного риска.
-
-Изменения каталога, цены и остатка передаются приложениям подписанными уведомлениями. Периодическая сверка восстанавливает пропуски, а идентификатор события предотвращает повторное применение одного изменения.
-
-Публичный каталог содержит только допущенные приложения и показывает разработчика, назначение, права, обращение с данными, поддержку, цену и дату проверки. Частные интеграции скрыты; допуск не считается гарантией качества бизнеса.
-
-Отзывы о приложениях оставляют только продавцы с подтверждённым использованием. Пользовательская оценка полезности, надёжности и поддержки отделена от статуса проверки безопасности.
-
-В первой версии платные приложения оплачиваются разработчику вне площадки при заранее видимых условиях. Встроенные подписки, возвраты и комиссия площадки откладываются до отдельного решения после проверки спроса.
-
-Разработчик отвечает за работу приложения, коммерческую поддержку, оплату и возвраты; площадка — за безопасное подключение, права, каталог и соблюдение правил. Границы видны до подключения.
-
-При прекращении поддержки новые подключения останавливаются, продавцы уведомляются и при отсутствии риска получают переходный срок. Затем права отзываются и удаление данных подтверждается; существенный риск отключается немедленно.
-
-Предложения идентичного товара по умолчанию упорядочиваются по прозрачной пользе: доступность доставки, полная стоимость, срок, расстояние и качество исполнения. Платное повышение запрещено, а покупатель может выбрать отдельную сортировку.
-
-Числовые веса факторов определяются до запуска после моделирования и пилота, затем публикуются и версионируются. Одинаковая версия применяется к сопоставимым условиям; тайные ручные или AI-изменения запрещены.
-
-В первом публичном запуске нет скрытой персонализации порядка продавцов: учитываются только явно заданные адрес, фильтры и сортировка. При одинаковых условиях порядок одинаковый; будущая персонализация возможна только прозрачно, отключаемо и с отдельным согласием.
-
-В публичной бете платного размещения нет. После пилота возможны только отдельные явно помеченные рекламные блоки, которые не меняют органическую выдачу; оплата не повышает обычную позицию.
-
-Разные товары в общем поиске упорядочиваются сначала по соответствию запросу, категории и характеристикам, затем по доступности, доставке и подтверждённому качеству. Факторы прозрачны, платное влияние запрещено, доступны отдельные способы сортировки.
-
-Отсутствие истории у нового продавца или товара нейтрально: показывается «недостаточно данных», действует усиленный начальный контроль, но нет автоматического понижения или повышения позиции.
-
-Международное расширение начинается только после устойчивой работы в России. Страны добавляются по одной после полной правовой, платёжной, налоговой, валютной, локализационной, логистической и операционной подготовки и отдельного пилота.
-
-Внутренняя подготовка начинается с транзакционного ядра, затем добавляет полноценные инструменты продавца и витрины, после них открытый формат и API, а AI-дизайнер подключается последним как ограниченная бета. Все утверждённые направления объединяются до публичного запуска.
-
-1. Числовые пороги, периоды и допустимые расхождения для ценового ориентира по категориям, определяемые после моделирования и получения данных пилота.
-2. Лимиты AI-медиа, сроки хранения версий и пороги автоматической проверки после технических тестов, расчёта стоимости и правовой проверки.
-3. Числовые пороги качества, безопасности, стабильности и экономики для выхода AI-дизайнера из ограниченной бета-версии.
-4. Исследование и выбор публичного бренда, проверка совпадений, доменов и товарных знаков, точные тексты презентации.
-5. Числовые пороги и период измерения показателей российского пилота.
-6. Точный перечень документов продавца и критерии усиленной проверки продавцов и покупателей.
-7. Точный состав разрешённых и запрещённых категорий.
-8. Точная единая ставка комиссии пилота после расчёта обязательных расходов.
-9. Платёжный партнёр с поддержкой общего платежа, распределения между продавцами, независимых удержаний и частичных возвратов; юридическая проверка схемы.
-10. Первые внешние источники импорта и их официальные возможности.
-11. Точные правила споров, выплат и автоматического принятия.
-12. Первая версия открытого формата данных.
-13. Точные цены и лимиты AI-функций и медиа.
-14. Минимальный состав аналитики и интеграций к запуску.
-15. Детальные критерии готовности и проверяемые этапы реализации каждой подсистемы в рамках утверждённой последовательности.
-16. Первые службы доставки, иерархия доказательств получения и правила собственной доставки продавца.
-17. Точные доказательства цифрового исполнения, сроки спора и правила возврата для файлов, ключей, подписок и услуг.
-18. Требования к управляемому хранению и внешней выдаче цифровых продуктов, включая проверку ссылок и срок доступности.
-19. Технологический стек, схема развёртывания и детальные интерфейсы модулей в рамках утверждённого единого ядра.
+This is the approved sequence for designing and checking major parts, but it is not yet a detailed implementation plan. All directions included in the approved public-beta scope are combined and undergo a general review before it opens.
 
 ---
 
-## 19. Что пока не сделано
+## 16. Main Risks
 
-- репозиторий не создан;
-- код не написан;
-- платёжный партнёр не выбран;
-- юридическая модель не проверена;
-- название продукта не выбрано;
-- письменная архитектурная спецификация утверждена Владиславом без изменений;
-- подчинённая спецификация первой фазы транзакционного ядра не написана;
-- план реализации не составлен.
-
-Этот документ фиксирует концепцию, а не подтверждает техническую или юридическую реализуемость всех пунктов.
+1. **Public launch that is too large.** Simultaneous readiness of all subsystems increases the timeline, cost, and number of failure points.
+2. **Payment model.** The availability of the required holding and refund mechanism with a suitable partner must be confirmed.
+3. **Portability from external platforms.** Capabilities depend on official exports, APIs, and the terms of specific sources.
+4. **Reviews.** The provenance and rules for permissible display of external content must be checked.
+5. **Broad catalog.** A universal core will require manageable attribute schemas by category.
+6. **Services and subscriptions.** They are more complex than ordinary file delivery and require stages, periods, and acceptance rules.
+7. **AI cost.** Video and repeated generation may make an unlimited model unprofitable.
+8. **Moderation.** The platform's responsibility requires a real operations team, not only an algorithm.
+9. **Two-sided market.** Sales require sellers and buyers at the same time.
+10. **Trust.** Errors in disputes, ratings, or payouts may destroy the product's primary value.
+11. **Price-benchmark manipulation and hidden mandatory status.** An opaque calculation or one controlled by interested participants may mislead the buyer. Sanctions, blocks, or ranking that effectively compel sellers to follow the benchmark require a separate antitrust review and must not be introduced without an opinion from a specialist lawyer.[1][2]
 
 ---
 
-## 20. Рекомендуемые skills для продолжения
+## 17. End-to-End Outcome the Product Must Achieve
 
-Следующему агенту или новой сессии рекомендуется использовать:
+The seller must be able to:
 
-- `superpowers:brainstorming` — продолжение согласования концепции;
-- `grill-with-docs` — строгая проверка протокола вопросами;
-- `domain-modeling` — модель продавца, товара, заказа, исполнения, отзыва и спора;
-- `codebase-design` — границы будущих подсистем;
-- `wayfinder` — разбиение большой программы на этапы;
-- `grounded-citations` — проверка юридических и платёжных утверждений по первоисточникам;
-- `technical-plan-validation` — проверка будущего технического плана;
-- `superpowers:writing-plans` — только после утверждения финальной спецификации.
+1. register and pass review;
+2. import or create a profile and catalog;
+3. add a physical or digital product, subscription, or service;
+4. provide AI with text, materials, and references;
+5. receive and edit a branded storefront;
+6. publish a store and products;
+7. accept a protected order;
+8. fulfill it using a suitable method;
+9. receive a payout after confirmation;
+10. receive an internal review;
+11. view analytics;
+12. export portable data in an open format.
+
+The buyer must be able to:
+
+1. find a product in the common catalog or follow the seller's link;
+2. understand the price, terms, rating, and provenance of reviews;
+3. pay securely;
+4. receive a product, file, key, subscription, or service;
+5. open a dispute when there is a problem;
+6. receive a decision and a possible refund;
+7. leave a verified review.
+
+---
+
+## 18. Next Decisions by Priority
+
+### Immediate Next Question
+
+Should a technical study of stack and deployment options be conducted before the subordinate specification for the first phase of the transaction core?
+
+Options under consideration:
+
+1. conduct a comparative study and provide a reasoned recommendation without creating product code;
+2. Vladislav will define the technology stack and deployment conditions himself;
+3. pause the project at the approved common specification.
+
+### Written Specification Approved
+
+- Vladislav confirmed the specification without changes on 2026-09-02.
+- Approval does not authorize starting implementation without the subordinate specification and first-phase plan.
+- Scope review confirmed that the common document covers several independent subsystems and must not become one giant plan.
+- Before the first-phase plan, the technology stack and deployment architecture must be selected and the project repository must be created or explicitly identified.
+
+### Final Concept — Section 7 Confirmed
+
+- Critical changes are atomic, repeated requests do not create duplicates, and an unknown partner state requires reconciliation.
+- If import or synchronization fails, the last confirmed version is retained.
+- An incident restricts the affected risk, preserves evidence, and permits recovery only after a confirmed fix.
+- Before release, unit, integration, contract, end-to-end, security, load, and recovery checks are mandatory.
+- Public beta opens only after legal, payment, security, and operational readiness and the absence of critical errors.
+
+### Written Specification Prepared and Checked
+
+- Path: `D:\Open_Marketplace\docs\superpowers\specs\2026-09-02-open-marketplace-design.md`.
+- All seven sections of the final concept have been confirmed by Vladislav.
+- A self-check of placeholders, contradictions, ambiguities, and scope has been completed.
+- The specification awaits Vladislav's separate confirmation before moving to the first subordinate specification and implementation plan.
+
+### Final Concept — Section 6 Confirmed
+
+- The AI designer is confirmed as an optional limited beta for selected verified sellers.
+- AI does not publish materials without the seller's explicit confirmation.
+- The real product must come from a real source and not be distorted; synthetic content is labeled under the approved rules.
+- Sources, published versions, and a snapshot of the order card are retained for comparison, rollback, and disputes.
+- A material discrepancy is blocked or referred to a person; exiting beta requires quality, safety, stability, and acceptable economics.
+
+### Final Concept — Section 5 Confirmed
+
+- Transparent ranking rules for identical and different products without paid organic influence or hidden personalization are confirmed.
+- New sellers and products receive the neutral “insufficient data” status and enhanced initial monitoring.
+- There is no advertising in public beta; after the pilot, only separate labeled blocks without influence on organic results are possible.
+- The price benchmark remains optional, explainable, and protected against arbitrary assignment.
+- Reviews and public metrics are based on verified events; a person makes final dispute decisions under the published rules.
+
+### Final Concept — Section 4 Confirmed
+
+- Seller review, a free basic branded storefront, and no influence of design on organic position are confirmed.
+- The seller's own portable data are available free of charge in an open documented format.
+- The first-launch API is limited to the catalog, own cards, prices, inventory, and secure checkout links within the platform.
+- Separate minimum application permissions, critical-permission periods, mandatory limits, logs, access revocation, and risk-based review are confirmed.
+- The rules for private integrations, the public application catalog, external payment, support, and application shutdown are confirmed.
+
+### Final Concept — Section 3 Confirmed
+
+- Common cards for demonstrably identical products and separate cards for unique listings have been confirmed.
+- The price and inventory are rechecked by the server before payment, after which a short reservation is created.
+- A common purchase is divided into independently fulfilled seller parts.
+- The payment partner processes money, holds, and refunds under a scheme reviewed before implementation.
+- Public beta confirms the full cycle for physical products and downloadable files with the exact version of the digital product.
+
+### Final Concept — Section 2 Confirmed
+
+- A modular monolith with independent internal modules and no initial microservices has been confirmed.
+- The server is the sole authoritative source for orders, inventory, money, permissions, digital delivery, and action history.
+- Long-running operations are performed by background workers.
+- Payment and logistics partners are connected through separate adapters.
+- The architectural preparation sequence has been confirmed without changes.
+
+### Final Concept — Section 1 Confirmed
+
+- The purpose and public positioning are confirmed without changes.
+- The first public launch remains a Russian public beta with real transactions and published restrictions.
+- Seller tools, the buyer marketplace, and open data infrastructure are combined for launch.
+- The AI designer launches as a limited beta and is not a condition for ordinary sales.
+- The main success criterion is the reliability of the full order cycle for physical products and downloadable files.
+
+### Approved: Product Preparation Sequence
+
+- First, the transaction core is designed and checked: identity, permissions, catalog, orders, payment flow, fulfillment, disputes, and audit.
+- Next, the full seller account, import, export, and branded storefronts are added.
+- After that, the open format, API, synchronization, and third-party integrations are connected.
+- The AI designer and media are connected last as a limited beta.
+- All approved directions are combined and undergo a general review before public launch.
+
+### Approved: International Expansion
+
+- The date of entry into a new country is not set in advance.
+- Stable operation in Russia is confirmed first.
+- Countries are added one at a time.
+- For each country, law, taxes, payments, currency, localization, logistics, support, and buyer protection are addressed separately.
+- Entry begins with a limited pilot; an interface translation alone is insufficient.
+
+### Approved: New Sellers and Products Without History
+
+- The absence of history is considered neutral, not a negative indicator.
+- An “insufficient data” label is shown without an invented rating.
+- Relevance, availability, and delivery are considered.
+- Enhanced initial monitoring under the published rules applies.
+- Newness does not send a listing to the end or give it an artificial first place.
+
+### Approved: Common Search for Different Products
+
+- First, relevance to the query, category, and selected attributes is considered.
+- Then availability for the address, delivery terms, and verified fulfillment quality are considered.
+- The factors are published; commercial compensation does not affect the organic order.
+- The buyer may sort by total cost, recency, delivery time, or rating.
+
+### Approved: Advertising in the Catalog and Search
+
+- Paid placement is absent in public beta.
+- After a successful pilot, advertising is possible only in separate, clearly marked blocks.
+- Advertising blocks are visually distinct and do not change the organic order.
+- An advertised listing must comply with the ordinary rules for safety, availability, and data quality.
+- Payment does not raise the organic position of a product or seller.
+
+### Approved: Personalization of Seller Order
+
+- Hidden behavioral personalization is not used in the first public launch.
+- Only the explicitly specified address, filters, and sorting method are considered.
+- The same order is applied under the same conditions.
+- Personalization may be researched later only as a transparent, explainable, and disableable feature with separate consent.
+
+### Approved: Numeric Weights for Listing Order
+
+- The factors and prohibition on commercial influence are fixed before implementation.
+- Exact weights are determined after modeling and pilot testing on data before public launch.
+- A version of the rules is published and applied equally to comparable conditions.
+- Changes receive a rationale, an entry in the version log, and advance notice.
+- AI and employees cannot secretly change the order for an individual seller.
+
+### Approved: Order of Identical-Product Listings
+
+- First, listings without inventory, delivery to the address, or the right to sell are excluded.
+- By default, delivery availability, total cost including delivery, time, distance, and verified fulfillment quality are considered.
+- The rules and factors are published.
+- Commission, payment for position, and storefront design do not raise a listing.
+- The buyer may choose sorting by total cost, time, distance, or rating.
+
+### Approved: Ending Application Support
+
+- New connections stop, and active sellers are notified in advance.
+- In the absence of a significant risk, a limited period is provided for export, disconnection, and choosing a replacement.
+- After the transition period, permissions are revoked, and the developer confirms deletion of received data.
+- In the presence of a significant risk, access is disabled immediately; an available secure export is performed from the platform's data.
+
+### Approved: Responsibility for a Third-Party Application
+
+- The developer is responsible for application operation, commercial support, payment, cancellation, and refunds of money received by the developer.
+- The platform is responsible for connection, permissions, its own logs, the catalog, and complaints about rule violations.
+- The boundaries of responsibility and contact channels are visible before connection.
+- The platform may restrict access in response to risk or a violation, but does not promise a refund of money it did not receive.
+
+### Approved: Payment for Third-Party Applications
+
+- In the first version, the developer accepts payment outside the platform.
+- Before connection, the price, period and payment method, cancellation terms, and party responsible for refunds are shown.
+- The platform is not the seller of the application and does not withhold a commission from its payment.
+- Built-in subscriptions, commissions, refunds, and payment disputes are designed separately after demand has been tested.
+
+### Approved: Application Reviews
+
+- A review may be left only by a seller who actually connected the application.
+- The review is marked as verified use.
+- Usefulness, reliability, and support are assessed separately from the security-review status.
+- User ratings do not raise or replace the security review.
+- Moderation and appeals follow the platform's general verifiable procedure.
+
+### Approved: Public Application Catalog
+
+- The catalog contains only approved third-party applications.
+- The listing shows the developer, purpose, exact permissions, data handling, support, price, and date of the latest review.
+- Private integrations for one seller are not published.
+- Approval means passing minimum controls, but does not guarantee the developer's business quality.
+
+### Approved: Event Delivery to Applications
+
+- The platform sends signed notifications about catalog, price, and inventory changes.
+- The signature confirms the notification's source and integrity.
+- Periodic reconciliation of the permitted state recovers missed events.
+- A stable event identifier prevents the change from being applied again upon redelivery.
+
+### Approved: Anomalous Application Behavior
+
+- Operations beyond protective limits are rejected.
+- Repeated excesses or other anomalous behavior automatically suspend critical permissions and start a review.
+- The seller and developer are notified.
+- Safe reading is retained only in the absence of a related risk.
+- Critical permissions are restored after the seller's confirmation for an understandable non-critical reason or after a platform review.
+
+### Approved: Automation Protective Limits
+
+- The platform sets mandatory safe limits and recommended default values.
+- The seller may make the limits stricter for the account or application, but may not weaken a mandatory platform limit.
+- Exact numeric values are determined before launch after risk modeling and tested during the pilot.
+
+### Approved: Automatic Changes Through the API
+
+- An application may automatically change prices and inventory only after the relevant permissions have been granted.
+- Automation operates within the explicitly granted scope and the seller's and platform's protective limits.
+- Every change is logged, has an understandable source, and is shown to the seller.
+- Exceeding the limits is blocked or requires the seller's separate confirmation.
+- Significant changes trigger a notification; the seller may immediately revoke access and, if permitted, restore the previous value.
+
+### Approved: Boundaries of the First Public API Version
+
+- Applications may read the open catalog.
+- After the seller's separate consent, an application may manage only that seller's own cards, prices, and inventory.
+- Access to payments, escrow, disputes, identity documents, and private messages is not provided.
+- Extension to the excluded areas requires a separate decision, threat model, legal review, and new user consent.
+
+### Approved: Permission Risk Classification
+
+- The platform publishes a single risk matrix with the risk level, validity period, and reconfirmation rules for each permission.
+- The same permissions receive the same rules for comparable integrations.
+- Those responsible for security and product approve the matrix and review it based on incidents, new threats, and operational data.
+- A developer, seller, or individual employee cannot unilaterally downgrade a permission's criticality.
+
+### Approved: Application Permission Duration
+
+- Minimum read permissions remain active until revoked by the seller with visible connection control.
+- Access ends after a prolonged period of inactivity established in advance.
+- Permissions to change prices, inventory, and other trusted data are time-limited and require the seller's periodic explicit reconfirmation.
+- If confirmation is not received, only the specific application's expired permissions end.
+- Exact periods are determined before launch based on the risk level and operational data.
+
+### Approved: Repeat Application Reviews
+
+- Continuous automated monitoring applies after approval.
+- Material changes to permissions, ownership, infrastructure, or data handling, a confirmed incident, and a new significant risk trigger a repeat review.
+- High-risk applications additionally undergo scheduled periodic review.
+- Exact periods and risk criteria are determined before launch based on the threat model and operational data.
+
+### Approved: Third-Party Application Incidents
+
+- In the presence of a significant risk, the platform urgently restricts the affected permissions or disables the application.
+- Logs and evidence are retained, compromised access is revoked, and the developer and affected sellers are notified.
+- Access is restored only after a confirmed fix and the required repeat review.
+- An appeal is available but does not delay urgent user protection.
+- The initial report does not mean automatic permanent removal without review.
+
+### Approved: Third-Party Integrations
+
+- A seller's private integration works only with their account without a mandatory manual platform queue, but follows the common rules for permissions, limits, and logging.
+- An application for several independent sellers registers and undergoes review before public distribution; each seller separately confirms its access.
+- The developer and contacts, permissions, connection security, data handling, privacy, support, and incident-reporting process are checked. A critical expansion of permissions requires a repeat review.
+- Submission of all source code is not mandatory for every application; additional materials and tests are requested based on risk. Approval is not considered a guarantee of the developer's business quality.
+
+**Approved: Price Benchmark:** the benchmark is optional, each seller sets their own price, and the benchmark is introduced in two stages. Until sufficient internal history accumulates, only a separately attributed verified source is allowed; if none is available, the benchmark is not shown. The platform then switches to a transparent market formula with protection against manipulation. The primary basis of the formula is the prices of verified completed transactions within the platform; current listings are used only as an additional market check. The main value is calculated as the median of suitable prices over a recent period. Only fully completed transactions without a refund, confirmed manipulation, or a recognized material violation are included; delivery cost is accounted for separately. A seller discount reduces the counted price, while a platform or partner subsidy without reducing the seller's amount does not. The transition to the internal median is performed automatically after reaching the category-specific threshold, established in advance, of fresh suitable transactions from several independent buyers and sellers. If the data stop meeting the threshold, the platform returns to a fresh verified external source, or hides the benchmark if none is available. A substantial divergence between current listings and the median temporarily hides the benchmark and starts a data review, but does not directly change the value. The buyer is shown the value, source, update date, period, number of transactions included, and a brief methodology without participant data or individual orders. The buyer may report an error, and the seller may submit a formal request; a confirmed error corrects the data and triggers automatic recalculation, but not manual assignment of a price. Deviation from the benchmark alone does not affect sales access, sanctions, reputation, or ordinary results; the buyer may explicitly sort listings by price or total cost.
+
+**Approved: AI Labeling and Generation:** a public label is mandatory for visible content created or substantially replaced by AI and for fully generated images. Simple technical correction of lighting, cropping, or size without new visible content does not require a public label, but the processing history is retained. If a card contains AI content, the gallery must retain a real image of the product without synthetic additions, and each labeled AI version can be compared with its specific source. Decorative materials, advertising backgrounds, and surroundings may be generated entirely; the image of the product being sold must come from a real source and must not change its properties. An AI image may be used as a cover when labeling is visible, the product is unchanged, a real image is available in the gallery, and comparison with the source is available. The source and published versions are immutable; a rollback reactivates the previous version without erasing history, and the order retains a snapshot of the card at the time of purchase. Before publication, the result is automatically compared with the source and the seller explicitly confirms it; disputed results are blocked until correction or human review. A credible risk of material distortion after publication temporarily hides only the disputed image and starts human review; a single complaint does not by itself block the seller or delete the card.
+
+**Approved: Public Seller Metrics:** at the first launch, the number of completed orders, fulfillment timeliness, cancellations attributable to the seller, confirmed problems, and returns attributable to the seller are shown. The period and sample size are stated; insufficient data are reported directly. The rating and verified reviews are shown separately. Internal anti-fraud signals and the closed risk score are not published.
+
+A problematic event affects public metrics only after the fact and the seller's responsibility have been finally confirmed. Open disputes, unprocessed complaints, preliminary decisions, and ongoing ordinary appeals do not worsen the metric.
+
+Experience and current quality are shown separately: the number of completed orders covers all time, while quality shares cover an explicitly stated recent rolling period with a sample size. There is no single hidden score; the exact period is determined after modeling the pilot.
+
+The profile contains a general seller overview and, with a sufficient sample, separate metrics for physical products, digital products, and services. The relevant fulfillment type has priority in the card; an unreliable percentage is not shown for a small sample.
+
+The seller receives a private breakdown of their own orders and events, the published methodology, a formal error-reporting process, and a recalculation log. A confirmed error corrects the source data and starts automatic recalculation; manually assigning a final metric without grounds is prohibited.
+
+Quality metrics affect ordinary results only as a limited transparent factor with a published methodology and user filters. Relevance remains the basis; the closed risk score is not used for a hidden demotion, and restrictions are applied through a separate sanctions procedure.
+
+The first version of the open format covers the catalog and storefront working core: products, variants, attributes, prices, inventory, media, categories, collections, settings, and data provenance. Orders and verified reviews use separate related schemas; closed payment, dispute, and risk data are not part of the catalog.
+
+Each export contains a schema version. Compatible additions do not break old fields; incompatible changes receive a new major version, an announced support period, transition rules, and a migration tool.
+
+Import first undergoes checking and a preview of matches, changes, and conflicts. Writing occurs only after the seller's explicit confirmation, is retained in the log, and allows the entire operation to be rolled back; unconditional overwriting and automatic creation of duplicates are prohibited.
+
+At the first launch, automatic synchronization runs only from the selected external source into the platform, with owners of field groups explicitly assigned. Reverse portability is performed through a separate export; two-way synchronization is deferred until separate design after the pilot.
+
+The seller may explicitly take control of a field or logical group, after which its synchronization is suspended without disabling the other data. Re-enabling it requires a preview; silently overwriting a manual edit is prohibited.
+
+When a failure occurs, the last confirmed version is retained, the seller is notified, and a damaged related group is not partially applied. After the safe period, affected listings with an unconfirmed price or inventory temporarily stop accepting new orders; exact periods are determined after the pilot.
+
+The open format is governed through a public repository, open proposals, and discussions. At the start, the platform team serves as the responsible maintainers; decisions are made under published criteria and accompanied by a public rationale and version log.
+
+The format specification, schemas, and reference examples are published under a permissive open license allowing independent and commercial implementations. The exact license is selected after legal review.
+
+The basic safe API is free for documentation, permitted public reading, checkout links, and a reasonable amount of seller work with their own data. Higher limits, managed connectors, frequent synchronization, and guaranteed service may be paid; a full manual export remains free.
+
+Each application receives separate minimum permissions after the seller's explicit confirmation, keeps its own log, and may be disabled immediately. The account password and a shared perpetual key are not given to applications; expanding critical permissions requires new consent.
+
+A seller's private integration may work only with their account without a manual queue. An application for several independent sellers registers and passes a security and rules review before public distribution; each seller still confirms access separately.
+
+Before broad approval, the developer, requested permissions, connection security, data-storage and deletion rules, privacy, support, and incident readiness are checked. A critical expansion of permissions requires a repeat review; source code is not always requested, but according to risk.
+
+When a credible incident occurs, the significant risk is immediately restricted, logs are retained, participants are notified, and access is restored only after a confirmed fix. The developer may appeal the decision, but an appeal does not delay temporary user protection.
+
+After approval, the application is continuously monitored and reviewed again after material changes or a new risk; high-risk applications additionally undergo scheduled review. Exact periods and criteria are established before launch.
+
+Minimum read permissions remain active until revoked and end after prolonged inactivity. Critical permissions to change trusted data are time-limited and require the seller's periodic reconfirmation; exact periods are determined before launch based on risk.
+
+Permission criticality and validity period are set by the platform's single published matrix. It is applied equally to comparable integrations and reviewed by those responsible for security and product based on actual risk data.
+
+The first public API version covers reading the open catalog and managing the connecting seller's own cards, prices, and inventory. Payments, escrow, disputes, identity documents, and private messages are excluded.
+
+Automatic changes to prices and inventory are permitted only within the granted scope and protective limits. All changes are logged and shown to the seller; excesses are blocked or require separate confirmation, and access can be revoked immediately.
+
+The platform sets mandatory safe limits. The seller may only make them stricter; exact numbers are determined after risk modeling and the pilot.
+
+Operations beyond the limits are rejected. Repeated or anomalous violations temporarily suspend critical permissions, notify participants, and start a review; safe reading is retained only in the absence of a related risk.
+
+Catalog, price, and inventory changes are sent to applications as signed notifications. Periodic reconciliation recovers omissions, and the event identifier prevents the same change from being applied again.
+
+The public catalog contains only approved applications and shows the developer, purpose, permissions, data handling, support, price, and review date. Private integrations are hidden; approval is not considered a guarantee of business quality.
+
+Only sellers with verified use leave application reviews. User ratings of usefulness, reliability, and support are separate from the security-review status.
+
+In the first version, paid applications are paid for to the developer outside the platform under terms visible in advance. Built-in subscriptions, refunds, and a platform commission are deferred until a separate decision after demand has been tested.
+
+The developer is responsible for application operation, commercial support, payment, and refunds; the platform is responsible for secure connection, permissions, the catalog, and compliance with rules. The boundaries are visible before connection.
+
+When support ends, new connections stop, sellers are notified, and, in the absence of risk, receive a transition period. Then permissions are revoked and data deletion is confirmed; significant risk is disabled immediately.
+
+Identical-product listings are ordered by transparent utility by default: delivery availability, total cost, time, distance, and fulfillment quality. Paid elevation is prohibited, and the buyer may choose separate sorting.
+
+Numeric factor weights are determined before launch after modeling and the pilot, then published and versioned. The same version is applied to comparable conditions; secret manual or AI changes are prohibited.
+
+In the first public launch, there is no hidden personalization of seller order: only the explicitly specified address, filters, and sorting are considered. The order is the same under the same conditions; future personalization is possible only transparently, disableably, and with separate consent.
+
+There is no paid placement in public beta. After the pilot, only separate, clearly marked advertising blocks that do not change organic results are possible; payment does not raise the ordinary position.
+
+Different products in common search are ordered first by relevance to the query, category, and attributes, then by availability, delivery, and verified quality. The factors are transparent, paid influence is prohibited, and separate sorting methods are available.
+
+The absence of history for a new seller or product is neutral: “insufficient data” is shown, enhanced initial monitoring applies, and there is no automatic lowering or raising of position.
+
+International expansion begins only after stable operation in Russia. Countries are added one at a time after full legal, payment, tax, currency, localization, logistics, and operational preparation and a separate pilot.
+
+Internal preparation begins with the transaction core, then adds full seller tools and storefronts, followed by the open format and API, with the AI designer connected last as a limited beta. All approved directions are combined before public launch.
+
+1. Numeric thresholds, periods, and permitted deviations for the price benchmark by category, determined after modeling and obtaining pilot data.
+2. AI media limits, version-retention periods, and automated-review thresholds after technical tests, cost calculation, and legal review.
+3. Numeric thresholds for quality, safety, stability, and economics for the AI designer to exit limited beta.
+4. Research and selection of the public brand, checking matches, domains, and trademarks, and exact presentation copy.
+5. Numeric thresholds and measurement period for Russian pilot metrics.
+6. Exact list of seller documents and criteria for enhanced review of sellers and buyers.
+7. Exact composition of allowed and prohibited categories.
+8. Exact single pilot commission rate after calculating mandatory costs.
+9. A payment partner supporting a common payment, distribution among sellers, independent holds, and partial refunds; legal review of the scheme.
+10. Initial external import sources and their official capabilities.
+11. Exact rules for disputes, payouts, and automatic acceptance.
+12. First version of the open data format.
+13. Exact prices and limits for AI features and media.
+14. Minimum analytics and integration scope for launch.
+15. Detailed readiness criteria and verifiable implementation stages for each subsystem within the approved sequence.
+16. Initial delivery services, hierarchy of receipt evidence, and rules for seller-owned delivery.
+17. Exact evidence of digital fulfillment, dispute periods, and refund rules for files, keys, subscriptions, and services.
+18. Requirements for managed storage and external delivery of digital products, including link verification and availability period.
+19. Technology stack, deployment architecture, and detailed module interfaces within the approved common core.
+
+---
+
+## 19. What Has Not Yet Been Done
+
+- the repository has not been created;
+- no code has been written;
+- a payment partner has not been selected;
+- the legal model has not been reviewed;
+- the product name has not been selected;
+- the written architecture specification has been approved by Vladislav without changes;
+- the subordinate specification for the first phase of the transaction core has not been written;
+- an implementation plan has not been prepared.
+
+This document records the concept; it does not confirm the technical or legal feasibility of all points.
+
+---
+
+## 20. Recommended Skills for Continuation
+
+The next agent or a new session is recommended to use:
+
+- `superpowers:brainstorming` — continue aligning the concept;
+- `grill-with-docs` — strict question-based review of the protocol;
+- `domain-modeling` — model of the seller, product, order, fulfillment, review, and dispute;
+- `codebase-design` — boundaries of future subsystems;
+- `wayfinder` — breaking a large program into stages;
+- `grounded-citations` — checking legal and payment claims against primary sources;
+- `technical-plan-validation` — checking the future technical plan;
+- `superpowers:writing-plans` — only after approval of the final specification.
 
 ## Sources
 
-[1] https://www.consultant.ru/document/cons_doc_LAW_61763/75fad2ba0bd186dad16ff04a2efe55ae3f9ff7e6 — 135-ФЗ «О защите конкуренции», статья 11
-[2] https://www.consultant.ru/document/cons_doc_LAW_61763/56ebcb13554d43c05bafaceb47b4e73d289fd904 — 135-ФЗ «О защите конкуренции», статья 12
+[1] https://www.consultant.ru/document/cons_doc_LAW_61763/75fad2ba0bd186dad16ff04a2efe55ae3f9ff7e6 — 135-FZ “On Protection of Competition,” Article 11
+[2] https://www.consultant.ru/document/cons_doc_LAW_61763/56ebcb13554d43c05bafaceb47b4e73d289fd904 — 135-FZ “On Protection of Competition,” Article 12

@@ -1,46 +1,48 @@
-# Open Marketplace — открытая витрина и демонстрационная корзина
+# Open Marketplace: public storefront and demo cart
 
-Русский | [English](README.en.md)
+English | [Russian README](README.ru.md)
 
-**Проверенный выпуск:** [v0.4.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.4.0) · [Скачать ZIP](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip) · [Контрольная сумма](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS)
+**Verified release:** [v0.4.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.4.0) · [Download ZIP](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip) · [Checksum](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS)
 
-**Проверка v0.4.0:** 647 тестов и 12 правил границ модулей прошли. Проверены установка, восстановление, мобильная и настольная витрина. [Итоговый отчёт и ссылки на проверки GitHub](docs/releases/v0.4.0-verification.md).
+**v0.4.0 verification:** 647 tests and 12 module-boundary contracts passed. Installation, restoration, mobile and desktop storefront checks completed. [Final report and GitHub checks](docs/releases/v0.4.0-verification.md).
 
-[Текущая ветка main](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) может содержать более новые изменения, чем неизменяемый архив выпуска. [Что изменилось в v0.4.0](docs/releases/v0.4.0.md) · [Предыдущие выпуски](https://github.com/VibeSan7/Open_Marketplace/releases).
+The [current main branch](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) may include changes newer than the immutable release archive. [Changes in v0.4.0](docs/releases/v0.4.0.md) · [Previous releases](https://github.com/VibeSan7/Open_Marketplace/releases).
 
-Проект запускается на вашем компьютере через Docker и открывается в браузере. Продавец ведёт карточки, фотографии, варианты, цены и остатки. Покупатель ищет товары и сравнивает подтверждённые предложения продавцов.
+Run the project on your computer with Docker and open it in a browser. Sellers manage product listings, photos, variants, prices, and stock. Buyers search the catalog and compare verified offers from sellers.
 
-**Открытая витрина с отдельно включаемой демонстрацией корзины и заказа — без настоящих платежей.** Цифровые товары пока можно сохранять только в непубличных черновиках. Локальный запуск не публикует сайт в интернете.
+**An open storefront with an optional, separately enabled cart and order demonstration — no real payments.** Digital products can only be saved as unpublished drafts. Running the project locally does not publish a website on the internet.
 
-Публичные товары, поиск, фотографии и страницы продавцов доступны гостям. Старые карточки после обновления остаются закрытыми: владелец явно включает публичный показ опубликованного товара. Для избранного и демонстрационных заказов нужен активный личный аккаунт с подтверждённой почтой; допуск к закрытому каталогу и управление товарами остаются отдельными правами.
+Guests can browse explicitly public products, photos, search and seller pages. Existing listings remain private after an upgrade: the owner explicitly enables guest visibility after publication. Saved products and demo orders require an active personal account with verified email; private-catalog admission and seller-management permissions remain separate.
 
-![Открытая товарная витрина Open Marketplace](docs/images/storefront-preview.png)
+English is the primary language for repository documentation and GitHub-facing descriptions. [README.ru.md](README.ru.md) is the only Russian documentation translation. The application interface and multilingual test data are unchanged; UI action names below are English descriptions, not verbatim button labels. Executable examples may retain application strings that must match the code.
 
-На снимке — учебные данные. Новая установка пуста, но [отдельная команда](docs/runbooks/storefront-demo-ru.md) добавляет 24 товара с фотографиями, 48 вариантов, 6 категорий и 3 вымышленных магазина. Готовых паролей нет. [Авторы фотографий и лицензии](docs/demo-image-credits.md).
+![Open Marketplace public product storefront](docs/images/storefront-preview.png)
 
-## Что работает
+The preview uses synthetic data. A fresh installation is empty; an [optional command](docs/runbooks/storefront-demo-en.md) adds 24 illustrated products, 48 variants, 6 categories and 3 fictional stores. No preset passwords are distributed. [Image credits and licenses](docs/demo-image-credits.md).
 
-- Регистрация, подтверждение почты, вход, двухэтапная защита, управление сессиями и роли сотрудников.
-- Открытая гостевая витрина, отдельный допуск к закрытым товарам и проверка продавцов.
-- Черновики карточек: изменения содержания становятся видны только после публикации. Цена и остаток сохраняются отдельно, без потери более новых изменений.
-- Варианты товара, фотографии, места хранения, штуки / килограммы / метры, цены в рублях, бесплатные товары.
-- Общие карточки и сравнение идентичных предложений после подтверждения сотрудником.
-- Поиск по словам, опечаткам и смыслу, диапазон цены и сортировка, фильтры, автоматическая подгрузка и ссылки с сохранёнными условиями.
-- Избранное, страницы продавцов, понятные состояния карточек и закрытый предпросмотр перед публикацией.
-- [Демонстрация заказа](docs/runbooks/demo-orders-ru.md): корзина нескольких продавцов, количество и итог, подтверждение изменения цены, защита от повторного оформления, тестовая оплата, передача, получение и отмена. Выключена по умолчанию; настоящих денег и отправлений нет.
-- Фотографии и база сохраняются в отдельных постоянных хранилищах Docker. Частные фотографии не раздаются как общедоступные файлы.
+## Features
 
-## 1. Что установить
+- Registration, email verification, sign-in, two-factor authentication, session management, and staff roles.
+- Public guest browsing, separate private-catalog admission and seller approval.
+- Product drafts: content changes become visible only after publication. Prices and stock are saved separately, without overwriting newer changes.
+- Product variants, photos, storage locations, units / kilograms / meters, prices in rubles, and free products.
+- Shared product listings and comparison of identical offers after staff approval.
+- Keyword, typo-tolerant and semantic search, price range and sorting, automatic loading, and links preserving search conditions. Semantic search matches meaning rather than just spelling.
+- Personal saved products, seller pages, clear listing status and private publication previews.
+- [Optional order demonstration](docs/runbooks/demo-orders-en.md): multi-seller cart, quantities, totals, price reconfirmation, duplicate-safe checkout, simulated payment, handover, receipt and cancellation. Disabled by default; no real money or shipments.
+- Photos and the database are stored in separate persistent Docker volumes. Private photos are not served as public files.
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) с поддержкой Linux-контейнеров. Запустите Docker Desktop перед дальнейшими командами.
-- [Git for Windows](https://git-scm.com/downloads/win): команды ниже выполняются в **Git Bash**, не в PowerShell. На Linux/macOS подходит обычный Bash.
-- [Python 3](https://www.python.org/downloads/) для однократного создания файла настроек. Само приложение, его библиотеки и тесты работают внутри Docker.
+## 1. Prerequisites
 
-Первый запуск скачивает образы и локальную модель поиска. Нужны интернет и свободное место для Docker; повторный запуск уже использует сохранённые данные. Для проверок используйте современный Docker Compose, поддерживающий `!reset` (2.24.4 или новее).
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Linux container support. Start Docker Desktop before running the commands below.
+- [Git for Windows](https://git-scm.com/downloads/win): run these commands in **Git Bash**, not PowerShell. On Linux or macOS, use Bash.
+- [Python 3](https://www.python.org/downloads/) to create the settings file once. The application, its dependencies, and the tests run inside Docker.
 
-## 2. Скачать проект
+The first run downloads container images and the local search model. You need an internet connection and enough storage for Docker. Later runs reuse the saved data. To run the tests, use Docker Compose with `!reset` support (2.24.4 or later).
 
-Для проверенной версии скачайте [ZIP v0.4.0](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip) и распакуйте архив. Его контрольная сумма опубликована в [SHA256SUMS](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS). Для текущей ветки разработки клонируйте репозиторий:
+## 2. Get the project
+
+For the verified version, download and extract the [v0.4.0 ZIP](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip). Its checksum is published in [SHA256SUMS](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS). To use the current development branch, clone the repository:
 
 ```bash
 git clone https://github.com/VibeSan7/Open_Marketplace.git
@@ -50,13 +52,15 @@ git clone https://github.com/VibeSan7/Open_Marketplace.git
 cd Open_Marketplace
 ```
 
-Если скачали ZIP, перейдите в распакованную папку, где лежит `compose.yaml`. Команды выполняются именно из неё. Доступ к коду не предоставляет доступ к чужим установкам: учётные записи и права вы настраиваете в своей копии.
+If you downloaded a ZIP file, open the extracted directory that contains `compose.yaml`. Run all commands from that directory. Access to the source does not grant access to someone else's installation: configure accounts and permissions in your own copy.
 
-## 3. Создать настройки — только при первом запуске
+The v0.4.0 archive includes the storefront and both documentation languages. Older releases are retained unchanged on the [Releases page](https://github.com/VibeSan7/Open_Marketplace/releases).
 
-Для последовательного первого запуска используйте [русскую инструкцию установки](docs/runbooks/initial-setup-ru.md). Она ссылается на эту процедуру и не предлагает заменять настройки уже работающей копии.
+## 3. Create settings, first run only
 
-Следующая команда создаёт `.env` с новыми случайными ключами и паролем базы. Значения не выводятся. **Существующий `.env` не перезаписывается. Не удаляйте его и не создавайте заново для уже работающей базы.**
+For the ordered first run, use the [English installation runbook](docs/runbooks/initial-setup-en.md). It points back to this procedure and does not suggest replacing settings for an existing installation.
+
+This command creates `.env` with new random keys and a database password. It does not print their values. **It will not overwrite an existing `.env`. Do not delete or regenerate that file for an existing database.**
 
 ```bash
 python - <<'PY'
@@ -84,84 +88,84 @@ with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:
 PY
 ```
 
-`.env` исключён из Git и Docker-образа. Не отправляйте его в чат, GitHub или журнал ошибок. Если получена ошибка `FileExistsError`, файл уже существует: сохраните его и продолжите, а не удаляйте ключи.
+Git and the Docker image exclude `.env`. Do not send it to a chat, GitHub, or an error log. If you get `FileExistsError`, the file already exists: keep it and continue instead of deleting the keys.
 
-## 4. Запустить
+## 4. Start the application
 
-Создать и обновить таблицы базы:
+Create or update the database tables:
 
 ```bash
 docker compose run --rm --build web python manage.py migrate --noinput
 ```
 
-Однократно скачать и проверить локальную модель смыслового поиска:
+Download and check the local semantic search model once:
 
 ```bash
 docker compose run --rm web python manage.py prepare_catalog_search
 ```
 
-Запустить приложение и доставку писем в фоне:
+Start the application and the email delivery worker in the background:
 
 ```bash
 docker compose up --build -d
 ```
 
-Проверить состояние:
+Check their status:
 
 ```bash
 docker compose ps
 ```
 
-Откройте:
+Open:
 
-- **Сайт и начало работы:** <http://127.0.0.1:8000/>
-- **Местная почта:** <http://127.0.0.1:8025/> — здесь письма регистрации и приглашения. Это Mailpit: почтовый ящик для локальной установки, не настоящая отправка на внешний email.
-- **Панель сотрудников:** <http://127.0.0.1:8000/admin/>
+- **Website and getting started:** <http://127.0.0.1:8000/>
+- **Local email:** <http://127.0.0.1:8025/> for registration and invitation messages. Mailpit is an inbox for the local installation; it does not deliver these messages to an external email account.
+- **Staff panel:** <http://127.0.0.1:8000/admin/>
 
-На новой установке нет готовых товаров и паролей. Для быстрого знакомства используйте [демонстрационное наполнение](docs/runbooks/storefront-demo-ru.md). Для собственных товаров настройте администратора и продавца по следующему разделу.
+A fresh installation does not create sample products or preset passwords. Use the [optional demo content](docs/runbooks/storefront-demo-en.md) to explore the storefront, or set up an administrator and seller for your own listings.
 
-## 5. Настроить администратора и добавить первый товар
+## 5. Set up the administrator and add a product
 
-[Пошаговая инструкция для владельца, продавца и покупателя](docs/runbooks/catalog-quickstart-ru.md).
+[Step-by-step guide for the owner, seller, and buyer](docs/runbooks/catalog-quickstart-en.md).
 
-После запуска откройте в своей копии [встроенную read-only инструкцию](http://127.0.0.1:8000/setup/). Она объясняет роли, Mailpit и явный допуск; сама страница ничего не создаёт.
+After startup, open the [built-in read-only guide](http://127.0.0.1:8000/setup/) in your copy. It explains roles, Mailpit, and explicit admission; the page itself creates nothing.
 
-Коротко:
+In brief:
 
-1. Создайте первого администратора командой ниже. Адрес `admin@example.test` предназначен для локальной демонстрации: письмо придёт в Mailpit.
-2. Откройте приглашение в Mailpit, задайте пароль и настройте приложение-аутентификатор. Оно генерирует одноразовый код для второго шага входа. Резервные коды сохраните отдельно, не в репозитории.
-3. Создайте сотрудника с ролью проверки продавцов. Затем зарегистрируйте отдельный личный аккаунт продавца: служебный аккаунт не используется для торговли.
-4. Продавец подтверждает почту, включает двухэтапную защиту, отправляет заявку. Сотрудник проверяет и одобряет её.
-5. Администратор открывает `/catalog/manage/`, разрешает участие по email и создаёт категорию с характеристиками.
-6. Продавец открывает «Мои карточки», создаёт карточку, добавляет варианты, настоящие фотографии, цену и остаток, затем нажимает «Опубликовать». Для гостевого просмотра отдельно выбирает «Открыть публичный показ»; его отключение снова закрывает карточку для гостей.
+1. Create the first administrator with the command below. `admin@example.test` is for local demonstration; its invitation arrives in Mailpit.
+2. Open the invitation in Mailpit, set a password, and configure an authenticator app. It generates a one-time code for the second sign-in step. Store recovery codes securely, outside the repository.
+3. Invite a staff member with the seller review role. Then register a separate personal seller account: staff accounts are not used for trading.
+4. The seller verifies their email, enables two-factor authentication, and submits an application. The reviewer approves it after checking it.
+5. The administrator opens `/catalog/manage/`, grants participation by email, and creates a category with attributes.
+6. The seller opens My listings, creates a listing, adds variants, real photos, a price and stock, then clicks Publish. They separately choose Enable public visibility for guest browsing. Disabling it restores private-only visibility.
 
 ```bash
 docker compose run --rm web python manage.py bootstrap_security_admin --email admin@example.test
 ```
 
-Повторное создание первого администратора не предусмотрено. Не сбрасывайте базу ради повторного приглашения. Если приглашение истекло или письмо не приходит, используйте [инструкцию диагностики](docs/runbooks/local-development.md).
+The first administrator cannot be created again with this command. Do not reset the database just to issue another invitation. If the invitation has expired or its email does not arrive, use the [local troubleshooting guide](docs/runbooks/local-development.md).
 
-## Остановить и снова запустить
+## Stop and restart
 
-Обычная остановка **сохраняет базу, фотографии и модель**:
+A normal shutdown **preserves the database, photos, and model**:
 
 ```bash
 docker compose down
 ```
 
-Повторный запуск:
+Start it again:
 
 ```bash
 docker compose up -d
 ```
 
-**Не добавляйте `-v` к остановке:** этот флаг удаляет постоянные хранилища вместе с данными. Перед обновлением сохраняйте `.env`, базу и фотографии — [обновление и резервная копия](docs/runbooks/catalog-quickstart-ru.md#резервная-копия-и-обновление).
+**Do not add `-v` to the shutdown command:** it removes the persistent volumes and their data. Before updating, back up `.env`, the database, and photos. See [backups and updates](docs/runbooks/catalog-quickstart-en.md#backups-and-updates).
 
-## Автоматическая проверка
+## Automated checks
 
-Тесты работают в отдельной временной базе и отдельном проекте Docker. Не направляйте их на рабочую установку: проверка доставки писем очищает тестовый Mailpit.
+Tests use a separate temporary database and a separate Docker project. Do not point them at a working installation: email delivery tests clear the test Mailpit inbox.
 
-Сборка тестовой среды включает настоящий браузер Chromium:
+The test image includes the Chromium browser:
 
 ```bash
 docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml build test
@@ -183,30 +187,30 @@ docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml ru
 docker compose -p open-marketplace-tests -f compose.yaml -f compose.test.yaml run --rm test python manage.py makemigrations --check --dry-run
 ```
 
-Восстановление контрольной базы проверяется отдельно; рабочая база в нём не участвует:
+The restore check uses a separate test database, not your working database:
 
 ```bash
 COMPOSE_PROJECT_NAME=open-marketplace-tests bash ops/verify_restore.sh
 ```
 
-Результаты проверки v0.4.0, ограничения и ссылки на проверки GitHub: [итоговый отчёт](docs/releases/v0.4.0-verification.md). [Предыдущий отчёт каталога](docs/security/phase-2-local-validation.md) сохранён для истории. Тесты не являются обещанием безошибочности любой установки или заменой настройки внешнего сервера.
+The [v0.4.0 final report](docs/releases/v0.4.0-verification.md) records the results, limitations and GitHub checks. The [earlier catalog report](docs/security/phase-2-local-validation.md) remains available as historical evidence. Tests do not guarantee that every installation is error-free or replace the setup needed for an internet-facing server.
 
-## Ограничения
+## Limitations
 
-- По умолчанию сайт доступен только на этом компьютере. Внешний сервер, домен, HTTPS, настоящая доставка email и эксплуатационное резервирование в этот выпуск не входят. Встроенный локальный сервер Django не предназначен для открытого интернет-сервиса.
-- Гости видят только явно открытые карточки. Приватные товары остаются под допуском; проверка продавцов, управление каталогом и служебные полномочия не выдаются регистрацией.
-- Для локального HTTP предусмотрены обычные cookies. Настройки защищённого HTTPS-режима существуют, но не включайте их без настроенного HTTPS: браузер не сможет войти по обычному HTTP.
-- Приблизительный поиск действительно использует локальную многоязычную модель, но может ошибаться в релевантности. Он не объединяет товары автоматически и не ослабляет фильтры, остатки или права.
-- Подтверждение загрузчиком подлинности фотографии не является автоматической проверкой её происхождения.
-- Нет настоящей покупки, резервирования реального товара, расчёта доставки или выдачи цифровых файлов. Демонстрационные заказы используют отдельные тестовые остатки; банковские карты и платёжные сервисы не подключены.
+- By default, the website is only accessible on the computer running it. This release does not provide a public server, domain, HTTPS setup, external email delivery, or production backup operations. Django's local development server is not suitable for a public internet service.
+- Guests see only explicitly public listings. Private listings still require admission; seller approval, catalog management and staff permissions are not granted by registration.
+- Local HTTP uses non-secure cookies. Settings for secure HTTPS cookies exist, but do not enable them without HTTPS: the browser would be unable to sign in over plain HTTP.
+- Approximate search uses a local multilingual model, but relevance can be wrong. It does not merge products automatically or bypass filters, stock checks, or access rules.
+- A photo uploader's authenticity declaration is not an automated verification of the photo's origin.
+- There is no real purchasing, real inventory reservation, delivery cost calculation, or digital file delivery. Demonstration orders use separate simulated balances; no bank cards or payment providers are connected.
 
-## Документы и модули
+## Documents and modules
 
-- [Требования к витрине и корзине v0.4](docs/superpowers/specs/2026-09-16-storefront-v04-design.md).
-- [Итоговая проверка v0.4.0](docs/releases/v0.4.0-verification.md).
-- [Согласованные правила каталога](docs/superpowers/specs/2026-09-14-phase-2-catalog-design.md).
-- [План реализации](docs/superpowers/plans/2026-09-15-phase-2-catalog-implementation.md).
-- [Завершённая первая фаза: вход и права](docs/security/phase-1-review.md).
-- [Статус использования кода и лицензии](docs/code-use-status.md).
+- [Storefront and cart v0.4 specification](docs/superpowers/specs/2026-09-16-storefront-v04-design.md).
+- [v0.4.0 final verification](docs/releases/v0.4.0-verification.md).
+- [Agreed catalog rules](docs/superpowers/specs/2026-09-14-phase-2-catalog-design.md).
+- [Implementation plan](docs/superpowers/plans/2026-09-15-phase-2-catalog-implementation.md).
+- [Completed first phase: identity and access](docs/security/phase-1-review.md).
+- [Code-use and licence status](docs/code-use-status.md).
 
-Предметные модули `identity`, `access`, `seller_onboarding`, `catalog`, `audit`, `outbox` взаимодействуют через `public.py`. `web` и `staff_admin` отвечают за страницы, `verification` — за проверку восстановления и отдельное учебное наполнение.
+The domain modules `identity`, `access`, `seller_onboarding`, `catalog`, `audit`, and `outbox` interact through `public.py`. `web` and `staff_admin` provide the pages; `verification` checks test-database restoration and provides the separate synthetic-content import.

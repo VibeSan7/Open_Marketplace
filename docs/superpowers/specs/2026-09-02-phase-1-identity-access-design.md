@@ -1,129 +1,129 @@
-# Open Marketplace — первая фаза: идентичность, доступ и допуск продавца
+# Open Marketplace — Phase One: Identity, Access, and Seller Admission
 
-**Дата:** 2026-09-02  
-**Статус:** утверждена Владиславом 2026-09-02; реализация не начата  
-**Тип:** подчинённая спецификация первой реализуемой фазы  
-**Общая спецификация:** `D:\Open_Marketplace\docs\superpowers\specs\2026-09-02-open-marketplace-design.md`  
-**Техническое исследование:** `D:\Open_Marketplace\docs\research\2026-09-02-technical-stack-recommendation.md`  
-**Рабочие решения интервью:** `D:\Open_Marketplace\phase-1-design-notes.md`
+**Date:** 2026-09-02\
+**Status:** approved by Vladislav on 2026-09-02; implementation not started\
+**Type:** subordinate specification for the first implementable phase\
+**Overall specification:** `D:\Open_Marketplace\docs\superpowers\specs\2026-09-02-open-marketplace-design.md`\
+**Technical research:** `D:\Open_Marketplace\docs\research\2026-09-02-technical-stack-recommendation.md`\
+**Working interview decisions:** `D:\Open_Marketplace\phase-1-design-notes.md`
 
-## 1. Цель
+## 1. Goal
 
-Первая фаза создаёт самостоятельный работающий вертикальный поток:
+Phase one creates a self-contained working vertical flow:
 
-1. человек регистрируется;
-2. подтверждает email;
-3. входит и управляет безопасностью аккаунта;
-4. подаёт тестовую заявку на статус продавца;
-5. сотрудник рассматривает заявку;
-6. система одобряет, отклоняет или возвращает заявку на исправление;
-7. права проверяются сервером;
-8. защищённые действия восстанавливаются по неизменяемому аудиту;
-9. письма и другие фоновые действия безопасно повторяются после сбоя.
+1. a person registers;
+2. confirms their email;
+3. signs in and manages account security;
+4. submits a test application for seller status;
+5. a staff member reviews the application;
+6. the system approves, rejects, or returns the application for changes;
+7. permissions are checked on the server;
+8. protected actions can be reconstructed from immutable audit records;
+9. emails and other background actions can be safely retried after a failure.
 
-Фаза доказывает серверную основу будущего маркетплейса, но не начинает торговлю.
+The phase proves the server-side foundation of the future marketplace, but does not begin trading.
 
-## 2. Технологическое направление
+## 2. Technology Direction
 
 - Python 3.13;
-- последняя исправленная версия Django 5.2 LTS;
+- latest patch release of Django 5.2 LTS;
 - PostgreSQL;
-- Linux-контейнеры;
+- Linux containers;
 - Docker Compose;
-- модульный монолит;
-- серверные страницы Django для обычного пользователя;
-- Django Admin для служебных операций;
-- PostgreSQL-backed outbox-очередь для исходящих событий и фоновых доставок;
-- без Redis, Celery, Kafka, Kubernetes и отдельного поискового сервера.
+- modular monolith;
+- server-rendered Django pages for ordinary users;
+- Django Admin for staff operations;
+- PostgreSQL-backed outbox queue for outgoing events and background deliveries;
+- no Redis, Celery, Kafka, Kubernetes, or separate search server.
 
-Техническое исследование утвердило Django REST Framework для будущего JSON API, но в первой фазе JSON отсутствует, поэтому неиспользуемая зависимость не устанавливается. Точные исправленные версии используемых пакетов и контейнерных образов фиксируются lock-файлом в плане реализации после отдельной проверки доступных релизов. Нельзя использовать неприкреплённый диапазон версий в воспроизводимой сборке.
+The technical research approved Django REST Framework for a future JSON API, but JSON is absent from phase one, so the unused dependency is not installed. Exact patched versions of the packages and container images used are recorded in a lock file in the implementation plan after a separate check of available releases. An unpinned version range must not be used in a reproducible build.
 
-## 3. Границы
+## 3. Scope
 
-### 3.1 Входит
+### 3.1 Included
 
-- регистрация по email и паролю;
-- обязательное подтверждение email;
-- вход, выход, сброс и смена пароля;
-- активные сеансы и их отзыв;
-- второй фактор через приложение-аутентификатор;
-- одноразовые резервные коды;
-- защищённое восстановление второго фактора;
-- обычный аккаунт покупателя;
-- тестовая заявка продавца;
-- версии и жизненный цикл заявки;
-- отдельный профиль продавца после одобрения;
-- отдельные состояния аккаунта и продавца;
-- служебные роли проверяющего и администратора безопасности;
-- безопасное создание первого администратора;
-- персональные приглашения сотрудников;
-- серверная проверка прав;
-- неизменяемый аудит;
-- надёжные исходящие события и фоновые задания;
-- локальный тестовый почтовый ящик;
-- минимальные HTML-страницы;
-- Docker Compose и PostgreSQL для разработки и тестов;
-- восстановление тестовой базы.
+- registration by email and password;
+- mandatory email confirmation;
+- sign-in, sign-out, password reset, and password change;
+- active sessions and their revocation;
+- second factor through an authenticator app;
+- one-time recovery codes;
+- protected second-factor recovery;
+- ordinary buyer account;
+- test seller application;
+- application versions and lifecycle;
+- separate seller profile after approval;
+- separate account and seller states;
+- staff reviewer and security administrator roles;
+- secure creation of the first administrator;
+- personal staff invitations;
+- server-side permission checks;
+- immutable audit;
+- reliable outgoing events and background jobs;
+- local test mailbox;
+- minimal HTML pages;
+- Docker Compose and PostgreSQL for development and tests;
+- test database restoration.
 
-### 3.2 Не входит
+### 3.2 Excluded
 
-- каталог, товары, варианты и остатки;
-- поиск;
-- корзина, заказ, платёж и выплата;
-- доставка и цифровая выдача;
-- споры, возвраты и отзывы;
-- настоящие документы продавца;
-- платёжные реквизиты продавца;
-- внешний KYC/AML-поставщик;
-- production email-поставщик;
-- социальный вход;
-- SMS-вход и SMS-второй фактор;
-- OAuth, публичные API-ключи и сторонние приложения;
-- несколько владельцев одного продавца;
-- сотрудники продавца;
-- отдельный frontend-фреймворк;
-- облачное развёртывание;
+- catalog, products, variants, and inventory;
+- search;
+- cart, order, payment, and payout;
+- shipping and digital fulfillment;
+- disputes, returns, and reviews;
+- real seller documents;
+- seller payment details;
+- external KYC/AML provider;
+- production email provider;
+- social sign-in;
+- SMS sign-in and SMS second factor;
+- OAuth, public API keys, and third-party applications;
+- multiple owners of one seller;
+- seller employees;
+- separate frontend framework;
+- cloud deployment;
 - AI;
-- реальные покупки и персональные документы.
+- real purchases and personal documents.
 
-## 4. Канонические термины
+## 4. Canonical Terms
 
-- **Аккаунт** — идентичность одного человека и его защищённые способы входа.
-- **Обычный аккаунт** — аккаунт, который может действовать как покупатель и владелец одного продавца.
-- **Служебный аккаунт** — отдельный аккаунт сотрудника площадки, не участвующий в покупках и продажах.
-- **Сеанс** — ограниченное по времени подтверждение входа конкретного аккаунта.
-- **Второй фактор** — одноразовый код приложения-аутентификатора после пароля.
-- **Резервный код** — одноразовый способ заменить код приложения при потере устройства.
-- **Заявка продавца** — версия сведений, отправленная обычным аккаунтом на проверку.
-- **Профиль продавца** — отдельная сущность, созданная после одобрения заявки.
-- **Владелец продавца** — единственный обычный аккаунт, управляющий продавцом в первой версии.
-- **Проверяющий продавцов** — служебная роль для решений по заявкам.
-- **Администратор безопасности** — служебная роль для сотрудников и защищённого восстановления.
-- **Прикладная операция** — единый серверный вход в бизнес-правило независимо от HTML, Admin, команды или фонового исполнителя.
-- **Аудит** — добавляемая без последующего изменения история защищённых действий.
-- **Исходящее событие** — подтверждённая запись о необходимости уведомить другой модуль или внешний адаптер.
-- **Фоновое задание** — подтверждённая работа, выполняемая вне пользовательского запроса.
+- **Account** — the identity of one person and their protected sign-in methods.
+- **Ordinary account** — an account that can act as a buyer and the owner of one seller.
+- **Service account** — a separate account for a marketplace employee that does not participate in purchases or sales.
+- **Session** — a time-limited confirmation of a particular account's sign-in.
+- **Second factor** — a one-time authenticator-app code after the password.
+- **Recovery code** — a one-time way to replace the app code when the device is lost.
+- **Seller application** — a version of information submitted by an ordinary account for review.
+- **Seller profile** — a separate entity created after an application is approved.
+- **Seller owner** — the single ordinary account managing the seller in the first version.
+- **Seller reviewer** — a staff role for application decisions.
+- **Security administrator** — a staff role for employees and protected recovery.
+- **Application operation** — a single server-side entry point into a business rule regardless of whether it is called by HTML, Admin, a command, or a background worker.
+- **Audit** — a history of protected actions that is appendable without subsequent modification.
+- **Outgoing event** — a confirmed record of the need to notify another module or an external adapter.
+- **Background job** — confirmed work performed outside a user request.
 
-## 5. Архитектура
+## 5. Architecture
 
-Первая фаза — один Django-проект и одна PostgreSQL-база. Код разделяется по предметным модулям, а не по общим техническим папкам.
+Phase one is one Django project and one PostgreSQL database. Code is divided by domain modules, not by shared technical folders.
 
-### 5.1 Модуль `identity`
+### 5.1 `identity` module
 
-Отвечает за:
+Responsible for:
 
-- аккаунт;
-- email и его подтверждение;
-- пароль;
-- второй фактор;
-- резервные коды;
-- сброс и восстановление;
-- одноразовые токены подтверждения и восстановления;
-- сеансы.
+- account;
+- email and email confirmation;
+- password;
+- second factor;
+- recovery codes;
+- reset and recovery;
+- one-time confirmation and recovery tokens;
+- sessions.
 
-Не знает о заявках и продавцах.
+It knows nothing about applications or sellers.
 
-Публичные прикладные операции:
+Public application operations:
 
 - `register_account`;
 - `verify_email`;
@@ -142,20 +142,20 @@
 - `block_account`;
 - `unblock_account`.
 
-### 5.2 Модуль `access`
+### 5.2 `access` module
 
-Отвечает за:
+Responsible for:
 
-- роли;
-- точные разрешения;
-- назначения и отзывы ролей;
-- служебные приглашения;
-- проверку права;
-- начальное создание администратора безопасности.
+- roles;
+- exact permissions;
+- role assignments and revocations;
+- staff invitations;
+- permission checks;
+- initial creation of the security administrator.
 
-Не принимает решение по заявке продавца.
+It does not decide seller applications.
 
-Публичные прикладные операции:
+Public application operations:
 
 - `check_permission`;
 - `invite_staff_member`;
@@ -164,22 +164,22 @@
 - `revoke_staff_role`;
 - `bootstrap_security_admin`.
 
-Служебная роль активируется только принятием персонального приглашения или начального приглашения. Универсальная внешняя операция прямой выдачи роли отсутствует.
+A staff role is activated only by accepting a personal invitation or an initial invitation. No universal external operation for directly granting a role exists.
 
-### 5.3 Модуль `seller_onboarding`
+### 5.3 `seller_onboarding` module
 
-Отвечает за:
+Responsible for:
 
-- черновик заявки;
-- версии;
-- отправку и отзыв;
-- очередь проверки;
-- решение и причину;
-- создание профиля продавца;
-- связь единственного владельца;
-- состояние допуска продавца.
+- application draft;
+- versions;
+- submission and withdrawal;
+- review queue;
+- decision and reason;
+- seller-profile creation;
+- single-owner association;
+- seller-admission state.
 
-Публичные прикладные операции:
+Public application operations:
 
 - `create_seller_application`;
 - `update_seller_application_draft`;
@@ -194,215 +194,215 @@
 - `restore_seller`;
 - `revoke_seller`.
 
-### 5.4 Модуль `audit`
+### 5.4 `audit` module
 
-Отвечает за добавление и чтение допустимых записей аудита.
+Responsible for appending and reading permitted audit records.
 
-Публичные операции:
+Public operations:
 
 - `append_audit_entry`;
-- `query_audit_entries` для отдельно разрешённого служебного просмотра.
+- `query_audit_entries` for separately authorized staff viewing.
 
-Изменение и удаление существующей записи через приложение запрещены.
+Changing or deleting an existing record through the application is prohibited.
 
-### 5.5 Модуль `outbox`
+### 5.5 `outbox` module
 
-Отвечает за:
+Responsible for:
 
-- исходящие события;
-- фоновые задания;
-- повтор;
-- состояние попыток;
-- ручную проверку неисправимого задания.
+- outgoing events;
+- background jobs;
+- retries;
+- attempt state;
+- manual review of an irrecoverable job.
 
-Публичные операции:
+Public operations:
 
-- `enqueue_outbox_message` внутри предметной транзакции;
+- `enqueue_outbox_message` inside the domain transaction;
 - `claim_ready_messages`;
 - `mark_message_succeeded`;
 - `schedule_message_retry`;
 - `mark_message_for_manual_review`;
-- `retry_message_from_manual_review` с обязательной причиной.
+- `retry_message_from_manual_review` with a mandatory reason.
 
-### 5.6 Правила зависимостей
+### 5.6 Dependency Rules
 
-- `identity` не зависит от `seller_onboarding`.
-- `access` ссылается на аккаунты только через публичный интерфейс идентичности и стабильные идентификаторы.
-- `seller_onboarding` использует интерфейсы `identity` и `access`, но они не импортируют внутренности `seller_onboarding`.
-- каждый изменяющий модуль может добавлять аудит и outbox-запись через их публичные интерфейсы;
-- `audit` и `outbox` не вызывают предметные операции скрыто;
-- циклические зависимости запрещены;
-- общий пакет допускается только для действительно общих примитивов: идентификаторов, времени и базовых типов результата; предметные правила туда не переносятся.
+- `identity` does not depend on `seller_onboarding`.
+- `access` references accounts only through the public identity interface and stable identifiers.
+- `seller_onboarding` uses the `identity` and `access` interfaces, but they do not import `seller_onboarding` internals.
+- each changing module may add an audit and an outbox record through their public interfaces;
+- `audit` and `outbox` do not call domain operations covertly;
+- circular dependencies are prohibited;
+- a shared package is allowed only for genuinely shared primitives: identifiers, time, and basic result types; domain rules are not moved there.
 
-Формы, Django Admin, команды и worker не дублируют бизнес-правила. Django signals не координируют защищённые предметные переходы. Каждая защищённая прикладная операция сама проверяет участника, его разрешение и текущее состояние; предварительной проверки только во внешнем адаптере недостаточно.
+Forms, Django Admin, commands, and the worker do not duplicate business rules. Django signals do not coordinate protected domain transitions. Each protected application operation checks the actor, their permission, and the current state itself; a preliminary check only in an external adapter is insufficient.
 
-Границы проверяются автоматическим тестом импортов.
+Boundaries are checked by an automated import test.
 
-## 6. Внешние адаптеры
+## 6. External Adapters
 
 ### 6.1 HTML
 
-Минимальные серверные страницы Django:
+Minimal server-rendered Django pages:
 
-- регистрация;
-- подтверждение email;
-- вход и выход;
-- запрос и выполнение сброса пароля;
-- безопасность аккаунта;
-- включение второго фактора;
-- показ резервных кодов один раз;
-- список и отзыв сеансов;
-- черновик и отправка заявки;
-- состояние, причина и новая версия заявки.
+- registration;
+- email confirmation;
+- sign-in and sign-out;
+- password-reset request and execution;
+- account security;
+- second-factor enrollment;
+- one-time display of recovery codes;
+- session list and revocation;
+- application draft and submission;
+- application state, reason, and new version.
 
-Страница вызывает прикладную операцию и не меняет модели напрямую.
+The page calls an application operation and does not change models directly.
 
 ### 6.2 Django Admin
 
-Django Admin предоставляет:
+Django Admin provides:
 
-- очередь заявок;
-- просмотр версий и причин;
-- вызов разрешённых операций решения;
-- приглашения сотрудников;
-- блокировку аккаунта;
-- защищённое восстановление второго фактора;
-- просмотр разрешённого аудита и проблем outbox.
+- application queue;
+- viewing versions and reasons;
+- calling permitted decision operations;
+- staff invitations;
+- account blocking;
+- protected second-factor recovery;
+- viewing permitted audit records and outbox problems.
 
-Защищённые модели доступны для чтения, но прямые `save`/`delete` для обхода прикладной операции запрещены.
+Protected models are available for reading, but direct `save`/`delete` to bypass an application operation is prohibited.
 
-### 6.3 Локальная команда
+### 6.3 Local Command
 
-`bootstrap_security_admin` создаёт первого администратора безопасности.
+`bootstrap_security_admin` creates the first security administrator.
 
-Команда:
+The command:
 
-- работает только при отсутствии активного администратора безопасности;
-- принимает конкретный email;
-- не принимает и не печатает общий пароль;
-- создаёт одноразовое приглашение;
-- записывает аудит;
-- не создаёт второе живое начальное приглашение, пока первое ожидает принятия;
-- после истечения или явного отзыва начального приглашения допускает создать новое, если активного администратора всё ещё нет.
+- works only when no active security administrator exists;
+- accepts a specific email;
+- does not accept or print a shared password;
+- creates a one-time invitation;
+- records an audit entry;
+- does not create a second live initial invitation while the first awaits acceptance;
+- after the initial invitation expires or is explicitly revoked, allows a new one to be created if there is still no active security administrator.
 
 ### 6.4 Email
 
-Почтовый адаптер получает outbox-сообщение и отправляет письмо.
+The mail adapter receives an outbox message and sends the email.
 
-В разработке используется локальный тестовый почтовый ящик. Производственный поставщик не выбирается в этой фазе.
+Development uses a local test mailbox. No production provider is selected in this phase.
 
-## 7. Доменная модель
+## 7. Domain Model
 
 ### 7.1 `Account`
 
-Поля по смыслу:
+Fields by meaning:
 
-- стабильный идентификатор;
-- канонический уникальный email: после удаления внешних пробелов всё значение сравнивается без учёта регистра;
-- стандартный защищённый хеш пароля Django, никогда не открытый пароль;
-- состояние;
-- подтверждение email;
-- вид аккаунта: обычный или служебный;
-- время создания и изменения;
-- версия для безопасного конкурентного изменения.
+- stable identifier;
+- canonical unique email: after outer whitespace is removed, the entire value is compared case-insensitively;
+- Django's standard protected password hash, never the cleartext password;
+- state;
+- email confirmation;
+- account kind: ordinary or service;
+- creation and modification time;
+- version for safe concurrent changes.
 
-Состояния:
+States:
 
 - `pending_email_verification`;
 - `active`;
 - `blocked`.
 
-Допустимые переходы: `pending_email_verification` → `active` после подтверждения email; `active` → `blocked`; `blocked` → `active` по отдельному решению администратора безопасности. Самоблокировка администратора запрещена. В состоянии `blocked` аккаунт обязательно хранит причину, UUID администратора, время и UUID связанной записи аудита; при разблокировке текущие поля очищаются, а история сохраняется в неизменяемом аудите.
+Allowed transitions: `pending_email_verification` → `active` after email confirmation; `active` → `blocked`; `blocked` → `active` by a separate security-administrator decision. Self-blocking an administrator is prohibited. In the `blocked` state, the account must store the reason, administrator UUID, time, and UUID of the related audit record; when unblocked, the current fields are cleared and the history is preserved in immutable audit.
 
 ### 7.2 `Session`
 
-- владелец;
-- непредсказуемый серверный идентификатор сеанса, который не журналируется и не показывается пользователю;
-- создание;
-- последняя активность;
-- абсолютное истечение;
-- истечение по бездействию для служебного сеанса; для обычного сеанса в первой фазе не применяется;
-- допустимое описание устройства;
-- время и причина отзыва.
+- owner;
+- unpredictable server-side session identifier that is not logged or shown to the user;
+- creation;
+- last activity;
+- absolute expiry;
+- idle expiry for a service session; not applied to an ordinary session in phase one;
+- permitted device description;
+- revocation time and reason.
 
 ### 7.3 `TotpCredential`
 
-- владелец;
-- секрет, зашифрованный с проверкой целостности;
-- время подтверждения;
-- обязательность для текущих служебных ролей или профиля продавца;
-- время отключения либо отсутствие значения у активного credential.
+- owner;
+- secret encrypted with integrity verification;
+- confirmation time;
+- whether it is mandatory for current staff roles or the seller profile;
+- disable time, or no value for an active credential.
 
-Ключ шифрования хранится отдельно от базы и репозитория. Секрет доступен только операции проверки TOTP, не журналируется и не возвращается после завершения подключения.
+The encryption key is stored separately from the database and repository. The secret is available only to the TOTP verification operation, is not logged, and is not returned after enrollment is completed.
 
 ### 7.4 `RecoveryCode`
 
-- владелец;
-- необратимо защищённое значение;
-- время выдачи комплекта;
-- время использования;
-- время отзыва комплекта.
+- owner;
+- irreversibly protected value;
+- time the set was issued;
+- time used;
+- time the set was revoked.
 
 ### 7.5 `OneTimeToken`
 
-- назначение: подтверждение email, сброс пароля или повторная настройка обязательного TOTP;
-- аккаунт;
-- необратимо защищённое значение токена;
-- создание и истечение;
-- время использования;
-- время и причина отзыва.
+- purpose: email confirmation, password reset, or mandatory TOTP reconfiguration;
+- account;
+- irreversibly protected token value;
+- creation and expiry;
+- time used;
+- revocation time and reason.
 
-Открытое значение существует только при создании ссылки. Новый токен того же назначения отзывает все прежние активные токены этого назначения.
+The cleartext value exists only when the link is created. A new token with the same purpose revokes all earlier active tokens for that purpose.
 
 ### 7.6 `StaffInvitation`
 
-- конкретный email;
-- конкретная роль;
-- создавший администратор либо системный источник `bootstrap`;
-- необратимо защищённый одноразовый токен;
-- создание и истечение;
-- принятие или отзыв.
+- specific email;
+- specific role;
+- creating administrator or system source `bootstrap`;
+- irreversibly protected one-time token;
+- creation and expiry;
+- acceptance or revocation.
 
-Состояния:
+States:
 
 - `pending`;
 - `accepted`;
 - `expired`;
 - `revoked`.
 
-Приглашение на email обычного аккаунта запрещено. Новое приглашение создаёт служебный аккаунт; приглашение на уже существующий служебный аккаунт может добавить ещё одну независимую служебную роль после входа с паролем и TOTP.
+Inviting an ordinary account by email is prohibited. A new invitation creates a service account; an invitation to an existing service account may add another independent staff role after sign-in with a password and TOTP.
 
 ### 7.7 `RoleAssignment`
 
-- аккаунт;
-- роль;
-- состояние;
-- кто и почему назначил;
-- кто и почему отозвал;
-- время начала и окончания.
+- account;
+- role;
+- state;
+- who assigned it and why;
+- who revoked it and why;
+- start and end time.
 
-Состояния:
+States:
 
 - `active`;
 - `revoked`.
 
-Роли первой фазы:
+Phase-one roles:
 
 - `seller_reviewer`;
 - `security_admin`.
 
-Возможности покупателя являются базовыми возможностями обычного активного аккаунта. Владелец продавца определяется только связью в `SellerProfile`, а не второй дублирующей ролью. Служебный аккаунт может иметь обе служебные роли, но каждая назначается и отзывается независимо.
+Buyer capabilities are the basic capabilities of an active ordinary account. The seller owner is determined only by the association in `SellerProfile`, not by a second duplicate role. A service account may have both staff roles, but each is assigned and revoked independently.
 
 ### 7.8 `SellerApplication`
 
-- заявитель;
-- текущая версия;
-- состояние;
-- создание и отправка;
-- текущий проверяющий;
-- последнее решение и причина.
+- applicant;
+- current version;
+- state;
+- creation and submission;
+- current reviewer;
+- latest decision and reason.
 
-Состояния:
+States:
 
 - `draft`;
 - `submitted`;
@@ -412,39 +412,39 @@ Django Admin предоставляет:
 - `rejected`;
 - `withdrawn`.
 
-Допустимые переходы:
+Allowed transitions:
 
-- создание → `draft`;
-- `draft` → `submitted` или `withdrawn`;
-- `submitted` → `under_review` или `withdrawn`;
-- `under_review` → `changes_requested`, `approved`, `rejected` или `withdrawn`;
-- `changes_requested` → `submitted` с новой версией либо `withdrawn`.
+- creation → `draft`;
+- `draft` → `submitted` or `withdrawn`;
+- `submitted` → `under_review` or `withdrawn`;
+- `under_review` → `changes_requested`, `approved`, `rejected`, or `withdrawn`;
+- `changes_requested` → `submitted` with a new version or `withdrawn`.
 
-`approved`, `rejected` и `withdrawn` являются конечными состояниями конкретной заявки. После `rejected` или `withdrawn` аккаунт без продавца может создать новую заявку с отдельной историей. Одновременно у аккаунта существует не более одной заявки в состояниях `draft`, `submitted`, `under_review` или `changes_requested`.
+`approved`, `rejected`, and `withdrawn` are terminal states for a specific application. After `rejected` or `withdrawn`, an account without a seller may create a new application with a separate history. An account has no more than one application simultaneously in `draft`, `submitted`, `under_review`, or `changes_requested` states.
 
 ### 7.9 `SellerApplicationVersion`
 
-Минимальные тестовые поля:
+Minimal test fields:
 
-- форма деятельности: ИП, юридическое лицо или самозанятый;
-- тестовое отображаемое имя;
-- тестовое официальное имя;
-- тестовый регистрационный идентификатор;
-- контактный email;
-- подтверждение корректности тестовых сведений.
+- business form: sole proprietor, legal entity, or self-employed;
+- test display name;
+- test official name;
+- test registration identifier;
+- contact email;
+- confirmation that the test information is correct.
 
-После отправки версия неизменяема. Настоящие документы и платёжные реквизиты запрещены интерфейсом и инструкцией тестового стенда.
+After submission, a version is immutable. Real documents and payment details are prohibited by the interface and test-environment instructions.
 
 ### 7.10 `SellerReviewDecision`
 
-- заявка и версия;
-- решение;
-- причина;
-- проверяющий;
-- время;
-- идентификатор операции.
+- application and version;
+- decision;
+- reason;
+- reviewer;
+- time;
+- operation identifier.
 
-Решения:
+Decisions:
 
 - `request_changes`;
 - `approve`;
@@ -452,59 +452,59 @@ Django Admin предоставляет:
 
 ### 7.11 `SellerProfile`
 
-- стабильный идентификатор;
-- единственный владелец;
-- одобренная заявка и версия;
-- состояние;
-- причина текущего ограничения;
-- создание и изменение.
+- stable identifier;
+- sole owner;
+- approved application and version;
+- state;
+- reason for the current restriction;
+- creation and modification.
 
-Состояния:
+States:
 
 - `awaiting_owner_totp`;
 - `active`;
 - `suspended`;
 - `revoked`.
 
-Допустимые переходы:
+Allowed transitions:
 
-- создание сразу в `active`, если у владельца подтверждён TOTP;
-- создание в `awaiting_owner_totp` с переходом в `active` после подтверждения TOTP;
-- `active` → `suspended` или `revoked`;
-- `suspended` → `active` или `revoked`;
+- creation directly in `active` if the owner has confirmed TOTP;
+- creation in `awaiting_owner_totp` with transition to `active` after TOTP confirmation;
+- `active` → `suspended` or `revoked`;
+- `suspended` → `active` or `revoked`;
 - `awaiting_owner_totp` → `revoked`.
 
-`revoked` является конечным состоянием. `suspend`, `restore` и `revoke` выполняет только администратор безопасности с обязательной причиной; изменение статуса продавца не меняет состояние обычного аккаунта владельца.
+`revoked` is a terminal state. Only the security administrator performs `suspend`, `restore`, and `revoke`, with a mandatory reason; changing seller status does not change the ordinary state of the owner account.
 
 ### 7.12 `AuditEntry`
 
-- время;
-- участник или системный исполнитель;
-- роль участника;
-- тип действия;
-- объект и идентификатор;
-- результат;
-- причина;
-- идентификатор запроса/операции;
-- допустимые сведения до и после;
-- источник: HTML, Admin, команда или worker.
+- time;
+- actor or system executor;
+- actor role;
+- action type;
+- object and identifier;
+- result;
+- reason;
+- request/operation identifier;
+- permitted before and after information;
+- source: HTML, Admin, command, or worker.
 
 ### 7.13 `OutboxMessage`
 
-- стабильный идентификатор;
-- тип;
-- версия формата;
-- безопасная полезная нагрузка;
-- ключ идемпотентности;
-- создание;
-- число попыток;
-- время следующей попытки;
-- время захвата, идентификатор worker и срок аренды обработки;
-- состояние;
-- последняя безопасная ошибка;
-- время успеха.
+- stable identifier;
+- type;
+- format version;
+- safe payload;
+- idempotency key;
+- creation;
+- attempt count;
+- next-attempt time;
+- capture time, worker identifier, and processing lease expiry;
+- state;
+- last safe error;
+- success time.
 
-Состояния:
+States:
 
 - `pending`;
 - `processing`;
@@ -512,400 +512,400 @@ Django Admin предоставляет:
 - `succeeded`;
 - `manual_review`.
 
-Истёкшая аренда `processing` возвращает сообщение к безопасной повторной обработке. Успешное сообщение не выбирается снова; после исчерпания повторов сообщение переходит в `manual_review`.
-
-Для ссылки восстановления обязательного TOTP используется отдельный закрытый тип `identity.mandatory_totp_recovery` версии 1: безопасная payload содержит только `account_id` и `token_id`, а зашифрованная delivery-часть — только `recipient` и `absolute_token_url`. Открытый токен не хранится в payload, аудите или базе данных.
-
-## 8. Инварианты
-
-1. После удаления внешних пробелов весь email сравнивается без учёта регистра и уникален в этом каноническом виде.
-2. Вид созданного аккаунта — обычный или служебный — не меняется.
-3. Неподтверждённый аккаунт не выполняет защищённые действия.
-4. Обычный аккаунт владеет не более чем одним продавцом.
-5. Один продавец имеет ровно одного владельца в первой фазе.
-6. У обычного аккаунта одновременно существует не более одной незавершённой заявки продавца.
-7. Новая заявка после `rejected` или `withdrawn` получает новую историю; после `approved` новая заявка запрещена.
-8. Служебный аккаунт не является покупателем и не владеет продавцом.
-9. Публичная регистрация никогда не создаёт служебный аккаунт или служебную роль.
-10. Служебная роль возникает только из принятого персонального или начального приглашения.
-11. Роли `seller_reviewer` и `security_admin` назначаются и отзываются независимо.
-12. Обязательный второй фактор включён до защищённого служебного действия и до активации продавца.
-13. Добровольный TOTP нельзя отключить, пока существует активная служебная роль или неотозванный профиль продавца.
-14. Доступ к email сам по себе не отключает обязательный второй фактор.
-15. Резервный код используется не более одного раза.
-16. Одноразовый токен принимается только для своего назначения, до истечения и не более одного раза.
-17. Отправленная версия заявки неизменяема.
-18. Сотрудник не редактирует данные заявителя.
-19. Для решения по заявке и для изменения допуска продавца обязательна причина.
-20. Повтор одобрения одной версии не создаёт второго продавца.
-21. Статус продавца не блокирует обычный аккаунт автоматически.
-22. Единственный источник владения продавцом — связь владельца в `SellerProfile`; служебная роль её не дублирует.
-23. Смена или сброс пароля, ручное восстановление TOTP, блокировка аккаунта и изменение служебной роли отзывают затронутые сеансы.
-24. Аудит не содержит пароль, TOTP-секрет, резервный код, токен или иной секрет.
-25. Существующая запись аудита не изменяется и не удаляется прикладным интерфейсом.
-26. Предметное изменение, связанный аудит и outbox-запись фиксируются атомарно.
-27. Истёкшая аренда фоновой обработки восстанавливается, а повтор задания не повторяет предметное действие.
-28. Неожиданная ошибка не оставляет частично подтверждённое состояние.
-
-## 9. Основные потоки
-
-### 9.1 Регистрация
-
-1. Проверить нейтральные ограничения частоты.
-2. Удалить внешние пробелы и получить каноническое значение email без учёта регистра.
-3. Найти аккаунт по каноническому email без раскрытия результата пользователю.
-4. Если аккаунта нет, в одной транзакции создать неподтверждённый обычный аккаунт, одноразовый токен, запись регистрации в аудите и outbox-письмо.
-5. Если аккаунт ожидает подтверждения, в одной транзакции и в пределах лимитов отозвать прежний токен, создать новый токен, аудит и outbox-письмо без второго аккаунта.
-6. Если аккаунт уже активен или заблокирован, не менять его состояние и не создавать токен подтверждения.
-7. Во всех случаях вернуть одинаковый нейтральный ответ.
-8. Действующая одноразовая ссылка активирует ожидающий аккаунт, отзывает другие токены подтверждения и добавляет аудит.
-
-### 9.2 Вход
-
-1. Проверить пароль без раскрытия существования аккаунта.
-2. Проверить блокировку и подтверждение email.
-3. При обязательном или включённом втором факторе запросить TOTP либо резервный код.
-4. Создать новый сеанс и заменить предшествующий идентификатор входа.
-5. Добавить аудит успеха или безопасные метаданные неуспеха.
-
-### 9.3 Сброс пароля
-
-1. Принять email и вернуть нейтральный ответ.
-2. Создать ограниченный одноразовый токен и outbox-письмо, если аккаунт допустим.
-3. Проверить ссылку.
-4. Установить новый пароль.
-5. Отозвать все прежние сеансы и токены сброса.
-6. Добавить аудит и уведомление.
-
-### 9.4 Подключение второго фактора
-
-1. Требовать недавний пароль.
-2. Создать секрет и показать QR/значение только до подтверждения.
-3. Проверить первый TOTP-код.
-4. Активировать credential.
-5. Создать новый комплект одноразовых резервных кодов.
-6. Показать открытые коды ровно один раз.
-7. Добавить аудит.
-
-Если профиль продавца ожидает TOTP, подтверждение credential и активация профиля фиксируются в одной общей прикладной транзакции.
-
-### 9.5 Управление добровольным TOTP и резервными кодами
-
-1. Замена комплекта резервных кодов требует недавнего пароля и текущего TOTP либо ещё не использованного резервного кода.
-2. Новый комплект сразу отзывает все прежние коды и показывается открыто один раз.
-3. Отключение TOTP запрещено при активной служебной роли или неотозванном профиле продавца.
-4. Допустимое отключение добровольного TOTP требует недавнего пароля и текущего TOTP либо резервного кода.
-5. После отключения credential и резервные коды отзываются, остальные сеансы завершаются, создаются аудит и уведомление.
-
-### 9.6 Ручное восстановление второго фактора
-
-1. Обычный email-сброс не отключает обязательную защиту.
-2. Другой администратор безопасности начинает отдельную процедуру только после ручной повторной проверки, свежей повторной аутентификации и с обязательным проверяемым основанием; self-recovery запрещён, реальные документы в первой локальной фазе не используются.
-3. Целью может быть только активный аккаунт с подтверждённым email, действующим обязательным требованием TOTP и либо активным credential, либо доказанным незавершённым recovery с отключённым прежним credential и неиспользованным recovery-token. Заблокированный аккаунт сначала отдельно разблокируется; recovery не меняет состояние аккаунта.
-4. При административном старте старый credential немедленно отключается, все живые сеансы, старые recovery codes и незавершённые TOTP setup отзываются или инвалидируются.
-5. Предыдущий активный recovery-токен отзывается, а пользователь получает новый `OneTimeToken` сроком на 30 минут через `identity.mandatory_totp_recovery`.
-6. Открытая администраторская recovery-процедура — активное обязательное требование TOTP, отсутствие активного credential и неиспользованный неотозванный recovery-token — закрывает обычный вход и запрещает стандартные `begin_totp_setup`/`enable_totp`; восстановить фактор можно только через связанную с token процедуру, включая повторный выпуск истёкшей ссылки. Первичное подключение обязательного TOTP без такого recovery-token сохраняет отдельный ограниченный setup-поток.
-7. Открытие ссылки без входа проверяет назначение и срок token, затем требует текущий пароль; один email без пароля недостаточен. Token ещё не расходуется.
-8. Создаётся зашифрованный TOTP setup, связанный ровно с этим token и аккаунтом; обычный setup вместо этого связан ровно с серверным сеансом.
-9. Завершение принимает только связанный свежий setup и правильный новый TOTP-код, атомарно создаёт новый credential и 10 recovery codes и расходует token/setup.
-10. Обязательное требование TOTP сохраняется; завершение не создаёт сеанс и не выполняет автоматический вход.
-11. Аудит старта связывает администратора, пользователя, основание и результат; аудит и outbox завершения не содержат секретов. Неуспешные проверки пароля или TOTP записывают только нейтральные HMAC-отпечатки аккаунта и источника; ограничение частоты этих попыток добавляется в Task 17.
-
-### 9.7 Заявка продавца
-
-1. Активный обычный аккаунт без продавца и без незавершённой заявки создаёт черновик.
-2. Заполняет только тестовые поля.
-3. Отправляет неизменяемую версию.
-4. Outbox создаёт служебное уведомление.
-5. Проверяющий берёт заявку в работу.
-6. При `request_changes` заявитель видит причину и создаёт новую версию.
-7. При `reject` заявитель остаётся покупателем и может создать новую отдельную заявку.
-8. При `withdraw` незавершённая заявка становится конечной, а заявитель может создать новую отдельную заявку.
-9. При `approve` в одной транзакции создаются решение, профиль с единственным владельцем, аудит и событие.
-10. Если у владельца уже есть подтверждённый TOTP, профиль сразу становится `active`.
-11. Иначе профиль получает `awaiting_owner_totp`; после подтверждения TOTP он становится `active` в общей прикладной транзакции.
+An expired `processing` lease returns a message to safe retry processing. A successful message is not selected again; after retries are exhausted, a message moves to `manual_review`.
+
+The mandatory TOTP recovery link uses a separate closed type `identity.mandatory_totp_recovery` version 1: the safe payload contains only `account_id` and `token_id`, while the encrypted delivery part contains only `recipient` and `absolute_token_url`. The cleartext token is not stored in the payload, audit, or database.
+
+## 8. Invariants
+
+1. After outer whitespace is removed, the entire email is compared case-insensitively and is unique in this canonical form.
+2. The kind of a created account—ordinary or service—does not change.
+3. An unconfirmed account cannot perform protected actions.
+4. An ordinary account owns no more than one seller.
+5. One seller has exactly one owner in phase one.
+6. An ordinary account has no more than one unfinished seller application at a time.
+7. A new application after `rejected` or `withdrawn` receives a new history; after `approved`, a new application is prohibited.
+8. A service account is neither a buyer nor a seller owner.
+9. Public registration never creates a service account or staff role.
+10. A staff role arises only from an accepted personal or initial invitation.
+11. The `seller_reviewer` and `security_admin` roles are assigned and revoked independently.
+12. The mandatory second factor is enabled before a protected staff action and before seller activation.
+13. Optional TOTP cannot be disabled while an active staff role or non-revoked seller profile exists.
+14. Access to the email alone does not disable the mandatory second factor.
+15. A recovery code is used no more than once.
+16. A one-time token is accepted only for its own purpose, before expiry, and no more than once.
+17. A submitted application version is immutable.
+18. A staff member does not edit applicant data.
+19. A reason is mandatory for an application decision and for changing seller admission.
+20. Repeating approval of one version does not create a second seller.
+21. Seller status does not automatically block the ordinary account.
+22. The sole source of seller ownership is the owner association in `SellerProfile`; a staff role does not duplicate it.
+23. Password change or reset, manual TOTP recovery, account blocking, and a staff-role change revoke affected sessions.
+24. Audit contains no password, TOTP secret, recovery code, token, or other secret.
+25. An existing audit record is not changed or deleted through the application interface.
+26. The domain change, related audit, and outbox record are committed atomically.
+27. An expired background-processing lease is recovered, and a job retry does not repeat the domain action.
+28. An unexpected error does not leave a partially committed state.
+
+## 9. Main Flows
+
+### 9.1 Registration
+
+1. Check neutral rate limits.
+2. Remove outer whitespace and obtain the case-insensitive canonical email value.
+3. Find the account by canonical email without disclosing the result to the user.
+4. If the account does not exist, create an unconfirmed ordinary account, a one-time token, a registration audit record, and an outbox email in one transaction.
+5. If the account is awaiting confirmation, revoke the previous token and create a new token, audit, and outbox email in one transaction and within the limits, without creating a second account.
+6. If the account is already active or blocked, do not change its state or create a confirmation token.
+7. Return the same neutral response in all cases.
+8. A valid one-time link activates an awaiting account, revokes other confirmation tokens, and adds an audit record.
+
+### 9.2 Sign-in
+
+1. Check the password without disclosing whether the account exists.
+2. Check blocking and email confirmation.
+3. If a second factor is mandatory or enabled, request TOTP or a recovery code.
+4. Create a new session and rotate the previous sign-in identifier.
+5. Add a success audit record or safe failure metadata.
+
+### 9.3 Password Reset
+
+1. Accept the email and return a neutral response.
+2. Create a limited one-time token and outbox email if the account is eligible.
+3. Validate the link.
+4. Set a new password.
+5. Revoke all previous sessions and reset tokens.
+6. Add an audit record and notification.
+
+### 9.4 Second-Factor Enrollment
+
+1. Require a recent password.
+2. Create a secret and show the QR/value only until confirmation.
+3. Check the first TOTP code.
+4. Activate the credential.
+5. Create a new set of one-time recovery codes.
+6. Show the cleartext codes exactly once.
+7. Add an audit record.
+
+If a seller profile is awaiting TOTP, credential confirmation and profile activation are committed in one shared application transaction.
+
+### 9.5 Managing Optional TOTP and Recovery Codes
+
+1. Replacing the recovery-code set requires a recent password and the current TOTP or an unused recovery code.
+2. A new set immediately revokes all previous codes and is shown in cleartext once.
+3. TOTP cannot be disabled when an active staff role or non-revoked seller profile exists.
+4. Permitted disabling of optional TOTP requires a recent password and the current TOTP or a recovery code.
+5. After disabling, the credential and recovery codes are revoked, the other sessions are ended, and audit and notification records are created.
+
+### 9.6 Manual Second-Factor Recovery
+
+1. An ordinary email reset does not disable the mandatory protection.
+2. Another security administrator starts a separate procedure only after manual re-verification, fresh reauthentication, and a mandatory verifiable basis; self-recovery is prohibited, and real documents are not used in the first local phase.
+3. The target may only be an active account with a confirmed email, an active mandatory TOTP requirement, and either an active credential or a proven unfinished recovery with the former credential disabled and an unused recovery token. A blocked account is unblocked separately first; recovery does not change account state.
+4. At administrative start, the old credential is immediately disabled, and all live sessions, old recovery codes, and unfinished TOTP setups are revoked or invalidated.
+5. The previous active recovery token is revoked, and the user receives a new `OneTimeToken` valid for 30 minutes through `identity.mandatory_totp_recovery`.
+6. An open administrator recovery procedure—an active mandatory TOTP requirement, no active credential, and an unused, non-revoked recovery token—closes ordinary sign-in and prohibits standard `begin_totp_setup`/`enable_totp`; the factor can be recovered only through the token-linked procedure, including reissuing an expired link. Initial mandatory TOTP enrollment without such a recovery token retains a separate limited setup flow.
+7. Opening the link without signing in checks the token's purpose and expiry, then requires the current password; an email alone is insufficient. The token is not consumed yet.
+8. An encrypted TOTP setup is created and linked exactly to this token and account; an ordinary setup is linked exactly to the server-side session instead.
+9. Completion accepts only the linked fresh setup and the correct new TOTP code, atomically creates a new credential and 10 recovery codes, and consumes the token/setup.
+10. The mandatory TOTP requirement remains; completion does not create a session or sign the user in automatically.
+11. Start audit links the administrator, user, basis, and result; completion audit and outbox contain no secrets. Failed password or TOTP checks record only neutral HMAC fingerprints of the account and source; rate limiting for these attempts is added in Task 17.
+
+### 9.7 Seller Application
+
+1. An active ordinary account without a seller or unfinished application creates a draft.
+2. It fills in only test fields.
+3. It submits an immutable version.
+4. Outbox creates a staff notification.
+5. A reviewer takes the application for processing.
+6. With `request_changes`, the applicant sees the reason and creates a new version.
+7. With `reject`, the applicant remains a buyer and may create a new separate application.
+8. With `withdraw`, the unfinished application becomes terminal, and the applicant may create a new separate application.
+9. With `approve`, the decision, profile with a single owner, audit, and event are created in one transaction.
+10. If the owner already has confirmed TOTP, the profile immediately becomes `active`.
+11. Otherwise the profile receives `awaiting_owner_totp`; after TOTP confirmation it becomes `active` in one shared application transaction.
 
-### 9.8 Изменение допуска продавца
+### 9.8 Changing Seller Admission
 
-1. Только администратор безопасности начинает `suspend`, `restore` или `revoke`.
-2. Операция требует недавнего подтверждения, явной причины и допустимого перехода текущего состояния.
-3. Изменение профиля, аудит и outbox-уведомление фиксируются атомарно.
-4. Новое состояние учитывается следующей серверной проверкой права немедленно.
-5. Обычный аккаунт владельца остаётся активным, если отдельного основания для его блокировки нет.
+1. Only a security administrator starts `suspend`, `restore`, or `revoke`.
+2. The operation requires recent confirmation, an explicit reason, and an allowed transition from the current state.
+3. The profile change, audit, and outbox notification are committed atomically.
+4. The new state is considered immediately by the next server-side permission check.
+5. The owner's ordinary account remains active unless there is a separate basis for blocking it.
 
-### 9.9 Приглашение сотрудника
-
-1. Администратор безопасности выбирает один email и одну роль.
-2. Email обычного аккаунта отклоняется; целевым может быть только неиспользуемый email или существующий служебный аккаунт.
-3. Система создаёт одноразовое ограниченное приглашение на одну служебную роль и письмо.
-4. Новый сотрудник открывает приглашение, создаёт служебный аккаунт, задаёт пароль и подтверждает email; до подтверждения TOTP аккаунт не имеет служебной роли.
-5. Существующий служебный аккаунт входит с паролем и TOTP и принимает дополнительную роль отдельным приглашением.
-6. После подтверждения TOTP назначение роли, аудит и применимое outbox-сообщение фиксируются атомарно.
-7. Повтор принятого, просроченного или отозванного приглашения отклоняется; уже активная роль не дублируется.
-
-## 10. Начальные настройки безопасности разработки
-
-Эти значения обязательны для тестов первой фазы, но не являются обещанием внешнего запуска. До внешнего стенда проводится отдельный security review и значения могут быть ужесточены с новой версией спецификации.
-
-- подтверждение email: 24 часа;
-- сброс пароля: 30 минут;
-- служебное приглашение: 24 часа;
-- путь повторной настройки обязательного TOTP: 30 минут;
-- недавнее повторное подтверждение для чувствительного действия: 15 минут;
-- комплект резервных кодов: 10 одноразовых кодов;
-- пароль: от 12 до 128 символов, допускаются фразы и пробелы, запрещаются известные распространённые значения;
-- обычный сеанс: до 30 дней с возможностью немедленного отзыва;
-- служебный сеанс: не более 12 часов и не более 30 минут бездействия;
-- неуспешный вход: растущая задержка после пяти попыток за 15 минут с учётом аккаунта и источника;
-- повтор письма: не более трёх попыток в час на назначение и дополнительное ограничение по источнику;
-- все значения задаются конфигурацией и покрываются тестами граничных случаев.
+### 9.9 Staff Invitation
+
+1. The security administrator selects one email and one role.
+2. An ordinary account's email is rejected; the target may only be an unused email or an existing service account.
+3. The system creates a single-use, time-limited invitation for one staff role and an email.
+4. A new employee opens the invitation, creates a service account, sets a password, and confirms the email; before TOTP confirmation, the account has no staff role.
+5. An existing service account signs in with a password and TOTP and accepts an additional role through a separate invitation.
+6. After TOTP confirmation, role assignment, audit, and the applicable outbox message are committed atomically.
+7. Re-accepting an accepted, expired, or revoked invitation is rejected; an already active role is not duplicated.
+
+## 10. Initial Development Security Settings
+
+These values are mandatory for phase-one tests, but are not a promise of external launch. A separate security review takes place before an external environment, and values may be tightened in a new specification version.
+
+- email confirmation: 24 hours;
+- password reset: 30 minutes;
+- staff invitation: 24 hours;
+- mandatory TOTP reconfiguration path: 30 minutes;
+- recent reauthentication for a sensitive action: 15 minutes;
+- recovery-code set: 10 one-time codes;
+- password: 12 to 128 characters, phrases and spaces allowed, known common values prohibited;
+- ordinary session: up to 30 days with immediate revocation available;
+- service session: no more than 12 hours and no more than 30 minutes idle;
+- failed sign-in: increasing delay after five attempts within 15 minutes, taking account and source into account;
+- email retry: no more than three attempts per hour per purpose and an additional source limit;
+- all values are configuration-driven and covered by boundary tests.
 
-Бесконечная блокировка аккаунта только из-за чужих неудачных попыток запрещена.
+Indefinite account blocking solely because of someone else's failed attempts is prohibited.
 
-## 11. Сеансы
+## 11. Sessions
 
-Пользователь видит:
+The user sees:
 
-- время создания;
-- последнюю активность;
-- допустимое описание устройства;
-- текущий сеанс;
-- возможность отзыва.
+- creation time;
+- last activity;
+- permitted device description;
+- current session;
+- revocation option.
 
-Все затронутые сеансы отзываются после:
+All affected sessions are revoked after:
 
-- смены или сброса пароля;
-- отключения добровольного TOTP;
-- ручного восстановления TOTP;
-- блокировки аккаунта;
-- изменения служебной роли;
-- выявленного компрометирования.
+- password change or reset;
+- disabling optional TOTP;
+- manual TOTP recovery;
+- account blocking;
+- staff-role change;
+- detected compromise.
 
-Отзыв текущего сеанса завершает текущий вход.
-
-## 12. Права
+Revoking the current session ends the current sign-in.
+
+## 12. Permissions
 
-### Обычный активный аккаунт
+### Active Ordinary Account
 
-- просмотр и изменение собственных безопасных настроек;
-- управление собственными сеансами;
-- создание собственной заявки при отсутствии продавца и другой незавершённой заявки;
-- просмотр всех собственных заявок и их истории;
-- просмотр причин и создание новой версии;
-- отзыв заявки только из разрешённого незавершённого состояния.
-
-### Владелец продавца
+- view and change their own security settings;
+- manage their own sessions;
+- create their own application when they have no seller and no other unfinished application;
+- view all their own applications and their history;
+- view reasons and create a new version;
+- withdraw an application only from an allowed unfinished state.
+
+### Seller Owner
 
-В первой фазе получает только факт владения и просмотр состояния допуска. Сервер проверяет одновременно связь владельца и текущее состояние `SellerProfile`. Каталог и торговые действия отсутствуют.
+In phase one, receives only the fact of ownership and a view of admission status. The server checks the owner association and the current `SellerProfile` state together. The catalog and trading actions are absent.
 
-### Проверяющий продавцов
+### Seller Reviewer
 
-- видит очередь и версии заявок;
-- начинает проверку;
-- запрашивает исправления;
-- одобряет или отклоняет;
-- читает связанный допустимый аудит.
+- see the queue and application versions;
+- start a review;
+- request changes;
+- approve or reject;
+- read related permitted audit records.
 
-Не создаёт сотрудников, не восстанавливает TOTP и не меняет данные заявки.
+Does not create employees, recover TOTP, or change application data.
 
-### Администратор безопасности
+### Security Administrator
 
-- создаёт и отзывает служебные приглашения;
-- назначает и отзывает служебные роли;
-- блокирует и восстанавливает аккаунты по основанию;
-- выполняет защищённую процедуру восстановления обязательного TOTP;
-- приостанавливает, восстанавливает и отзывает допуск продавца с обязательной причиной;
-- возвращает сообщение из `manual_review` к повтору только после проверки и с обязательной причиной;
-- читает связанный допустимый аудит.
+- create and revoke staff invitations;
+- assign and revoke staff roles;
+- block and restore accounts with a basis;
+- perform the protected mandatory-TOTP recovery procedure;
+- suspend, restore, and revoke seller admission with a mandatory reason;
+- return a message from `manual_review` to retry only after review and with a mandatory reason;
+- read related permitted audit records.
 
-Не рассматривает заявку без отдельной роли проверяющего.
+Does not review an application without a separate seller-reviewer role.
 
-Один служебный аккаунт может иметь обе роли только как два независимых назначения; наличие одной роли не даёт разрешений другой.
-
-## 13. Аудит
-
-Аудируются:
-
-- регистрация и подтверждение email;
-- успешные и неуспешные попытки входа;
-- сброс и смена пароля;
-- включение, отключение и восстановление TOTP;
-- выдача, замена и использование recovery-code без сохранения открытого значения;
-- создание и отзыв сеансов;
-- создание и версии заявки;
-- отправка, отзыв и решения;
-- создание продавца и изменение допуска;
-- приглашение сотрудника;
-- назначение и отзыв роли;
-- блокировка и восстановление аккаунта;
-- перевод outbox в `manual_review` и разрешённый ручной повтор;
-- защищённые действия worker.
+One service account may have both roles only as two independent assignments; having one role grants no permissions of the other.
+
+## 13. Audit
+
+The following are audited:
+
+- registration and email confirmation;
+- successful and failed sign-in attempts;
+- password reset and change;
+- TOTP enrollment, disabling, and recovery;
+- issuing, replacing, and using a recovery code without storing its cleartext value;
+- session creation and revocation;
+- application creation and versions;
+- submission, withdrawal, and decisions;
+- seller creation and admission changes;
+- staff invitation;
+- role assignment and revocation;
+- account blocking and restoration;
+- moving outbox to `manual_review` and an authorized manual retry;
+- protected worker actions.
 
-Полезная нагрузка проходит allowlist: сохраняются только заранее разрешённые поля. Сериализация целого объекта или HTTP-body в аудит запрещена.
+The payload passes an allowlist: only predefined permitted fields are stored. Serializing an entire object or HTTP body into audit is prohibited.
 
-## 14. Outbox и фоновые задания
+## 14. Outbox and Background Jobs
 
-В одной транзакции сохраняются предметное изменение, аудит и outbox-сообщение.
+The domain change, audit, and outbox message are saved in one transaction.
 
-Worker:
+The worker:
 
-1. в короткой транзакции выбирает `pending`, готовое `retry_wait` либо `processing` с истёкшей арендой;
-2. безопасно блокирует строку, присваивает попытку, worker и новую ограниченную аренду, затем фиксирует `processing`;
-3. выполняет внешний адаптер вне долгой предметной транзакции;
-4. в новой короткой транзакции фиксирует успех либо планирует повтор;
-5. после сбоя worker истёкшая аренда делает сообщение доступным для повторного захвата;
-6. после исчерпания допустимых повторов переводит сообщение в `manual_review`;
-7. не теряет исходную безопасную нагрузку.
+1. in a short transaction selects `pending`, ready `retry_wait`, or `processing` with an expired lease;
+2. safely locks the row, assigns an attempt, worker, and new limited lease, then commits `processing`;
+3. executes the external adapter outside the long domain transaction;
+4. in a new short transaction commits success or schedules a retry;
+5. after a worker failure, the expired lease makes the message available for another claim;
+6. after the permitted retries are exhausted, moves the message to `manual_review`;
+7. does not lose the original safe payload.
 
-Гарантия — как минимум одна доставка. Обработчик обязан использовать ключ идемпотентности.
+The guarantee is at-least-once delivery. The handler must use the idempotency key.
 
-Возврат из `manual_review` выполняется только администратором безопасности через прикладную операцию, записывается в аудит и создаёт новую ограниченную попытку, не новый предметный объект.
+Returning from `manual_review` is performed only by the security administrator through an application operation, is recorded in audit, and creates a new limited attempt, not a new domain object.
 
-В первой фазе поддерживаются типы:
+Phase one supports these types:
 
-- письмо подтверждения email;
-- письмо сброса пароля;
-- служебное приглашение;
-- внутреннее событие отправки заявки на проверку `seller_onboarding.application_submitted` версии 1 с payload `application_id` и `version_id`, без delivery-данных;
-- уведомление о решении по заявке;
-- уведомление о защищённом изменении аккаунта;
-- внутреннее событие создания или изменения допуска продавца.
+- email-confirmation message;
+- password-reset message;
+- staff invitation;
+- internal application-submission-for-review event `seller_onboarding.application_submitted` version 1 with payload `application_id` and `version_id`, without delivery data;
+- application-decision notification;
+- protected-account-change notification;
+- internal seller-admission creation or change event.
 
-## 15. Ошибки
+## 15. Errors
 
-### Ожидаемые
+### Expected
 
-- недопустимое поле;
-- неподтверждённый email;
-- неверный или просроченный токен;
-- неверный пароль/TOTP;
-- запрещённый переход состояния;
-- отсутствие права;
-- конфликт конкурентного изменения;
-- превышение частоты.
+- invalid field;
+- unconfirmed email;
+- invalid or expired token;
+- invalid password/TOTP;
+- prohibited state transition;
+- missing permission;
+- concurrent-change conflict;
+- rate-limit exceeded.
 
-Пользователь получает безопасное действие без внутренней трассировки.
+The user receives a safe action without internal tracing.
 
-### Неожиданные
+### Unexpected
 
-- транзакция откатывается;
-- ошибка получает correlation ID;
-- журнал исключает секреты;
-- пользователь видит нейтральное сообщение;
-- outbox не считается успешно выполненным;
-- подтверждённое состояние не изменяется частично.
+- the transaction is rolled back;
+- the error receives a correlation ID;
+- the log excludes secrets;
+- the user sees a neutral message;
+- the outbox is not considered successfully completed;
+- confirmed state is not partially changed.
 
-### Неопределённый внешний результат
+### Indeterminate External Result
 
-Если почтовый адаптер не подтвердил отправку, сообщение остаётся готовым к безопасному повтору. Система не создаёт второй предметный токен без необходимости.
+If the mail adapter did not confirm delivery, the message remains ready for a safe retry. The system does not create a second domain token without necessity.
 
-## 16. Тестирование
+## 16. Testing
 
-### 16.1 Предметные тесты
+### 16.1 Domain Tests
 
-- все допустимые и запрещённые переходы аккаунта;
-- все допустимые и запрещённые переходы заявки и продавца;
-- только одна незавершённая заявка и новая история после `rejected`/`withdrawn`;
-- совмещение и конфликт ролей;
-- обязательность причины;
-- одноразовость приглашения, токена и recovery-code;
-- запрет отключения обязательного TOTP;
-- независимость аккаунта и продавца.
+- all allowed and prohibited account transitions;
+- all allowed and prohibited application and seller transitions;
+- only one unfinished application and new history after `rejected`/`withdrawn`;
+- role combination and conflict;
+- mandatory reason;
+- single-use invitation, token, and recovery code;
+- prohibition on disabling mandatory TOTP;
+- independence of account and seller.
 
-### 16.2 PostgreSQL integration
+### 16.2 PostgreSQL Integration
 
-- уникальность канонического email без учёта регистра;
-- одновременная отправка одной заявки;
-- конкурентное создание второй незавершённой заявки;
-- одновременное решение двумя проверяющими;
-- повтор одобрения;
-- атомарность decision/profile/owner/audit/outbox;
-- выбор outbox несколькими worker через безопасную блокировку;
-- повторный захват `processing` после истечения аренды;
-- возврат `manual_review` к повтору только через разрешённую операцию с причиной;
-- миграции на чистой и предыдущей схеме.
+- uniqueness of canonical email without regard to case;
+- simultaneous submission of one application;
+- concurrent creation of a second unfinished application;
+- simultaneous decision by two reviewers;
+- repeated approval;
+- atomicity of decision/profile/owner/audit/outbox;
+- outbox selection by multiple workers through safe locking;
+- reclaiming `processing` after lease expiry;
+- returning `manual_review` to retry only through an authorized operation with a reason;
+- migrations on a clean and a previous schema.
 
-SQLite не используется как замена PostgreSQL в этих тестах.
+SQLite is not used as a replacement for PostgreSQL in these tests.
 
-### 16.3 HTML и security
+### 16.3 HTML and Security
 
-- CSRF для всех изменений;
+- CSRF for all changes;
 - cookie flags;
-- нейтральный ответ для существующего и неизвестного email;
-- rotation сеанса при входе;
-- отзыв после password/TOTP/role changes;
-- ограничения частоты;
-- запрет доступа по чужим идентификаторам;
-- обязательный второй фактор;
-- шифрование TOTP-секрета и отсутствие ключа шифрования в базе и репозитории;
-- отсутствие секретов в ответах, журнале и аудите.
+- neutral response for an existing and an unknown email;
+- session rotation at sign-in;
+- revocation after password/TOTP/role changes;
+- rate limits;
+- prohibition on access through another user's identifiers;
+- mandatory second factor;
+- TOTP-secret encryption and absence of the encryption key from the database and repository;
+- absence of secrets in responses, logs, and audit.
 
 ### 16.4 Django Admin
 
-- reviewer видит и вызывает только разрешённые операции;
-- security admin не получает review permissions автоматически;
-- прямой обход прикладной операции запрещён;
-- каждое решение требует причины и создаёт аудит;
-- только security admin меняет допуск уже созданного продавца.
+- reviewer sees and calls only permitted operations;
+- security administrator does not automatically receive review permissions;
+- direct bypass of the application operation is prohibited;
+- every decision requires a reason and creates an audit record;
+- only the security administrator changes the admission of an already-created seller.
 
-### 16.5 Сквозные сценарии
+### 16.5 End-to-End Scenarios
 
-1. Регистрация → письмо → подтверждение → вход.
-2. Просроченная и повторно использованная ссылка отклоняются.
-3. Сброс пароля отзывает прежние сеансы.
-4. TOTP и recovery-code работают; повтор recovery-code запрещён.
-5. Email без recovery-code не отключает обязательный TOTP.
-6. Первичный security admin создаётся только один раз.
-7. Staff invitation одноразово назначает конкретную роль.
+1. Registration → email → confirmation → sign-in.
+2. Expired and reused links are rejected.
+3. Password reset revokes previous sessions.
+4. TOTP and recovery codes work; reusing a recovery code is prohibited.
+5. Email without a recovery code does not disable mandatory TOTP.
+6. The initial security administrator is created only once.
+7. A staff invitation assigns one specific role once.
 8. Draft → submit → changes → new version → approve.
-9. Повтор approve не создаёт второго продавца.
-10. Reject оставляет обычный аккаунт активным.
-11. После reject или withdraw создаётся новая заявка с отдельной историей, но одновременно активна только одна.
-12. Security admin приостанавливает и восстанавливает продавца, не блокируя аккаунт покупателя.
-13. Запрещённая служебная операция блокируется и аудируется.
-14. Повтор outbox и восстановление после истёкшей аренды не повторяют предметное действие.
-15. Audit восстанавливает цепочку и не содержит секретов.
-16. Block account отзывает сеансы.
-17. Тестовая база реально восстанавливается в отдельную базу.
+9. Repeated approval does not create a second seller.
+10. Reject leaves the ordinary account active.
+11. A new application with a separate history is created after reject or withdraw, but only one is active at a time.
+12. The security administrator suspends and restores a seller without blocking the buyer account.
+13. A prohibited staff operation is blocked and audited.
+14. Outbox retry and recovery after an expired lease do not repeat the domain action.
+15. Audit reconstructs the chain and contains no secrets.
+16. Block account revokes sessions.
+17. The test database is actually restored to a separate database.
 
-## 17. Локальное окружение
+## 17. Local Environment
 
-Docker Compose поднимает:
+Docker Compose starts:
 
 - `web`;
-- `worker` из того же образа;
+- `worker` from the same image;
 - `postgres`;
-- локальный тестовый почтовый ящик.
+- local test mailbox.
 
-Отдельный профиль запускает тесты и восстановление.
+A separate profile runs tests and restoration.
 
-Секреты разработки находятся только в неотслеживаемом `.env`; `.env` включён в `.gitignore`, а `.env.example` содержит только имена переменных и безопасные заглушки. Ключ шифрования TOTP не хранится в базе, образе или фикстурах.
+Development secrets are located only in the untracked `.env`; `.env` is included in `.gitignore`, and `.env.example` contains only variable names and safe placeholders. The TOTP encryption key is not stored in the database, image, or fixtures.
 
-Исходные документы и будущий репозиторий остаются под `D:\Open_Marketplace`, пока измерение не докажет необходимость переноса рабочего дерева в файловую систему WSL.
+The source documents and future repository remain under `D:\Open_Marketplace` until measurement proves that the working tree needs to move to the WSL filesystem.
 
-Локально установленный Python 3.11 не используется как каноническое окружение проекта.
+Locally installed Python 3.11 is not used as the canonical project environment.
 
-## 18. Критерии завершения
+## 18. Completion Criteria
 
-Фаза завершена, когда одновременно выполнено:
+The phase is complete when all of the following are true simultaneously:
 
-1. все пять модулей имеют явные интерфейсы;
-2. автоматический тест запрещает недопустимые зависимости;
-3. окружение запускается одной документированной командой;
-4. все тесты проходят в Linux-контейнерах на PostgreSQL;
-5. полный пользовательский поток показан через реальные HTML-страницы;
-6. служебный поток показан через Django Admin;
-7. фоновые письма проходят через outbox и локальный mailbox;
-8. восстановление тестовой базы реально выполнено;
-9. аудит восстанавливает цепочку действий и не содержит секретов;
-10. выполнена записанная security-проверка, и в её реестре нет незакрытых дефектов уровня critical или high;
-11. секреты отсутствуют в Git, образах, журналах и фикстурах;
-12. документация позволяет новому исполнителю повторить запуск и проверку;
-13. каталог, деньги и реальные документы не проникли в объём.
+1. all five modules have explicit interfaces;
+2. an automated test prohibits invalid dependencies;
+3. the environment starts with one documented command;
+4. all tests pass in Linux containers on PostgreSQL;
+5. the complete user flow is demonstrated through real HTML pages;
+6. the staff flow is demonstrated through Django Admin;
+7. background emails pass through the outbox and local mailbox;
+8. test database restoration has actually been performed;
+9. audit reconstructs the action chain and contains no secrets;
+10. a recorded security check has been completed, with no unresolved critical- or high-severity defects in its register;
+11. secrets are absent from Git, images, logs, and fixtures;
+12. the documentation allows a new operator to repeat startup and verification;
+13. catalog, money, and real documents have not entered the scope.
 
-## 19. Предварительные файлы будущего проекта
+## 19. Preliminary Future-Project Files
 
-Это логическая структура для будущего плана; файлы ещё не создаются:
+This is a logical structure for the future plan; the files are not created yet:
 
 ```text
 open_marketplace/
@@ -943,17 +943,17 @@ open_marketplace/
   tests/
 ```
 
-Финальный план может уточнить имена файлов, но не меняет предметные границы без новой проверки спецификации.
+The final plan may refine file names, but does not change domain boundaries without a new specification review.
 
-## 20. Условия перехода к плану реализации
+## 20. Conditions for Moving to the Implementation Plan
 
-План реализации создаётся только после:
+The implementation plan is created only after:
 
-1. проверки этого документа на заглушки, противоречия и двусмысленности;
-2. подтверждения Владиславом письменной спецификации;
-3. отдельного разрешения создать Git-репозиторий по согласованному пути;
-4. проверки актуальной документации библиотек через Context7;
-5. фиксации точных совместимых версий и lock-файла;
-6. подтверждения, что реализация остаётся одной активной фазой и не начинает каталог или платежи.
+1. checking this document for placeholders, contradictions, and ambiguities;
+2. Vladislav confirms the written specification;
+3. separate permission is given to create a Git repository at the agreed path;
+4. current library documentation is checked through Context7;
+5. exact compatible versions and a lock file are recorded;
+6. it is confirmed that implementation remains one active phase and does not begin the catalog or payments.
 
-Утверждение этой спецификации само по себе не создаёт репозиторий, не устанавливает пакеты, не пишет продуктовый код, не покупает облачные ресурсы и не выполняет развёртывание.
+Approval of this specification by itself does not create a repository, install packages, write product code, purchase cloud resources, or perform a deployment.

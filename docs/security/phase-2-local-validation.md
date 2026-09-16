@@ -1,74 +1,74 @@
-# Проверка каталога v0.2.0
+# Catalog validation v0.2.0
 
-Статус: реализация каталога проверена локально. Это рабочий выпуск для запуска через Docker, **не развёрнутый интернет-магазин и не подтверждение готовности к публичной эксплуатации**.
+Status: the catalog implementation was validated locally. This is a working release for running through Docker, **not a deployed online store and not confirmation of readiness for public operation**.
 
-Сохранены все 47 решений `CAT-*` из [согласованной спецификации](../superpowers/specs/2026-09-14-phase-2-catalog-design.md). Каталог не включает заказы, оплату и выдачу цифровых файлов.
+All 47 `CAT-*` decisions from the [approved specification](../superpowers/specs/2026-09-14-phase-2-catalog-design.md) were preserved. The catalog does not include orders, payments, or digital-file delivery.
 
-## Фактические результаты
+## Actual results
 
-- Полный набор: **503 теста, OK, 382.331 секунды**, без пропущенных тестов. Журнал рабочей проверки: `artifacts/phase2-validation/accepted-suite.log`.
-- Повторный полный прогон из чистого архива: **503 теста, OK, 366.615 секунды**, без пропусков и без подстановки исходников через bind mount (`artifacts/release-candidate/clean-suite.log`). Использована заново загруженная модель. Первая попытка создания дополнительной тестовой среды остановилась до тестов из-за исчерпания сетей Docker; повтор использовал уже выделенную временную тестовую среду, без изменения сетевых настроек и чужих проектов.
-- Проверка Django: `System check identified no issues`.
-- Согласованность моделей и миграций: `No changes detected`.
-- Ограничения связей между модулями: **12 kept, 0 broken** (`accepted-checks.log`).
-- `check --deploy --fail-level WARNING` при `DEBUG=false` и защищённых cookie: без замечаний (`accepted-deploy-check.log`). Это проверка настроек, а не замена HTTPS, боевого веб-сервера и эксплуатационного аудита.
-- JavaScript каталога проверен `node --check`; `git diff --check` не выявил ошибок пробелов.
-- Настоящий Chromium выполнил создание и публикацию карточки продавцом, загрузку фотографии, мобильные фильтры, применение текста, ошибку/повтор подгрузки, возврат и отзыв доступа. Ошибка изображения не подменяется чужой фотографией.
-- Настоящая локальная модель поиска проверена русскоязычными смысловыми запросами без буквального совпадения и на нескольких группах товаров. Использовались вычисленные векторы, а не подставленные ответы.
+- Full suite: **503 tests, OK, 382.331 seconds**, with no skipped tests. Validation log: `artifacts/phase2-validation/accepted-suite.log`.
+- Repeat full run from a clean archive: **503 tests, OK, 366.615 seconds**, with no skips and no source substitution through a bind mount (`artifacts/release-candidate/clean-suite.log`). A freshly loaded model was used. The first attempt to create an additional test environment stopped before the tests because Docker networks were exhausted; the repeat used an already allocated temporary test environment, without changing network settings or other projects.
+- Django check: `System check identified no issues`.
+- Model and migration consistency: `No changes detected`.
+- Module dependency constraints: **12 kept, 0 broken** (`accepted-checks.log`).
+- `check --deploy --fail-level WARNING` with `DEBUG=false` and secure cookies: no warnings (`accepted-deploy-check.log`). This checks settings; it does not replace HTTPS, a production web server, or an operational audit.
+- Catalog JavaScript was checked with `node --check`; `git diff --check` found no whitespace errors.
+- Real Chromium performed seller creation and publication of a card, photo upload, mobile filters, text application, load error/retry, return, and access revocation. An image error is not replaced with another person’s photo.
+- The real local search model was checked with Russian semantic queries without literal matches and across several product groups. Computed vectors, rather than substituted answers, were used.
 
-## Связь с согласованными правилами
+## Relation to approved rules
 
-Проверки и реализация находятся рядом; основные точки входа:
+The checks and implementation are located together; the main entry points are:
 
-- Публикация, отдельный черновик, владение, допуск, добавление/снятие/возврат вариантов и снятие карточки: `catalog/tests/test_catalog.py`, `test_acceptance.py`, `test_boundaries.py`.
-- Обязательные данные, изменение справочника и сохранение опубликованного снимка: `test_acceptance.py`, `test_web_integration.py`, `test_management_queries.py`.
-- Единицы, рубли, точность, бесплатный товар, пустые значения и настоящая конкуренция транзакций: `test_domain.py`, `test_concurrency.py`, `test_catalog.py`.
-- Общие карточки, подтверждение идентичности сотрудником, цены исходных предложений и исключение доставки из сравнения: `test_common_cards.py`, `test_web_integration.py`.
-- Приватные фотографии, проверка формата/размера, удаление метаданных, обложка и фотографии варианта: `test_photos.py`, `test_acceptance.py`, `test_browser.py`.
-- Точное/приблизительное совпадение, опечатки, фильтры одного варианта и смысл: `test_search.py`, `test_semantic.py`.
-- Ссылки, сохранение условий при ошибке, выбор варианта, отсутствие товара и отсутствие подмены: `test_web.py`, `test_web_integration.py`, `test_acceptance.py`.
-- Прокрутка, возврат, текст и фильтры в реальном браузере: `test_browser.py`.
-- Формы HTML-адаптера: `web/tests/test_catalog_forms.py`. Тест расположен в веб-модуле, а не обходит запрет обратной зависимости каталога от интерфейса.
+- Publication, separate draft, ownership, access, adding/removing/restoring variants, and unpublishing a card: `catalog/tests/test_catalog.py`, `test_acceptance.py`, `test_boundaries.py`.
+- Required data, catalog changes, and preservation of the published snapshot: `test_acceptance.py`, `test_web_integration.py`, `test_management_queries.py`.
+- Units, rubles, precision, free product, empty values, and real transaction concurrency: `test_domain.py`, `test_concurrency.py`, `test_catalog.py`.
+- Shared cards, employee identity confirmation, source-offer prices, and excluding delivery from comparisons: `test_common_cards.py`, `test_web_integration.py`.
+- Private photos, format/size checks, metadata removal, cover photo, and variant photos: `test_photos.py`, `test_acceptance.py`, `test_browser.py`.
+- Exact/approximate matching, typos, single-variant filters, and meaning: `test_search.py`, `test_semantic.py`.
+- Links, condition preservation on error, variant selection, product absence, and no substitution: `test_web.py`, `test_web_integration.py`, `test_acceptance.py`.
+- Scrolling, return, text, and filters in a real browser: `test_browser.py`.
+- HTML adapter forms: `web/tests/test_catalog_forms.py`. The test is located in the web module and does not bypass the prohibition on a reverse catalog-to-interface dependency.
 
-## Чистая установка
+## Clean installation
 
-Исходники извлечены стандартным `git archive` без `.env`, `.git`, баз, фотографий пользователей, модели, журналов и рабочих артефактов. В извлечённой копии выполнены команды README:
+The sources were extracted with standard `git archive` without `.env`, `.git`, databases, user photos, the model, logs, or working artifacts. The README commands were run in the extracted copy:
 
-1. Создан новый `.env` со случайными значениями. Проверено, что повторный запуск генератора вызывает `FileExistsError` и оставляет прежний файл неизменным.
-2. Собран обычный образ приложения и выполнены миграции на пустой постоянной PostgreSQL-базе.
-3. Модель загружена заново в пустое постоянное хранилище командой `prepare_catalog_search`, завершившейся с кодом 0.
-4. Запущены приложение, доставщик писем, PostgreSQL и Mailpit. Ни исходный `.env`, ни рабочая база не переносились.
-5. HTTP-проверка: `/catalog/` безопасно переводит неавторизованного посетителя на `/login/`; страница входа, JavaScript, CSS и местная почта возвращают HTTP 200.
-6. Выполнены обычные `down` и `up -d` без `-v`: постоянная база сохранилась, число применённых миграций до и после совпало. В собранном образе нет `.env`, `.git`, папок с рабочими артефактами и резервными копиями.
+1. A new `.env` with random values was created. A repeat generator run was checked to raise `FileExistsError` and leave the existing file unchanged.
+2. The ordinary application image was built and migrations were run on an empty persistent PostgreSQL database.
+3. The model was freshly loaded into empty persistent storage using `prepare_catalog_search`, which completed with code 0.
+4. The application, mail sender, PostgreSQL, and Mailpit were started. Neither the original `.env` nor the working database was transferred.
+5. HTTP check: `/catalog/` safely redirects an unauthenticated visitor to `/login/`; the login page, JavaScript, CSS, and local mail return HTTP 200.
+6. Ordinary `down` and `up -d` were run without `-v`: the persistent database survived, and the number of applied migrations matched before and after. The built image contains no `.env`, `.git`, working-artifact directories, or backups.
 
-Compose-проекты проверки отделены от иных установок. Их имена не являются частью пользовательской настройки. Каталог слушает только локальный интерфейс; доступ из интернета не открывался.
+The validation Compose projects are separate from other installations. Their names are not part of the user configuration. The catalog listens only on the local interface; internet access was not opened.
 
-## Восстановление базы и фотографий
+## Database and photo restoration
 
-`ops/verify_restore.sh` проверен на изолированном проекте. Он:
+`ops/verify_restore.sh` was checked in an isolated project. It:
 
-- создаёт синтетические записи и проверяет исходную базу;
-- делает `pg_dump` и отдельный архив фотографий;
-- восстанавливает базу в другую базу, а файлы — в другой каталог;
-- сначала убеждается, что проверка фотографий **не проходит** с пустым целевым каталогом;
-- восстанавливает архив и успешно проверяет права, опубликованные снимки, варианты, цены, остатки, фотографии и связи предложений;
-- удаляет только созданные им временные базы, каталоги и архивы; результат записывает после успешной очистки.
+- creates synthetic records and checks the source database;
+- makes a `pg_dump` and a separate photo archive;
+- restores the database into another database and the files into another directory;
+- first confirms that photo validation **does not pass** with an empty target directory;
+- restores the archive and successfully checks permissions, published snapshots, variants, prices, stock, photos, and offer relationships;
+- deletes only the temporary databases, directories, and archives it created; it records the result after successful cleanup.
 
-Результат: `media=restored_from_archive`, проверки identity/access/outbox/catalog завершены, `restored_ok`. Журнал: `artifacts/phase2-validation/accepted-photo-restore.log`. Рабочие секреты, реальные аккаунты и личная почта не использовались.
+Result: `media=restored_from_archive`, identity/access/outbox/catalog checks completed, `restored_ok`. Log: `artifacts/phase2-validation/accepted-photo-restore.log`. Working secrets, real accounts, and personal mail were not used.
 
-## Исправления, найденные при итоговой проверке
+## Fixes found during final validation
 
-- Неверное условие ссылки больше не заставляет сбрасывать все остальные условия: каждое значение можно исправить или удалить отдельно. Перед исправлением три новые регрессионные проверки воспроизвели ошибки; затем прошли вместе с полным набором.
-- Нулевой запас явно подписан; отсутствующий вариант не предлагается как доступное предложение для сравнения.
-- Устаревший запрет слова `catalog` в проверке предыдущей фазы убран точечно. Запреты оплаты, документов KYC и последующих продуктовых областей сохранены.
-- Имя новой миграции сокращено до `0002_common_cards.py`; общая проверка длинных секретоподобных значений в отчёте восстановления не ослаблена.
-- Восстановление теперь доказывает перенос самих фотографий, а не повторно использует исходный каталог файлов.
+- An invalid link condition no longer forces all other conditions to be reset: each value can be fixed or removed separately. Before the fix, three new regression checks reproduced the errors; they then passed with the full suite.
+- Zero stock is explicitly labeled; a missing variant is not offered as an available offer for comparison.
+- The outdated prohibition on the word `catalog` in the previous phase’s check was removed selectively. Prohibitions on payments, KYC documents, and later product areas were preserved.
+- The new migration name was shortened to `0002_common_cards.py`; the general check for long secret-like values in the restoration report was not weakened.
+- Restoration now proves transfer of the photos themselves rather than reusing the original file directory.
 
-## Границы доказательства и публикации
+## Evidence and publication boundaries
 
-- GitHub Actions в репозитории не настроен: перечисленные результаты получены реальным локальным выполнением, не удалённым CI.
-- Отдельная проверяющая модель не запускалась; независимый аудит безопасности не заявляется.
-- `.env`, кэши, логи, дампы и пользовательские фотографии исключены из Git и Docker-контекста. Индекс Git проверен на известные значения секретов двух локальных `.env` и характерные форматы ключей; совпадений не обнаружено. Это ограниченная проверка, а не гарантия отсутствия всех возможных секретов.
-- Репозиторий остаётся закрытым. Публичность, лицензия, реальные права пользователей, домен и внешняя инфраструктура не менялись.
-- Новая установка намеренно пустая: настройка администратора, участников и первого товара описана в [русской инструкции](../runbooks/catalog-quickstart-ru.md).
-- Логи остаются только в локальных игнорируемых артефактах: тестовые трассировки могут содержать временные идентификаторы. В исходники выпуска включён этот очищенный отчёт, а не сырые журналы.
+- GitHub Actions is not configured in the repository: the listed results came from real local execution, not remote CI.
+- No separate reviewing model was run; no independent security audit is claimed.
+- `.env`, caches, logs, dumps, and user photos are excluded from Git and the Docker context. The Git index was checked for known secret values from two local `.env` files and characteristic key formats; no matches were found. This is a limited check, not a guarantee that all possible secrets are absent.
+- The repository remains private. Visibility, license, real user permissions, domain, and external infrastructure were not changed.
+- The new installation is intentionally empty: administrator, participant, and first-product setup is described in the [catalog quickstart guide](../runbooks/catalog-quickstart-en.md).
+- Logs remain only in local ignored artifacts: test traces may contain temporary identifiers. This cleaned report, rather than raw logs, is included in the release sources.

@@ -1,79 +1,79 @@
-# Фаза 1 — локальная проверка 2026-09-13
+# Phase 1 — local validation 2026-09-13
 
-Завершающая проверка сохранности и остановки копии: `2026-09-13T06:15:02.286666+00:00`. Согласованные локальные проверки выполнены. **Это не независимое заключение, не окончательное закрытие Task 20 и не разрешение на объединение или публикацию.**
+Final preservation and copy-shutdown check: `2026-09-13T06:15:02.286666+00:00`. The approved local checks were completed. **This is not an independent assessment, final closure of Task 20, or authorization to merge or publish.**
 
-## Объём
+## Scope
 
-- Проверялось текущее рабочее дерево ветки `task20-phase1-completion` с существующими незакоммиченными исправлениями.
-- Для обычного запуска подготовлена отдельная копия из 200 файлов; перед автоматическим прогоном синхронизированы четыре обновлённых документа. Итоговый снимок для тестов охватывает 201 файл.
-- Прикладной код, тесты, зависимости, скрипт восстановления и исходный `.env` в ходе этих проверок не изменялись. Основная ранее согласованная настройка `compose.yaml` сохраняет привязку сайта к `127.0.0.1:8000`.
-- В копии отличаются только локальные опубликованные порты и `APP_BASE_URL`, необходимые для одновременной работы со старым стендом. Остальные файлы, кроме этих двух Compose-файлов, проверены по контрольным суммам.
-- Новые проверяющие модели не запускались. Коммит, push, merge и развёртывание не выполнялись.
+- The current working tree of branch `task20-phase1-completion` with existing uncommitted fixes was checked.
+- A separate 200-file copy was prepared for ordinary startup; four updated documents were synchronized before the automated run. The final test snapshot covers 201 files.
+- Application code, tests, dependencies, the restoration script, and the original `.env` were not changed during these checks. The main previously approved `compose.yaml` setting continues to bind the site to `127.0.0.1:8000`.
+- Only the locally published ports and `APP_BASE_URL`, required to work alongside the old stand, differ in the copy. All other files except these two Compose files were checked by checksum.
+- No new reviewing models were run. Commit, push, merge, and deployment were not performed.
 
-## Обычный запуск
+## Ordinary startup
 
-После одноразового штатного подтверждения выполнена документированная последовательность:
+After one-time standard confirmation, the documented sequence was run:
 
 ```bash
 docker compose run --rm --build web python manage.py migrate --noinput && docker compose up --build
 ```
 
-Она работала в проекте `omp-final-20260913t023437z`, с обычным `postgres` и отдельным постоянным томом. Страницы `/login/` и `/register/` через HTTP вернули 200 и формы; последующий `migrate --check` завершился с кодом 0. Сайт и почтовый сервис копии были доступны только на loopback-портах 18000/18025/11025.
+It ran in project `omp-final-20260913t023437z`, with ordinary `postgres` and a separate persistent volume. The `/login/` and `/register/` pages returned 200 and forms over HTTP; the subsequent `migrate --check` completed with code 0. The copy’s site and mail service were available only on loopback ports 18000/18025/11025.
 
-Подробности: [протокол обычного запуска](phase-1-ordinary-startup-2026-09-13.md). [Ручная приёмка 10/10](phase-1-browser-acceptance-2026-09-13.md) выполнена раньше на сохраняемом стенде и не выдаётся за повторный браузерный проход в новой базе. Оба доказательства закрывают Task 20 Step 5.
+Details: [ordinary-startup record](phase-1-ordinary-startup-2026-09-13.md). [Manual 10/10 acceptance](phase-1-browser-acceptance-2026-09-13.md) was completed earlier on the preserved stand and is not presented as a repeat browser pass in the new database. Both pieces of evidence close Task 20 Step 5.
 
-## Свежие автоматические результаты
+## Fresh automated results
 
-Проверки выполнялись последовательно, после синхронизации документов обычного запуска, в заново собранных образах копии. Использовались только её отдельные `postgres-test` с данными в `tmpfs` и Mailpit. Тесты не подключались к постоянному тому ни текущего стенда, ни копии.
+The checks ran sequentially, after synchronizing the ordinary-startup documents, in newly built images of the copy. Only its separate `postgres-test` with data in `tmpfs` and Mailpit were used. The tests did not attach to the persistent volume of either the current stand or the copy.
 
 - `makemigrations --check --dry-run`: `No changes detected`.
-- `migrate --noinput`: успешно.
-- `check --deploy`: только `security.W004`, `security.W008`, `security.W012`, `security.W016` — четыре ожидаемых предупреждения локального HTTP-режима. Это не разрешение использовать эти настройки при публикации. `test_cookie_security_defaults_and_secure_mode` прошёл в свежем наборе.
+- `migrate --noinput`: successful.
+- `check --deploy`: only `security.W004`, `security.W008`, `security.W012`, `security.W016` — four expected warnings for local HTTP mode. This is not authorization to use these settings for publication. `test_cookie_security_defaults_and_secure_mode` passed in the fresh suite.
 - `lint-imports --no-cache`: `11 kept, 0 broken`.
-- Полный набор: `Ran 407 tests in 177.694s`, `OK`; ошибок и пропусков нет.
-- Все 17 имён сценариев из `test_full_flows.py` получены из настоящего исходного файла, сопоставлены с полным журналом и подтверждены как успешные. Реальное восстановление проверено отдельным запуском скрипта, а не только тестом его контракта.
-- Дополнительный отдельный запуск `test_scope_boundaries.py`: 5/5. Эти пять тестов уже входят в 407 и не прибавляются к числу уникальных тестов.
-- Runtime- и test-образы: `/app/.env` и `/app/.git` отсутствуют; процессы проверки выполнялись не от root.
-- В 201 отслеживаемом или новом неигнорируемом файле не найдено заданных шаблонов приватных ключей и непустых присваиваний шести проектных секретов. `.env` игнорируется Git и не отслеживается. Это ограниченная проверка шаблонов, не гарантия отсутствия любого возможного секрета.
-- `git diff --check` и `bash -n ops/verify_restore.sh`: успешно перед прогоном; итоговые изменения отчётов проверяются отдельно.
+- Full suite: `Ran 407 tests in 177.694s`, `OK`; there were no errors or skips.
+- All 17 scenario names from `test_full_flows.py` were obtained from the actual source file, matched against the full log, and confirmed successful. Real restoration was checked by a separate script run, not only by its contract test.
+- Additional separate run of `test_scope_boundaries.py`: 5/5. These five tests are already included in 407 and are not added to the unique-test count.
+- Runtime and test images: `/app/.env` and `/app/.git` are absent; validation processes did not run as root.
+- The specified private-key patterns and non-empty assignments of the six project secrets were not found in any of the 201 tracked or new non-ignored files. `.env` is Git-ignored and untracked. This is a limited pattern check, not a guarantee that every possible secret is absent.
+- `git diff --check` and `bash -n ops/verify_restore.sh`: successful before the run; final report changes are checked separately.
 
-Журнал проверок обработан целиком. Первую большую передачу результатов через инструмент не удалось разобрать как JSON; она не использовалась как доказательство сбоя тестов. Итоговые числа получены повторным разбором полного файла с выдачей короткой проверенной сводки, без восстановления недоступной части вывода догадками.
+The validation log was processed in full. The first large transfer of results through the tool could not be parsed as JSON; it was not used as evidence of test failure. The final numbers were obtained by parsing the complete file again and producing a short verified summary, without guessing at the unavailable part of the output.
 
-## Реальное восстановление
+## Real restoration
 
 ```bash
 COMPOSE_PROJECT_NAME=omp-final-20260913t023437z bash ops/verify_restore.sh
 ```
 
-Код завершения 0. Штатный неизменённый скрипт создал отдельные временные исходную и целевую базы, выполнил `pg_dump` и `pg_restore`, затем сравнил данные.
+Exit code 0. The standard unchanged script created separate temporary source and target databases, ran `pg_dump` and `pg_restore`, and then compared the data.
 
-- В обеих базах успешно проверены все девять именованных условий согласованности данных и девять конечных миграций.
-- Секции исходной и восстановленной базы полностью совпали, включая идентификаторы записей.
-- Отдельный read-only запрос после выполнения подтвердил отсутствие временных баз `restore_source_*` и `restore_target_*`.
-- Временные дампы и частичные отчёты отсутствуют. Сохранён только безопасный результат.
+- All nine named data-consistency conditions and nine final migrations were successfully checked in both databases.
+- The source and restored database sections matched completely, including record identifiers.
+- A separate read-only query after completion confirmed the absence of temporary `restore_source_*` and `restore_target_*` databases.
+- Temporary dumps and partial reports are absent. Only the safe result was preserved.
 
-Это проверка восстановления тестовой базы, а не утверждённая политика резервного копирования рабочей системы.
+This is a test-database restoration check, not an approved backup policy for the production system.
 
-## Сохранность и состояние после проверки
+## Preservation and state after validation
 
-После проверки остановлены только пять контейнеров проекта `omp-final-20260913t023437z`. Они не удалялись; постоянный том копии, её файлы и свидетельства сохранены. Общая очистка Docker не выполнялась. Проверка отсутствия временных баз выполнена до остановки `postgres-test`, а не выведена из последующей потери его временной памяти.
+After validation, only the five containers of project `omp-final-20260913t023437z` were stopped. They were not removed; the copy’s persistent volume, files, and evidence were preserved. General Docker cleanup was not performed. The absence of temporary databases was checked before `postgres-test` was stopped, rather than inferred from the subsequent loss of its temporary memory.
 
-У исходного стенда `omp-browser-20260911t033934z`:
+For the original stand `omp-browser-20260911t033934z`:
 
-- все четыре контейнера продолжают работать без перезапуска;
-- страница входа на `http://127.0.0.1:8000/login/` вернула 200;
-- сохранены прежние привязки портов;
-- совпали идентификаторы и количество всех десяти писем Mailpit;
-- совпали агрегаты всех 17 таблиц приложения, включая состояние заявки `approved` и допуска продавца `active`;
-- исходный `.env` и снимок файлов перед прогоном не изменились.
+- all four containers continue running without restart;
+- the login page at `http://127.0.0.1:8000/login/` returned 200;
+- the previous port bindings were preserved;
+- the identifiers and count of all ten Mailpit emails matched;
+- aggregates for all 17 application tables matched, including application state `approved` and seller access `active`;
+- the original `.env` and pre-run file snapshot were unchanged.
 
-После прогона обновлены только итоговые документы и свидетельства, без изменений прикладного кода. `.env` в сохранённой копии является жёсткой ссылкой на исходный файл: его нельзя редактировать или включать в архивы/вложения.
+After the run, only the final documents and evidence were updated; application code was not changed. The `.env` in the preserved copy is a hard link to the original file: it must not be edited or included in archives/attachments.
 
-## Свидетельства и остающиеся условия
+## Evidence and remaining conditions
 
-Локальная папка, игнорируемая Git: `artifacts/final-local-20260913T023437Z/`.
+Local Git-ignored directory: `artifacts/final-local-20260913T023437Z/`.
 
-Основные свидетельства:
+Main evidence:
 
 - `gate-source-manifest.json`, `gate-precheck.json`, `gate-build.log`;
 - `makemigrations.log`, `migrate.log`, `check-deploy.log`, `import-linter.log`;
@@ -83,4 +83,4 @@ COMPOSE_PROJECT_NAME=omp-final-20260913t023437z bash ops/verify_restore.sh
 - `preservation-after-startup.json`, `preservation-after-gate.json`, `preservation-after-copy-stop.json`;
 - `copy-stop.log`, `copy-stop-verification.json`.
 
-Task 20 Step 7 остаётся открытым: действительное независимое заключение ещё не получено, окончательная фиксация изменений отдельно не разрешена. Объединение и публикация не выполняются. Изменение кода после этого снимка требует новой соответствующей проверки.
+Task 20 Step 7 remains open: a valid independent assessment has not yet been obtained, and final recording of the changes is not separately authorized. Merge and publication are not being performed. Code changes after this snapshot require new corresponding validation.

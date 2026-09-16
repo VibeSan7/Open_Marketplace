@@ -1,8 +1,6 @@
 # Using the catalog
 
-[Русский](catalog-quickstart-ru.md) | English
-
-The [English README](../../README.en.md) contains the installation commands. This guide covers what to do after startup. It does not change the application's interface language; Russian button labels are shown alongside their English meanings.
+The [English README](../../README.md) contains the installation commands. This guide covers what to do after startup. The application interface is unchanged; UI action names below are English descriptions rather than verbatim button labels.
 
 For the complete first run, start with the [installation runbook](initial-setup-en.md), then open the [built-in read-only guide](http://127.0.0.1:8000/setup/) in your copy. That page creates no accounts and changes no data.
 
@@ -49,14 +47,14 @@ In catalog management, create a category such as Clothing. Add attributes such a
 
 ## Add the first product
 
-1. The seller opens <http://127.0.0.1:8000/catalog/own/> and clicks "Создать карточку" (Create listing).
+1. The seller opens <http://127.0.0.1:8000/catalog/own/> and clicks Create listing.
 2. Choose a physical product and its unit: individual units, kilograms, or meters.
 3. Enter the title, description, and category, then save the draft. The category's attributes appear after selecting it.
 4. Upload real photos and confirm their origin. JPEG, PNG, and WebP are accepted; files are checked and saved without their original metadata.
 5. Create a variant, such as Red S, fill in its attributes, and select the photos that belong to that variant.
 6. Save the price and stock separately. An empty field is not zero. Enter `0` for a free product or `0` stock when it is out of stock.
-7. Click "Опубликовать" (Publish). If anything is missing, fix the reported issue and publish again.
-8. Separately enable "Открыть публичный показ" for guest visibility, then open the catalog and check the listing. Existing listings never become public automatically. A product with zero stock does not appear in search, but its published description remains available through a direct link.
+7. Click Publish. If anything is missing, fix the reported issue and publish again.
+8. Separately enable Enable public visibility for guest visibility, then open the catalog and check the listing. Existing listings never become public automatically. A product with zero stock does not appear in search, but its published description remains available through a direct link.
 
 Listing-level attributes must be the same for every variant. Color and size normally belong to variants, rather than having conflicting values at both listing and variant level.
 
@@ -65,32 +63,32 @@ The unit is locked after the first price or quantity is saved. Create a differen
 ## Edit, withdraw, and restore
 
 - Edit the content and save a draft. Buyers still see the previous published version.
-- "Опубликовать" (Publish) validates the whole set being published. An error does not result in partial publication.
+- Publish validates the whole set being published. An error does not result in partial publication.
 - Price and stock are saved immediately using separate buttons. An old draft does not roll them back.
 - If another update has changed a value, a conflict is shown. Compare the current value with the input preserved in the form, then explicitly confirm another update.
-- "Снять вариант" (Withdraw variant) and "Снять всю карточку" (Withdraw entire listing) take effect immediately, without deleting photos or quantities.
+- Withdraw variant and Withdraw entire listing take effect immediately, without deleting photos or quantities.
 - To restore a withdrawn variant, explicitly request its return, save the variant, and publish the listing. This does not remove a staff-imposed block.
 - Create additional storage locations in the editor. Enter stock at each location separately for each relevant variant.
 
 ## Shared listings and offer comparison
 
-The administrator creates a shared listing through "Мои карточки" (My listings), with a shared description, category, attributes, variants, and photos. Prices and stock are not entered there; they come from seller offers.
+The administrator creates a shared listing through My listings, with a shared description, category, attributes, variants, and photos. Prices and stock are not entered there; they come from seller offers.
 
 In the editor for a published variant, the seller selects the matching shared variant and submits a reason for the match. A shared variant can be selected before it has its first offer.
 
 A staff member checks the model, attributes, included items, condition, and unit. Only explicit approval adds the offer to the shared listing. Semantic search does not confirm that products are identical. Changes to identifying information require the link to be approved again.
 
-In-stock offers are compared by price for the same unit. "Доставка ещё не рассчитана" means "Delivery has not been calculated yet": the displayed price is not a final purchase total. This version does not support purchases.
+In-stock offers are compared by price for the same unit. The delivery-not-yet-calculated notice means that delivery costs are not included: the displayed price is not a final purchase total. This version does not support purchases.
 
 ## Search and links
 
-- Type a query and press Enter or click "Найти" (Search). Typing alone does not run a search.
+- Type a query and press Enter or click Search. Typing alone does not run a search.
 - Changing a filter immediately applies both that filter and the text currently typed in the search field.
 - Multiple values for one attribute mean "or". Different attributes must match the same product variant.
 - Gray values currently have no matching products. A selected unavailable value is not removed automatically.
 - Exact results come first, followed by labeled approximate results. A suggested query correction is applied only when clicked and preserves the filters.
-- Scrolling loads more listings. On an error, click "Повторить" (Retry); previously loaded results should remain visible.
-- "Поделиться условиями поиска" (Share search conditions) copies the applied conditions, not unfinished text in the input field.
+- Scrolling loads more listings. On an error, click Retry; previously loaded results should remain visible.
+- Share search conditions copies the applied conditions, not unfinished text in the input field.
 - A variant link preserves the selected variant, not an old price or access permission. It does not buy or reserve the product.
 - Links containing `127.0.0.1` work only on the same computer. Access from another computer requires a separately configured server; sharing a local link does not create one.
 

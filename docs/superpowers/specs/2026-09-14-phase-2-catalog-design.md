@@ -1,1220 +1,1220 @@
-# Open Marketplace — фаза 2: каталог, варианты, остатки и поиск
+# Open Marketplace — Phase 2: Catalog, Variants, Stock, and Search
 
-**Статус:** реализация разрешена прямым распоряжением Владислава работать самостоятельно без дальнейшего интервью и подтверждена «продолжай». Индивидуальные CAT-решения ниже сохранены. Остальные технические решения приняты исполнителем и отдельно записаны в `../plans/2026-09-15-phase-2-catalog-implementation.md`; они не выдаются за отдельные ответы пользователя. Готовность проверяется по фактическим тестам и запуску, а не этим статусом.
+**Status:** implementation was authorized by Vladislav's direct instruction to work independently without further interviewing and confirmed with “continue.” The individual CAT decisions below are preserved. The remaining technical decisions were made by the implementer and recorded separately in `../plans/2026-09-15-phase-2-catalog-implementation.md`; they are not presented as separate user answers. Readiness is verified by actual tests and startup, not by this status.
 
-**Начало согласования:** 2026-09-14.
+**Agreement started:** 2026-09-14.
 
-**Актуальные полномочия:** Владислав разрешил самостоятельно довести согласованный каталог до работающего результата и опубликовать проект в существующем GitHub-репозитории, без дальнейшего интервью. Технические решения и ограничения записаны в плане реализации. Видимость репозитория, реальные доступы, внешний сервер и платные API не меняются. Ниже сохранена история согласования; прежние ограничения интервью и формулировки «ещё не реализовано» описывают соответствующую контрольную точку, а не текущую готовность. Фактическая приёмка находится в [отчёте проверки](../../security/phase-2-local-validation.md).
+**Current authorization:** Vladislav authorized independently bringing the agreed catalog to a working result and publishing the project in the existing GitHub repository, without further interviewing. Technical decisions and constraints are recorded in the implementation plan. Repository visibility, real access, an external server, and paid APIs do not change. The agreement history is preserved below; the former interview constraints and the wording “not implemented yet” describe the corresponding checkpoint, not current readiness. Actual acceptance is in the [validation report](../../security/phase-2-local-validation.md).
 
-## Источники и границы
+## Sources and Scope
 
-- [Утверждённая общая спецификация](2026-09-02-open-marketplace-design.md), особенно разделы 5–8 и 15.
-- [Протокол концепции](../../../concept-protocol.md), особенно разделы 6–7 и 15.
+- [Approved general specification](2026-09-02-open-marketplace-design.md), especially sections 5–8 and 15.
+- [Concept protocol](../../../concept-protocol.md), especially sections 6–7 and 15.
 
-По утверждённой последовательности вторая фаза охватывает каталог, варианты, остатки, поиск и минимальный покупательский интерфейс. Корзина, заказы, платежи, физическое и цифровое исполнение относятся к следующему этапу. Предварительный расчёт доставки для сравнения предложений продавцов также перенесён на следующий этап по CAT-COMPARE-DELIVERY-SCOPE-01; во второй фазе это сравнение временно использует только цену самого товара с явным предупреждением. Подробный состав работ и критерии всей второй фазы ещё согласуются.
+According to the approved sequence, Phase 2 covers the catalog, variants, stock, search, and a minimal buyer interface. The cart, orders, payments, and physical and digital fulfillment belong to the next stage. Preliminary delivery calculation for comparing seller offers has also been moved to the next stage under CAT-COMPARE-DELIVERY-SCOPE-01; in Phase 2, this comparison temporarily uses only the item price with an explicit warning. The detailed work scope and criteria for all of Phase 2 are still being agreed.
 
-Общая концепция публичной беты уже предусматривает физические товары и скачиваемые файлы, собственные карточки продавцов, общие карточки доказанно идентичных серийных товаров, самостоятельную цену продавца и единый запас физического варианта по местам хранения. Эти решения не пересогласуются настоящим документом. Сохраняется правило публичной беты из раздела «Хранение скачиваемых файлов» протокола: до публикации продаваемый файл должен быть загружен в управляемое хранилище платформы и пройти проверки разрешённого формата и вредоносного содержимого. Во второй фазе скачиваемые товары доступны только как непубличные черновики по CAT-DIGITAL-SCOPE-01. Загрузка, управляемое хранение и проверки самих продаваемых файлов, как и выдача покупателю, относятся к следующему этапу.
+The public beta's general concept already provides for physical goods and downloadable files, sellers' own cards, common cards for demonstrably identical mass-produced goods, an independently set seller price, and a single stock amount for a physical variant across storage locations. This document does not re-open those decisions. The public beta rule from the protocol's “Downloadable File Storage” section remains in force: before publication, the file being sold must be uploaded to platform-managed storage and pass permitted-format and malicious-content checks. In Phase 2, downloadable goods are available only as non-public drafts under CAT-DIGITAL-SCOPE-01. Upload, managed storage, and checks of the files being sold, as well as delivery to the buyer, belong to the next stage.
 
-## Согласованные решения
+## Agreed Decisions
 
-### CAT-PUBLISH-01 — самостоятельная первая публикация
+### CAT-PUBLISH-01 — Independent First Publication
 
-**Статус:** утверждено Владиславом 2026-09-14; в ответ на выбор порядка первой публикации выбран вариант «2».
+**Status:** approved by Vladislav on 2026-09-14; option “2” was selected in response to the choice of first-publication workflow.
 
-Для обычной карточки, создаваемой продавцом вручную:
+For a regular card created manually by a seller:
 
-- продавец самостоятельно публикует карточку после успешных автоматических проверок заполнения;
-- после такой публикации карточка видна покупателям без ожидания обязательного одобрения сотрудником площадки;
-- сотрудник проверяет карточку позднее, например по жалобе;
-- обязательная ручная очередь перед первой публикацией не вводится.
+- the seller publishes the card independently after successful automated completeness checks;
+- after such publication, the card is visible to buyers without waiting for mandatory approval by a marketplace staff member;
+- a staff member reviews the card later, for example in response to a complaint;
+- no mandatory manual queue before the first publication is introduced.
 
-Допуск продавца и проверка его карточки остаются разными процедурами. Это решение не изменяет ранее утверждённые правила AI-медиа и не определяет порядок редактирования уже опубликованной карточки. Для скачиваемых товаров во второй фазе действует отдельное ограничение CAT-DIGITAL-SCOPE-01: доступны только непубличные черновики, без возможности публикации.
+Seller admission and review of the seller's card remain separate procedures. This decision does not change the previously approved AI-media rules and does not define how an already published card is edited. Downloadable goods are subject to the separate Phase 2 restriction CAT-DIGITAL-SCOPE-01: only non-public drafts are available, with no publication capability.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при успешных автоматических проверках первая публикация не требует предварительного решения сотрудника;
-- новая карточка, не прошедшая обязательные автоматические проверки, не становится доступной покупателям.
+- when automated checks succeed, first publication does not require a prior staff decision;
+- a new card that fails mandatory automated checks does not become available to buyers.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах. Минимальные данные для публикации собственной физической карточки определяет CAT-PUBLISH-MINIMUM-01. Полный состав технических проверок, ограничения файлов и порядок последующей проверки сотрудником ещё нужно определить.
+These are requirements for future checks, not a report of completed tests. CAT-PUBLISH-MINIMUM-01 defines the minimum data for publishing the seller's own physical card. The complete set of technical checks, file restrictions, and the process for subsequent staff review still need to be defined.
 
-### CAT-EDIT-01 — черновик описания и фотографий
+### CAT-EDIT-01 — Description and Photo Draft
 
-**Статус:** утверждено Владиславом 2026-09-14; для изменений описания и фотографий опубликованной карточки выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for changing the description and photos of a published card.
 
-- Продавец редактирует описание и фотографии в отдельном черновике.
-- Пока правки не опубликованы, покупатели продолжают видеть прежнюю опубликованную версию карточки.
-- Для применения подготовленных правок продавец самостоятельно выполняет действие «Опубликовать изменения».
-- После успешных автоматических проверок новая версия заменяет прежнюю публичную версию.
-- Предварительное одобрение сотрудником площадки не требуется.
+- The seller edits the description and photos in a separate draft.
+- Until the changes are published, buyers continue to see the card's previous published version.
+- To apply the prepared changes, the seller independently performs the “Publish changes” action.
+- After successful automated checks, the new version replaces the previous public version.
+- Prior marketplace-staff approval is not required.
 
-Цена и остаток не входят в черновик описания и фотографий; порядок их изменения определяет CAT-OFFER-01. Для собственной опубликованной карточки физического товара, не присоединённой к общей, название, выбранная категория и значения характеристик входят в тот же черновик по CAT-EDIT-FIELDS-01.
+Price and stock are not part of the description and photo draft; CAT-OFFER-01 defines how they are changed. For the seller's own published physical-goods card that is not attached to a common card, the name, selected category, and attribute values are part of the same draft under CAT-EDIT-FIELDS-01.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- сохранение черновика описания и фотографий не изменяет публичную карточку;
-- успешная публикация применяет подготовленные изменения вместе, а не показывает их покупателям по частям;
-- неуспешная автоматическая проверка не заменяет прежнюю опубликованную версию.
+- saving a description and photo draft does not change the public card;
+- successful publication applies the prepared changes together rather than showing them to buyers in pieces;
+- an unsuccessful automated check does not replace the previous published version.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-OFFER-01 — отдельное сохранение цены и остатка
+### CAT-OFFER-01 — Separate Saving of Price and Stock
 
-**Статус:** утверждено Владиславом 2026-09-14; для изменения цены и количества товара в наличии выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for changing the price and quantity of goods in stock.
 
-- Продавец изменяет цену или количество товара в наличии и выполняет отдельное действие «Сохранить».
-- После успешных автоматических проверок соответствующее действующее значение обновляется сразу.
-- Сохранение не зависит от готовности черновика описания и фотографий и не требует действия «Опубликовать изменения».
-- Сохранение цены или остатка само по себе не публикует черновик описания и фотографий.
-- Предварительное одобрение сотрудником площадки не требуется.
+- The seller changes the price or the quantity of goods in stock and performs a separate “Save” action.
+- After successful automated checks, the corresponding active value is updated immediately.
+- Saving does not depend on the readiness of the description and photo draft and does not require the “Publish changes” action.
+- Saving the price or stock does not itself publish the description and photo draft.
+- Prior marketplace-staff approval is not required.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- действующие цена и остаток могут обновляться, пока продавец готовит черновик описания и фотографий;
-- отклонённое автоматическими проверками изменение не заменяет соответствующее действующее значение;
-- последующая публикация ранее созданного черновика описания и фотографий не возвращает цену или остаток к старым значениям.
+- the active price and stock can be updated while the seller prepares a description and photo draft;
+- a change rejected by automated checks does not replace the corresponding active value;
+- subsequently publishing a previously created description and photo draft does not return the price or stock to its old values.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах. Решение не добавляет заказы, платежи или резервирование товара.
+These are requirements for future checks, not a report of completed tests. The decision does not add orders, payments, or item reservation.
 
-### CAT-AVAILABILITY-01 — карточка без остатка по прямой ссылке
+### CAT-AVAILABILITY-01 — Out-of-Stock Card by Direct Link
 
-**Статус:** утверждено Владиславом 2026-09-14; для доступа по прямой ссылке к карточке закончившегося физического товара выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for direct-link access to a card for an out-of-stock physical good.
 
-- Если ранее опубликованный физический товар конкретного продавца закончился во всех вариантах, отсутствие остатка само по себе не скрывает его публичную страницу.
-- По прямой ссылке остаются доступны опубликованные описание и фотографии.
-- На странице заметно показывается отметка «Нет в наличии».
-- Неопубликованный черновик описания и фотографий не становится доступным покупателям.
+- If a seller's previously published physical good is out of stock in all variants, the lack of stock does not by itself hide its public page.
+- The published description and photos remain available through the direct link.
+- The page prominently displays the “Out of stock” label.
+- An unpublished description and photo draft does not become available to buyers.
 
-Решение касается только отсутствия остатка и доступа по прямой ссылке. Оно не отменяет добровольное снятие с публикации или отдельные ограничения по безопасности и модерации. Показ в общем каталоге и поиске регулируется CAT-SEARCH-01; состояние общей карточки с предложениями других продавцов этим решением не определяется.
+The decision concerns only the lack of stock and direct-link access. It does not cancel voluntary unpublishing or separate security and moderation restrictions. Display in the general catalog and search is governed by CAT-SEARCH-01; this decision does not determine the state of a common card with offers from other sellers.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- после исчерпания всех вариантов ранее опубликованная карточка открывается по прежней ссылке с опубликованными описанием, фотографиями и отметкой «Нет в наличии»;
-- отсутствие остатка не раскрывает черновые правки;
-- правило сохранения страницы не делает публичными ранее не опубликованные карточки и не восстанавливает карточки, скрытые по другим основаниям.
+- after all variants are exhausted, the previously published card opens at its former link with the published description, photos, and “Out of stock” label;
+- the lack of stock does not expose draft changes;
+- the page-preservation rule does not make previously unpublished cards public and does not restore cards hidden for other reasons.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-01 — отсутствие остатка в общем каталоге и поиске
+### CAT-SEARCH-01 — Lack of Stock in the General Catalog and Search
 
-**Статус:** утверждено Владиславом 2026-09-14; для показа физических товаров без доступного остатка в общем каталоге и поиске выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for displaying physical goods without available stock in the general catalog and search.
 
-- Если физического товара нет в наличии ни у одного подходящего продавца, он по умолчанию не показывается в общем каталоге и общем поиске.
-- Отсутствие остатка у одного продавца само по себе не исключает товар в целом, если есть подходящее предложение в наличии у другого продавца.
-- Исключение из результатов не отменяет согласованный доступ по прямой ссылке согласно CAT-AVAILABILITY-01.
-- Это фильтр наличия, а не полный набор условий показа. Публикация, права, ограничения безопасности и остальные критерии поиска продолжают учитываться отдельно.
+- If a physical good is not in stock with any suitable seller, it is not shown in the general catalog or general search by default.
+- A lack of stock with one seller does not by itself exclude the good as a whole if another seller has a suitable offer in stock.
+- Excluding it from results does not cancel the agreed direct-link access under CAT-AVAILABILITY-01.
+- This is an availability filter, not the complete set of display conditions. Publication, permissions, security restrictions, and the remaining search criteria continue to be considered separately.
 
-Решение не пересматривает раздел 8.1 общей спецификации: предложения без остатка исключаются перед сортировкой предложений продавцов идентичного товара. Здесь уточнён показ товаров в общей выдаче, а не порядок предложений внутри одной общей карточки.
+The decision does not revisit section 8.1 of the general specification: offers without stock are excluded before seller offers for an identical good are sorted. This clarifies the display of goods in the overall results, not the ordering of offers within one common card.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- физический товар без доступных предложений в наличии отсутствует в обычной выдаче общего каталога и поиска;
-- наличие подходящего предложения хотя бы у одного продавца не позволяет считать товар полностью отсутствующим;
-- ранее согласованный доступ по прямой ссылке сохраняется;
-- после успешного пополнения остатка ранее опубликованного предложения повторная публикация описания и фотографий не нужна для прохождения фильтра наличия; другие основания скрытия при этом не отменяются.
+- a physical good with no available in-stock offers is absent from the normal general-catalog and search results;
+- a suitable offer from at least one seller means the good cannot be considered entirely unavailable;
+- the previously agreed direct-link access remains;
+- after successfully replenishing stock for a previously published offer, republishing the description and photos is not needed to pass the availability filter; other grounds for hiding it are not canceled by this.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-MATCH-01 — подтверждение присоединения к общей карточке
+### CAT-MATCH-01 — Confirmation of Attachment to a Common Card
 
-**Статус:** утверждено Владиславом 2026-09-14; для подтверждения совпадения товара продавца с общей карточкой выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for confirming that the seller's good matches the common card.
 
-Для доказанно идентичных физических серийных товаров:
+For demonstrably identical mass-produced physical goods:
 
-- продавец предлагает присоединить своё предложение к подходящей общей карточке;
-- уполномоченный сотрудник площадки проверяет совпадение модели, характеристик, комплектации и состояния по утверждённым правилам идентичности общей концепции;
-- присоединение выполняется только после подтверждения сотрудником; одни автоматические проверки не заменяют это подтверждение;
-- пока проверяется сопоставление, продавец может самостоятельно публиковать собственную карточку по CAT-PUBLISH-01;
-- до подтверждения карточка может оставаться несопоставленной, как предусмотрено общей концепцией.
+- the seller proposes attaching their offer to a suitable common card;
+- an authorized marketplace staff member checks that the model, attributes, package contents, and condition match under the general concept's approved identity rules;
+- attachment is performed only after staff confirmation; automated checks alone do not replace this confirmation;
+- while the match is being checked, the seller may independently publish their own card under CAT-PUBLISH-01;
+- until confirmation, the card may remain unmatched, as provided by the general concept.
 
-Отказ в сопоставлении сам по себе не запрещает самостоятельную публикацию собственной карточки. Остальные условия публикации и отдельные ограничения безопасности и модерации сохраняются. Цена и остаток остаются данными конкретного продавца и регулируются CAT-OFFER-01.
+Rejection of the match does not by itself prohibit independent publication of the seller's own card. The remaining publication conditions and separate security and moderation restrictions remain in force. Price and stock remain data belonging to the specific seller and are governed by CAT-OFFER-01.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- предложение не присоединяется к общей карточке без подтверждения уполномоченным сотрудником;
-- подтверждённое сотрудником совпадение позволяет выполнить присоединение;
-- ожидание или отказ в сопоставлении сами по себе не блокируют самостоятельную публикацию собственной карточки при выполнении остальных условий.
+- an offer is not attached to a common card without confirmation by an authorized staff member;
+- a match confirmed by a staff member permits attachment;
+- a pending or rejected match does not by itself block independent publication of the seller's own card when the remaining conditions are met.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах. Решение относится к сопоставлению товаров разных продавцов с общей карточкой, а не к импорту в собственный каталог продавца.
+These are requirements for future checks, not a report of completed tests. The decision concerns matching goods from different sellers to a common card, not importing into the seller's own catalog.
 
-### CAT-COMMON-EDIT-01 — изменения содержания общей карточки
+### CAT-COMMON-EDIT-01 — Changes to Common-Card Content
 
-**Статус:** утверждено Владиславом 2026-09-14; для изменений описания, характеристик и фотографий уже созданной общей карточки выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for changing the description, attributes, and photos of an already created common card.
 
-- Продавцы предлагают исправления общих данных.
-- Уполномоченный сотрудник площадки проверяет предложенные исправления и публикует их.
-- Продавец не может самостоятельно изменить публичное содержание общей карточки для остальных присоединённых продавцов.
-- Одни автоматические проверки не заменяют проверку и публикацию сотрудником.
-- Цена и остаток своего предложения остаются под самостоятельным управлением продавца по CAT-OFFER-01 и не являются общими данными карточки.
+- Sellers propose corrections to common data.
+- An authorized marketplace staff member reviews and publishes the proposed corrections.
+- A seller cannot independently change the public content of a common card for the other attached sellers.
+- Automated checks alone do not replace staff review and publication.
+- The price and stock of the seller's offer remain under the seller's independent control under CAT-OFFER-01 and are not common card data.
 
-Утверждённые требования доказанной идентичности товаров остаются обязательными: право редактирования общей карточки не разрешает превратить её в другой товар под прежними присоединёнными предложениями. Это решение касается правок уже существующей общей карточки, а не порядка создания новой.
+The approved requirements for demonstrable product identity remain mandatory: the right to edit a common card does not permit turning it into a different good under the previously attached offers. This decision concerns edits to an existing common card, not the process for creating a new one.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- предложение исправления от продавца само по себе не изменяет публичное содержание общей карточки;
-- общие правки публикуются только после проверки уполномоченным сотрудником;
-- самостоятельное изменение своей карточки продавцом не перезаписывает общие данные автоматически;
-- редактирование общего содержания не меняет цены и остатки присоединённых продавцов.
+- a seller's correction proposal does not by itself change the public content of the common card;
+- common edits are published only after review by an authorized staff member;
+- a seller's independent change to their own card does not automatically overwrite common data;
+- editing common content does not change the prices or stock of attached sellers.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-TAXONOMY-01 — категории и наборы характеристик
+### CAT-TAXONOMY-01 — Categories and Attribute Sets
 
-**Статус:** утверждено Владиславом 2026-09-14; для управления общим справочником категорий и характеристик выбран вариант «1».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for managing the shared directory of categories and attributes.
 
-- Уполномоченные сотрудники площадки создают и ведут категории и наборы характеристик, включая обязательность полей.
-- Продавец самостоятельно выбирает доступную категорию и заполняет предусмотренные поля своей карточки.
-- Если категории или характеристики не хватает, продавец предлагает дополнение сотруднику.
-- Продавец не добавляет и не изменяет общую структуру каталога самостоятельно.
-- Обычное заполнение и публикация карточки по действующим правилам не требуют новой ручной проверки; применяется CAT-PUBLISH-01.
+- Authorized marketplace staff create and maintain categories and attribute sets, including field requirements.
+- The seller independently selects an available category and fills in the provided fields for their card.
+- If a category or attribute is missing, the seller proposes an addition to a staff member.
+- The seller does not independently add to or change the general catalog structure.
+- Normal completion and publication of a card under the current rules do not require a new manual review; CAT-PUBLISH-01 applies.
 
-Решение относится к общему справочнику, а не к персональным подборкам витрины. Оно не устанавливает конкретный перечень разрешённых к продаже категорий, не заменяет необходимую юридическую проверку и не разрешает обходить ограничения категорий. Порядок применения обычного нового обязательного поля к уже опубликованным карточкам определяет CAT-TAXONOMY-CHANGE-01.
+The decision concerns the shared directory, not personal storefront collections. It does not establish a specific list of categories permitted for sale, replace the necessary legal review, or permit bypassing category restrictions. CAT-TAXONOMY-CHANGE-01 defines how a normal new required field is applied to already published cards.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- продавец может выбирать доступную категорию и заполнять её поля, но не может напрямую изменять общий справочник;
-- предложение продавца о новом поле или категории само по себе не изменяет общий справочник;
-- корректно заполненная карточка не попадает в обязательную ручную очередь только из-за использования существующей категории.
+- the seller may select an available category and fill in its fields, but cannot directly change the shared directory;
+- a seller's proposal for a new field or category does not by itself change the shared directory;
+- a correctly completed card does not enter the mandatory manual queue merely because it uses an existing category.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-TAXONOMY-CHANGE-01 — новое обязательное поле у опубликованных карточек
+### CAT-TAXONOMY-CHANGE-01 — New Required Field on Published Cards
 
-**Статус:** утверждено Владиславом 2026-09-14; для обычного добавления обязательного поля выбран вариант «1» — не скрывать старые карточки.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for the normal addition of a required field — do not hide old cards.
 
-- Карточки, опубликованные до обычного добавления нового обязательного поля, не скрываются только из-за отсутствия этого значения.
-- Продавец видит, что данные нужно дополнить.
-- Новое поле обязательно при публикации новых карточек и при следующей публикации правок содержания ранее опубликованной карточки.
-- Отдельное сохранение цены и количества по CAT-OFFER-01 продолжает работать и не блокируется только из-за отсутствия нового описательного значения.
-- Пока правки содержания не прошли проверки и не опубликованы, покупатели видят прежнюю опубликованную версию. Сохранение цены или остатка не публикует этот черновик.
+- Cards published before the normal addition of a new required field are not hidden solely because this value is missing.
+- The seller can see that the data needs to be completed.
+- The new field is required when publishing new cards and when next publishing content edits to a previously published card.
+- Separate saving of the price and quantity under CAT-OFFER-01 continues to work and is not blocked solely because the new descriptive value is missing.
+- Until content edits pass checks and are published, buyers see the previous published version. Saving the price or stock does not publish this draft.
 
-Решение относится к обычному обновлению требований к описанию товара. Оно не отменяет срочные ограничения по закону, безопасности или модерации, другие условия видимости и ранее согласованные права на редактирование общей карточки. Конкретные обязательные поля, их значения, канал уведомления и срок массового дополнения данных этим решением не устанавливаются.
+The decision concerns a normal update to product-description requirements. It does not cancel urgent legal, security, or moderation restrictions, other visibility conditions, or previously agreed rights to edit a common card. This decision does not establish specific required fields, their values, the notification channel, or the deadline for completing data in bulk.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- добавление обычного обязательного поля само по себе не скрывает прежнюю публикацию по прямой ссылке и не исключает её из каталога или поиска при выполнении остальных условий показа;
-- публикация новой карточки и публикация правок старой отклоняются при отсутствии нового обязательного значения; отказ в публикации правок не скрывает прежнюю публичную версию;
-- после заполнения нового поля публикация возможна при выполнении остальных условий и с сохранением ранее согласованного порядка проверки;
-- отсутствие нового описательного значения само по себе не мешает корректно изменить цену или остаток отдельно.
+- adding a normal required field does not by itself hide the previous publication at its direct link or exclude it from the catalog or search when the remaining display conditions are met;
+- publishing a new card and publishing edits to an old one are rejected when the new required value is missing; rejecting the edits does not hide the previous public version;
+- after the new field is completed, publication is possible when the remaining conditions are met and the previously agreed review process is preserved;
+- the lack of a new descriptive value does not by itself prevent correctly changing the price or stock separately.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-DIGITAL-SCOPE-01 — скачиваемые товары только в черновиках во второй фазе
+### CAT-DIGITAL-SCOPE-01 — Downloadable Goods Only in Drafts in Phase 2
 
-**Статус:** утверждено Владиславом 2026-09-14; для границы второй фазы выбран вариант «1» — пока только черновик цифровой карточки.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for the Phase 2 boundary — only a digital-card draft for now.
 
-- Продавец может подготовить описание и цену скачиваемого товара в черновике.
-- Во второй фазе такая карточка не публикуется и не видна покупателям.
-- Загрузка, управляемое хранение и проверки самого продаваемого файла переносятся на следующий этап вместе с цифровым исполнением.
-- Заказы, оплата и защищённая выдача файла покупателю остаются за пределами второй фазы.
-- Перенос касается самого приобретаемого файла, а не фотографий карточки.
+- The seller may prepare the description and price of a downloadable good in a draft.
+- In Phase 2, such a card is not published and is not visible to buyers.
+- Upload, managed storage, and checks of the file itself are moved to the next stage together with digital fulfillment.
+- Orders, payment, and secure delivery of the file to the buyer remain outside Phase 2.
+- The deferral concerns the file being purchased itself, not the card's photos.
 
-Решение определяет границу этапа, а не исключает скачиваемые файлы из публичной беты. Ранее утверждённые требования к управляемому хранилищу, проверке файла до публикации и точной версии в заказе сохраняются. Обычная самостоятельная публикация по CAT-PUBLISH-01 не отменяет запрет публикации цифровой карточки во второй фазе. Внешняя ссылка не заменяет отложенные загрузку и проверки файла.
+The decision defines the stage boundary; it does not exclude downloadable files from the public beta. The previously approved requirements for managed storage, pre-publication file checking, and the exact version in an order remain in force. Normal independent publication under CAT-PUBLISH-01 does not cancel the ban on publishing a digital card in Phase 2. An external link does not replace the deferred file upload and checks.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- продавец может сохранять описание и цену цифрового черновика;
-- цифровой черновик не показывается в покупательском каталоге и поиске и не раскрывается покупателю по прямой ссылке;
-- попытка опубликовать цифровую карточку во второй фазе отклоняется, даже если её описание и цена корректно заполнены; ограничение не сводится к отсутствию кнопки в интерфейсе;
-- сохранение описания или цены не делает цифровой черновик публичным;
-- во второй фазе не реализуются приём и выдача самого продаваемого файла.
+- the seller may save the description and price of a digital draft;
+- the digital draft is not shown in the buyer catalog or search and is not exposed to the buyer through a direct link;
+- an attempt to publish a digital card in Phase 2 is rejected even if its description and price are completed correctly; the restriction is not limited to omitting a button from the interface;
+- saving the description or price does not make the digital draft public;
+- receipt and delivery of the file being sold are not implemented in Phase 2.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах. Реализация, новая инфраструктура и изменения следующего этапа этим согласованием не разрешаются.
+These are requirements for future checks, not a report of completed tests. This agreement does not authorize implementation, new infrastructure, or changes for the next stage.
 
-### CAT-EDIT-FIELDS-01 — название, категория и характеристики в том же черновике
+### CAT-EDIT-FIELDS-01 — Name, Category, and Attributes in the Same Draft
 
-**Статус:** утверждено Владиславом 2026-09-14; для остальных полей собственной карточки выбран вариант «1» — через тот же черновик.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for the remaining fields of the seller's own card — through the same draft.
 
-Для собственной опубликованной карточки физического товара, не присоединённой к общей карточке:
+For the seller's own published physical-goods card that is not attached to a common card:
 
-- Название, выбранная категория и значения характеристик карточки редактируются в том же черновике, что описание и фотографии по CAT-EDIT-01.
-- Пока правки не опубликованы, покупатели продолжают видеть прежнюю опубликованную версию этих данных.
-- Действие «Опубликовать изменения» после успешных автоматических проверок применяет подготовленные правки содержания вместе.
-- Предварительное одобрение сотрудником для обычной публикации этих правок не требуется.
-- Цена и количество сохраняются отдельно по CAT-OFFER-01; публикация черновика содержания не возвращает их к старым значениям.
+- The card's name, selected category, and attribute values are edited in the same draft as the description and photos under CAT-EDIT-01.
+- Until the changes are published, buyers continue to see the previous published version of this data.
+- After successful automated checks, the “Publish changes” action applies the prepared content changes together.
+- Prior staff approval is not required for the normal publication of these changes.
+- The price and quantity are saved separately under CAT-OFFER-01; publishing the content draft does not return them to their old values.
 
-Выбор существующей категории и заполнение значений полей не дают продавцу право менять общий справочник по CAT-TAXONOMY-01. Сохраняются проверки обязательных полей выбранной категории и CAT-TAXONOMY-CHANGE-01. Решение не меняет порядок правок общей карточки, создания и снятия вариантов или действий с уже подтверждённым сопоставлением.
+Selecting an existing category and filling in field values does not give the seller the right to change the shared directory under CAT-TAXONOMY-01. Checks for required fields in the selected category and CAT-TAXONOMY-CHANGE-01 remain in force. The decision does not change the process for editing a common card, creating or withdrawing variants, or taking actions on an already confirmed match.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- сохранение черновых названия, категории и характеристик не меняет публичные данные карточки; новая категория и черновые характеристики не используются как опубликованные в покупательском каталоге и поиске;
-- успешная публикация применяет подготовленные название, категорию, характеристики, описание и фотографии как одну версию содержания;
-- публикация проверяет обязательные поля категории, выбранной в черновике; неуспешная проверка не применяет часть правок и не заменяет прежнюю публичную версию;
-- отдельное сохранение цены и количества не публикует черновик; последующая публикация черновика не откатывает актуальные цену и количество.
+- saving the draft name, category, and attributes does not change the card's public data; the new category and draft attributes are not used as published data in the buyer catalog or search;
+- successful publication applies the prepared name, category, attributes, description, and photos as one content version;
+- publication checks the required fields of the category selected in the draft; an unsuccessful check applies none of the edits and does not replace the previous public version;
+- separate saving of the price and quantity does not publish the draft; subsequent publication of the draft does not roll back the active price and quantity.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-ADD-01 — новый вариант в том же черновике карточки
+### CAT-VARIANT-ADD-01 — New Variant in the Same Card Draft
 
-**Статус:** утверждено Владиславом 2026-09-14; для добавления нового варианта выбран вариант «1» — через тот же черновик карточки.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for adding a new variant — through the same card draft.
 
-Для собственной уже опубликованной карточки физического товара, не присоединённой к общей:
+For the seller's own already published physical-goods card that is not attached to a common card:
 
-- Продавец готовит новый вариант в том же черновике карточки, что остальные изменения содержания по CAT-EDIT-01 и CAT-EDIT-FIELDS-01.
-- Создание и сохранение нового варианта в черновике сами по себе не делают его доступным покупателям.
-- Продавец выполняет действие «Опубликовать изменения»; после успешных автоматических проверок новый вариант публикуется вместе с остальными подготовленными правками карточки.
-- Независимая публикация только нового варианта, оставляющая остальные подготовленные правки в черновике, во второй фазе не вводится.
-- Обычная публикация выполняется продавцом без предварительного одобрения сотрудником. Прочие условия публикации, показа и наличия сохраняются.
-- Цена и количество уже опубликованных вариантов продолжают сохраняться отдельно по CAT-OFFER-01 и не откатываются при публикации черновика.
+- The seller prepares a new variant in the same card draft as the other content changes under CAT-EDIT-01 and CAT-EDIT-FIELDS-01.
+- Creating and saving a new variant in the draft does not by itself make it available to buyers.
+- The seller performs the “Publish changes” action; after successful automated checks, the new variant is published together with the card's other prepared edits.
+- Phase 2 does not introduce independent publication of only the new variant while leaving the other prepared edits in the draft.
+- Normal publication is performed by the seller without prior staff approval. The remaining publication, display, and availability conditions remain in force.
+- The price and quantity of already published variants continue to be saved separately under CAT-OFFER-01 and are not rolled back when the draft is published.
 
-Сохраняется утверждённый принцип единого реального запаса варианта по местам хранения продавца: публикация не создаёт отдельную копию этого запаса. Решение не определяет снятие или удаление вариантов, изменения общей карточки и пересмотр подтверждённого сопоставления.
+The approved principle of one actual stock amount for a variant across the seller's storage locations remains in force: publication does not create a separate copy of this stock. The decision does not define withdrawing or deleting variants, changes to a common card, or reconsidering a confirmed match.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- сохранённый, но не опубликованный новый вариант не показывается покупателю и не участвует в покупательских фильтрах или расчётах показываемых цен и наличия;
-- остаток неопубликованного нового варианта сам по себе не позволяет карточке пройти фильтр наличия, если подходящих опубликованных вариантов в наличии нет;
-- успешная публикация применяет новый вариант вместе с подготовленными изменениями содержания карточки;
-- неуспешная проверка публикации не показывает новый вариант и не применяет часть остальных черновых правок; прежняя публичная версия сохраняется;
-- добавление и публикация нового варианта не откатывают актуальные цену и количество существующих опубликованных вариантов и не создают дополнительную копию реального запаса.
+- a saved but unpublished new variant is not shown to the buyer and does not participate in buyer filters or calculations of displayed prices and availability;
+- stock for an unpublished new variant does not by itself allow the card to pass the availability filter if no suitable published variants are in stock;
+- successful publication applies the new variant together with the card's prepared content changes;
+- an unsuccessful publication check does not show the new variant or apply any of the other draft edits; the previous public version is preserved;
+- adding and publishing a new variant do not roll back the active price and quantity of existing published variants and do not create an additional copy of actual stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-WITHDRAW-01 — отдельное снятие варианта с публикации
+### CAT-VARIANT-WITHDRAW-01 — Separate Withdrawal of a Variant from Publication
 
-**Статус:** утверждено Владиславом 2026-09-14; для добровольного снятия варианта выбран вариант «1» — сразу, отдельным действием.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for voluntarily withdrawing a variant — immediately, as a separate action.
 
-Для собственной физической карточки, не присоединённой к общей, когда снимается один опубликованный вариант, а другие остаются опубликованными:
+For the seller's own physical card that is not attached to a common card, when one published variant is withdrawn and the others remain published:
 
-- Продавец выполняет отдельное действие «Снять с публикации» для выбранного варианта.
-- После успешной проверки прав вариант сразу убирается из выбора покупателя в этой карточке; готовность черновика остальных правок для этого не требуется.
-- Снятие само по себе не публикует остальные черновые правки карточки.
-- Публикация ранее подготовленного черновика сама по себе не возвращает снятый вариант обратно.
-- Данные варианта сохраняются, его реальный остаток не обнуляется и не списывается этим действием.
-- Остальные варианты не снимаются автоматически; остальные условия их показа продолжают учитываться.
+- The seller performs a separate “Withdraw from publication” action for the selected variant.
+- After a successful permission check, the variant is immediately removed from the buyer's selection for this card; the readiness of the draft containing the other edits is not required for this.
+- Withdrawal does not itself publish the card's other draft edits.
+- Publishing a previously prepared draft does not by itself return the withdrawn variant.
+- The variant's data is preserved; this action does not set its actual stock to zero or deduct it.
+- The other variants are not withdrawn automatically; the remaining display conditions continue to be considered.
 
-Это добровольное прекращение предложения варианта, а не исчерпание его запаса. Сохранение или пополнение остатка само по себе не отменяет снятие с публикации: исключения и ограничения показа по CAT-SEARCH-01 сохраняются. Действие не определяет окончательное удаление данных, порядок возвращения варианта, доступ по прежним ссылкам или действия с общей карточкой. Видимость самой карточки после снятия последнего опубликованного варианта определяет CAT-CARD-WITHDRAW-01.
+This is a voluntary discontinuation of the variant offer, not exhaustion of its stock. Saving or replenishing stock does not by itself cancel the withdrawal from publication: the display exclusions and restrictions under CAT-SEARCH-01 remain in force. The action does not define permanent data deletion, how the variant is returned, access through former links, or actions on a common card. CAT-CARD-WITHDRAW-01 defines the card's visibility after the last published variant is withdrawn.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- вариант можно снять, пока остальные правки карточки находятся в незавершённом черновике; эти правки не становятся публичными;
-- снятый вариант отсутствует в выборе покупателя и не считается доступным предложением в фильтрах наличия, даже если его реальный остаток положительный;
-- снятие не удаляет данные варианта, не меняет его реальный остаток и не снимает остальные варианты;
-- публикация черновика, подготовленного до снятия, не возвращает вариант в выбор покупателя автоматически;
-- отдельное сохранение цены или количества само по себе не возвращает снятый вариант в публикацию.
+- a variant can be withdrawn while the card's other edits are in an unfinished draft; those edits do not become public;
+- a withdrawn variant is absent from the buyer's selection and is not considered an available offer in availability filters even if its actual stock is positive;
+- withdrawal does not delete the variant's data, change its actual stock, or withdraw the other variants;
+- publishing a draft prepared before withdrawal does not automatically return the variant to the buyer's selection;
+- separately saving the price or quantity does not by itself return the withdrawn variant to publication.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-CARD-WITHDRAW-01 — скрытие карточки после снятия последнего варианта
+### CAT-CARD-WITHDRAW-01 — Hiding the Card after Withdrawing the Last Variant
 
-**Статус:** утверждено Владиславом 2026-09-14; для видимости карточки после снятия последнего опубликованного варианта выбран вариант «1» — скрыть содержание карточки.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for card visibility after withdrawing the last published variant — hide the card content.
 
-Для собственной физической карточки, не присоединённой к общей, после добровольного снятия последнего опубликованного варианта:
+For the seller's own physical card that is not attached to a common card, after voluntarily withdrawing the last published variant:
 
-- Карточка не показывается в покупательском каталоге и поиске.
-- По прежней прямой ссылке покупатель видит только сообщение «Карточка недоступна», без описания и фотографий карточки.
-- Прежняя опубликованная версия содержания и неопубликованные черновые правки не раскрываются покупателю вместо этого сообщения.
-- Данные карточки и вариантов сохраняются для продавца в рамках его обычных прав доступа; реальные остатки не обнуляются и не списываются.
-- Изменение цены или количества само по себе не возвращает карточку в публичный показ.
+- The card is not shown in the buyer catalog or search.
+- At the former direct link, the buyer sees only the “Card unavailable” message, without the card's description or photos.
+- The previous published content version and unpublished draft edits are not exposed to the buyer instead of this message.
+- The card and variant data remains available to the seller within their normal access rights; actual stock is not set to zero or deducted.
+- Changing the price or quantity does not by itself return the card to public display.
 
-Решение относится к добровольному снятию последнего опубликованного варианта, а не к одному лишь отсутствию остатка. CAT-AVAILABILITY-01 сохраняется: когда опубликованные физические варианты просто закончились, по прямой ссылке остаются прежние описание и фотографии с отметкой «Нет в наличии», если нет других оснований скрытия. Возвращение добровольно снятых вариантов регулируется CAT-VARIANT-RESTORE-01; ограничения безопасности, закона и модерации не отменяются.
+The decision concerns voluntarily withdrawing the last published variant, not merely a lack of stock. CAT-AVAILABILITY-01 remains in force: when published physical variants simply run out, the former description and photos remain at the direct link with the “Out of stock” label unless there are other grounds for hiding them. Returning voluntarily withdrawn variants is governed by CAT-VARIANT-RESTORE-01; security, legal, and moderation restrictions are not canceled.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- после добровольного снятия последнего опубликованного варианта карточка отсутствует в каталоге и поиске, а её прямая ссылка возвращает покупателю только сообщение о недоступности без содержания карточки;
-- положительный реальный остаток у снятых вариантов не сохраняет и не восстанавливает публичный показ карточки;
-- скрытие карточки не удаляет данные и не изменяет реальные остатки;
-- скрытая карточка не раскрывает покупателю ни прежнее содержание, ни черновик;
-- при одном лишь исчерпании остатка у остающихся опубликованными вариантов продолжает действовать CAT-AVAILABILITY-01, а не это правило скрытия.
+- after voluntarily withdrawing the last published variant, the card is absent from the catalog and search, and its direct link returns only an unavailable message to the buyer without the card content;
+- positive actual stock in withdrawn variants does not preserve or restore the card's public display;
+- hiding the card does not delete data or change actual stock;
+- a hidden card exposes neither the previous content nor the draft to the buyer;
+- when only the stock of variants that remain published is exhausted, CAT-AVAILABILITY-01 continues to apply, not this hiding rule.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-RESTORE-01 — возвращение снятого варианта через тот же черновик
+### CAT-VARIANT-RESTORE-01 — Returning a Withdrawn Variant through the Same Draft
 
-**Статус:** утверждено Владиславом 2026-09-14; для возвращения добровольно снятого варианта выбран вариант «1» — через тот же черновик.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for returning a voluntarily withdrawn variant — through the same draft.
 
-Для собственной физической карточки, не присоединённой к общей, когда продавец возвращает ранее опубликованный вариант, который сам добровольно снял:
+For the seller's own physical card that is not attached to a common card, when the seller returns a previously published variant that they voluntarily withdrew:
 
-- Продавец явно выбирает нужный вариант для возвращения в том же черновике карточки.
-- Сохранение такого выбора ещё не возвращает вариант в публичный показ.
-- После действия «Опубликовать изменения» и успешных автоматических проверок по действующим правилам выбранный вариант возвращается вместе с остальными подготовленными правками содержания карточки.
-- Отдельное действие восстановления прежних опубликованных данных варианта без остальных подготовленных правок не вводится.
-- Остальные снятые варианты не возвращаются автоматически. Наличие записи варианта в старом черновике или изменение его остатка не заменяют явный выбор вернуть этот вариант.
-- Актуальные цена и количество сохраняются по CAT-OFFER-01 и не заменяются значениями из старого снимка.
+- The seller explicitly selects the needed variant for return in the same card draft.
+- Saving this selection does not yet return the variant to public display.
+- After the “Publish changes” action and successful automated checks under the current rules, the selected variant returns together with the other prepared card-content edits.
+- No separate action is introduced to restore the variant's previous published data without the other prepared edits.
+- The other withdrawn variants are not returned automatically. The presence of a variant record in an old draft or a change to its stock does not replace the explicit choice to return this variant.
+- The active price and quantity are saved under CAT-OFFER-01 and are not replaced by values from the old snapshot.
 
-Возвращается сохранённый вариант, а не создаётся его дубликат с отдельным запасом. Если карточка была скрыта только из-за отсутствия опубликованных вариантов по CAT-CARD-WITHDRAW-01, успешная публикация явно выбранного возвращаемого варианта устраняет именно эту причину скрытия. Остальные условия видимости, наличия и права публикации продолжают учитываться. Снятие блокировки сотрудника, правила возврата денег и действия с общей карточкой этим решением не регулируются.
+The saved variant is returned; a duplicate with separate stock is not created. If the card was hidden only because it had no published variants under CAT-CARD-WITHDRAW-01, successful publication of the explicitly selected returning variant removes that particular reason for hiding it. The remaining visibility, availability, and publication-permission conditions continue to be considered. This decision does not govern removal of a staff block, refund rules, or actions on a common card.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- явный выбор варианта для возвращения и сохранение черновика сами по себе не делают его публичным;
-- успешная публикация возвращает только явно выбранные снятые варианты вместе с подготовленными правками содержания;
-- текущие обязательные требования проверяются заново; неуспешная проверка не возвращает вариант и не применяет часть черновых правок;
-- другие снятые варианты остаются снятыми, даже если их записи присутствовали в старом черновике;
-- возвращение не создаёт второй вариант или отдельную копию его реального запаса и не откатывает актуальные цену и количество;
-- при возвращении варианта ранее скрытая из-за снятия всех вариантов карточка снова может быть доступна покупателю только при выполнении остальных условий показа; иные ограничения не снимаются автоматически.
+- explicitly selecting a variant for return and saving the draft do not by themselves make it public;
+- successful publication returns only the explicitly selected withdrawn variants together with the prepared content edits;
+- current required conditions are checked again; an unsuccessful check does not return the variant or apply any of the draft edits;
+- other withdrawn variants remain withdrawn even if their records were present in the old draft;
+- returning the variant does not create a second variant or a separate copy of its actual stock and does not roll back the active price and quantity;
+- when a card previously hidden because all variants were withdrawn has a variant returned, it can become available to the buyer again only when the remaining display conditions are met; other restrictions are not removed automatically.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-UNITS-01 — штуки, килограммы и метры
+### CAT-UNITS-01 — Pieces, Kilograms, and Meters
 
-**Статус:** утверждено Владиславом 2026-09-14; для единиц учёта физических товаров во второй фазе выбран вариант «1» — штуки, килограммы и метры.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for physical-goods units of measure in Phase 2 — pieces, kilograms, and meters.
 
-- Во второй фазе поддерживаются штуки, килограммы и метры как единицы учёта продаваемого физического товара.
-- Для каждой карточки выбирается одна единица, одинаковая для всех её вариантов.
-- Количество в штуках должно быть целым; количество в килограммах и метрах может быть дробным, например «1,5 м».
-- Цена предложения указывается за одну выбранную единицу: штуку, килограмм или метр.
-- Количество каждого варианта учитывается отдельно по местам хранения продавца; одинаковая единица не объединяет запасы разных вариантов.
+- Phase 2 supports pieces, kilograms, and meters as units of measure for the physical good being sold.
+- One unit is selected for each card and is the same for all its variants.
+- The quantity in pieces must be an integer; the quantity in kilograms and meters may be fractional, for example “1,5 m”.
+- The offer price is stated per one selected unit: piece, kilogram, or meter.
+- The quantity of each variant is tracked separately by the seller's storage locations; using the same unit does not combine the stock of different variants.
 
-Решение касается единицы продаваемого количества и цены, а не веса и габаритов для доставки. Оно не добавляет другие единицы автоматически, не устанавливает пересчёт между единицами и допустимое количество в заказе. Точность количества в килограммах и метрах определяет CAT-STOCK-PRECISION-01; фиксацию единицы собственной карточки после сохранения цены или остатка — CAT-UNIT-LOCK-01. Согласованные права на категории и перенос заказов, оплаты и исполнения на следующий этап сохраняются.
+The decision concerns the unit of the quantity sold and its price, not the weight and dimensions used for delivery. It does not automatically add other units, establish conversion between units, or define the permitted quantity in an order. CAT-STOCK-PRECISION-01 defines the precision of quantities in kilograms and meters; CAT-UNIT-LOCK-01 defines locking the unit of the seller's own card after saving the price or stock. The agreed category permissions and the deferral of orders, payment, and fulfillment to the next stage remain in force.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- физическая карточка может использовать одну из согласованных единиц: штуки, килограммы или метры;
-- разные варианты одной карточки не используют разные единицы учёта;
-- дробное количество штук отклоняется, а дробные количества в килограммах и метрах поддерживаются; дробное значение, например «1,5 м», не превращается в целое количество;
-- показываемая цена сопровождается указанием, за какую выбранную единицу она установлена;
-- изменение количества одного варианта не меняет количество других вариантов и не объединяет их реальные запасы.
+- a physical card may use one of the agreed units: pieces, kilograms, or meters;
+- different variants of one card do not use different units of measure;
+- a fractional quantity of pieces is rejected, while fractional quantities in kilograms and meters are supported; a fractional value, for example “1,5 m”, is not converted into an integer quantity;
+- the displayed price is accompanied by an indication of the selected unit for which it is set;
+- changing the quantity of one variant does not change the quantities of other variants or combine their actual stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-UNIT-LOCK-01 — фиксация единицы после сохранения цены или остатка
+### CAT-UNIT-LOCK-01 — Locking the Unit after Saving Price or Stock
 
-**Статус:** утверждено Владиславом 2026-09-14; для смены уже используемой единицы собственной карточки выбран вариант «1» — зафиксировать единицу.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for changing the unit already used by the seller's own card — lock the unit.
 
-Для собственной физической карточки, не присоединённой к общей:
+For the seller's own physical card that is not attached to a common card:
 
-- После первого успешного сохранения продавцом хотя бы цены или остатка единица учёта карточки фиксируется и больше не меняется.
-- Достаточно сохранённых данных одного варианта: единица общая для всех вариантов карточки по CAT-UNITS-01.
-- Ограничение не зависит от того, опубликована карточка или ещё находится в черновике.
-- Для другой единицы оформляется новая карточка; соответствующие цены и количества вводятся заново, без автоматического копирования из прежней карточки.
-- Отдельный процесс переключения существующей карточки на другую единицу с одновременной заменой цен и остатков во второй фазе не вводится.
+- After the seller's first successful saving of at least a price or stock, the card's unit of measure is locked and cannot be changed.
+- Saved data for one variant is sufficient: the unit is shared by all card variants under CAT-UNITS-01.
+- The restriction does not depend on whether the card is published or still in draft.
+- A new card is created for another unit; the corresponding prices and quantities are entered again without automatic copying from the previous card.
+- Phase 2 does not introduce a separate process for switching an existing card to another unit while replacing its prices and stock at the same time.
 
-Создание новой карточки не переносит и не копирует реальный запас автоматически, не удаляет прежнюю карточку и не изменяет её цены или остатки. Обычное обновление цены и количества в зафиксированной единице продолжает работать по CAT-OFFER-01. Это решение не определяет изменение единицы общей карточки, точность дробей и правила количества в заказе.
+Creating a new card does not automatically transfer or copy actual stock, delete the previous card, or change its prices or stock. Normal updates to the price and quantity in the locked unit continue to work under CAT-OFFER-01. This decision does not define changing the unit of a common card, fractional precision, or quantity rules in an order.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- первое успешное сохранение цены без остатка или остатка без цены фиксирует единицу всей карточки;
-- последующая попытка изменить единицу отклоняется, в том числе через черновик содержания, и не переобозначает уже сохранённые цены и остатки;
-- последующее обнуление остатка или снятие с публикации не отменяют фиксацию, возникшую после первого сохранения данных;
-- обычное изменение цены и количества в прежней единице не блокируется только из-за фиксации единицы;
-- создание карточки с другой единицей не копирует в неё старые цены и остатки и не меняет их в исходной карточке.
+- the first successful saving of a price without stock or stock without a price locks the unit for the entire card;
+- a subsequent attempt to change the unit is rejected, including through a content draft, and does not relabel prices and stock that have already been saved;
+- subsequently setting stock to zero or withdrawing the card from publication does not cancel the lock created after the first data save;
+- a normal change to the price and quantity in the previous unit is not blocked solely because the unit is locked;
+- creating a card with another unit does not copy the old prices and stock into it or change them in the original card.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-COMPARE-DELIVERY-SCOPE-01 — временное сравнение цены без расчёта доставки
+### CAT-COMPARE-DELIVERY-SCOPE-01 — Temporary Price Comparison without Delivery Calculation
 
-**Статус:** утверждено Владиславом 2026-09-14; для сравнения предложений продавцов во второй фазе выбран вариант «1» — пока сравнивать цену самого товара, расчёт доставки добавить следующим этапом.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for comparing seller offers in Phase 2 — compare the item price for now and add delivery calculation in the next stage.
 
-Для предложений продавцов одного выбранного физического варианта в общей карточке:
+For seller offers of one selected physical variant in a common card:
 
-- Во второй фазе предложения показываются по возрастанию объявленной цены самого товара за одну одинаковую единицу учёта.
-- При сравнении явно показывается пометка «Доставка ещё не рассчитана»; цена товара не выдаётся за итоговую стоимость покупки.
-- Предварительный расчёт доставки и сравнение с её учётом относятся к следующему этапу. Заказы, оплата и само исполнение также остаются следующим этапом.
-- Неизвестная стоимость доставки не считается нулевой или бесплатной доставкой. Без соответствующих данных не обещаются возможность доставки по адресу, её стоимость или срок.
-- Сохраняются ограничения публикации, наличия и права продажи. Временный порядок не возвращает в сравнение снятые, заблокированные или отсутствующие предложения.
+- In Phase 2, offers are shown in ascending order of the stated item price per one identical unit of measure.
+- The “Delivery has not been calculated yet” label is shown explicitly during comparison; the item price is not presented as the total purchase cost.
+- Preliminary delivery calculation and comparison including it belong to the next stage. Orders, payment, and fulfillment itself also remain in the next stage.
+- An unknown delivery cost is not treated as zero or free delivery. Without the relevant data, no promise is made about delivery to the address, its cost, or its time.
+- Publication, availability, and selling-permission restrictions remain in force. The temporary process does not return withdrawn, blocked, or unavailable offers to the comparison.
 
-Это промежуточный порядок второй фазы, а не изменение целевого поиска публичной беты. До её запуска должны действовать утверждённые правила раздела 8.1 общей спецификации: доступность доставки, полная стоимость, срок, расстояние и подтверждённое качество исполнения. Решение не определяет ранжирование разных товаров по поисковому запросу и не разрешает подключение внешних сервисов или реализацию.
+This is an interim Phase 2 process, not a change to the target public-beta search. Before it launches, the approved rules in section 8.1 of the general specification must apply: delivery availability, total cost, time, distance, and confirmed fulfillment quality. The decision does not define ranking different goods for a search query and does not authorize connecting external services or implementing it.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- подходящие предложения одного выбранного варианта сравниваются по действующим ценам самого товара за одинаковую единицу; меньшая цена располагается раньше большей;
-- неизвестные условия доставки не заменяются выдуманными числами и не влияют на этот временный порядок как якобы известная бесплатная доставка;
-- покупатель видит предупреждение «Доставка ещё не рассчитана» и не получает обещания итоговой стоимости покупки;
-- предложения без остатка, публикации или права продажи не включаются в сравнение только ради сортировки по цене;
-- готовность временного сравнения не считается выполнением требований к окончательному поиску публичной беты.
+- suitable offers for one selected variant are compared by the active item prices for the same unit; the lower price appears before the higher one;
+- unknown delivery conditions are not replaced with invented numbers and do not affect this temporary process as supposedly known free delivery;
+- the buyer sees the “Delivery has not been calculated yet” warning and receives no promise of the total purchase cost;
+- offers without stock, publication, or selling permission are not included in the comparison merely to sort them by price;
+- readiness of the temporary comparison is not considered fulfillment of the requirements for final public-beta search.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-GROUP-01 — один результат поиска на карточку товара
+### CAT-SEARCH-GROUP-01 — One Search Result per Product Card
 
-**Статус:** утверждено Владиславом 2026-09-14; для представления карточки с несколькими вариантами в поиске выбран вариант «1» — один результат на карточку товара.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for representing a card with multiple variants in search — one result per product card.
 
-Для одной физической карточки с её вариантами:
+For one physical card with its variants:
 
-- В результатах поиска карточка показывается один раз, даже если подходят несколько её вариантов. Внутри открытой карточки доступен выбор её вариантов. Для собственной физической карточки первоначальный выбор при переходе из поиска определяет CAT-SEARCH-OPEN-VARIANT-01.
-- Для попадания в результат нужен хотя бы один опубликованный вариант с доступным предложением в наличии, одновременно соответствующий выбранным фильтрам. Разные варианты не могут по отдельности удовлетворить разные фильтры вместо одного подходящего варианта.
-- Показываемые цена и наличие определяются только по подходящим вариантам и предложениям этой карточки. Цена другого, не подходящего по цвету или размеру варианта не используется для привлечения к этому результату.
-- Если внутри результата есть разные подходящие цены, показывается минимальная с пометкой «от…». Если цена одна или все подходящие цены одинаковы, показывается эта цена без необходимости пометки «от…».
-- Цена относится к одной выбранной единице учёта по CAT-UNITS-01, а не к полной стоимости покупки с доставкой. Перенос расчёта доставки по CAT-COMPARE-DELIVERY-SCOPE-01 сохраняется.
+- In search results, the card is shown once even if several of its variants match. Its variants can be selected inside the opened card. For the seller's own physical card, CAT-SEARCH-OPEN-VARIANT-01 defines the initial selection when navigating from search.
+- To appear in the results, at least one published variant must have an available offer in stock and simultaneously match the selected filters. Different variants cannot separately satisfy different filters instead of one matching variant.
+- The displayed price and availability are determined only from the matching variants and offers of this card. The price of another variant that does not match by color or size is not used to attract the user to this result.
+- If the result contains different matching prices, the minimum is shown with the “from…” label. If there is one price or all matching prices are the same, that price is shown without requiring the “from…” label.
+- The price applies to one selected unit of measure under CAT-UNITS-01, not to the total purchase cost including delivery. The deferral of delivery calculation under CAT-COMPARE-DELIVERY-SCOPE-01 remains in force.
 
-Решение сохраняет CAT-SEARCH-01 и остальные ограничения публикации, наличия и прав. Оно не разрешает автоматически объединять самостоятельные карточки разных продавцов и не меняет CAT-MATCH-01: группируются варианты уже одной карточки, а не любые похожие товары. Окончательный алгоритм ранжирования разных товаров этим решением не определяется.
+The decision preserves CAT-SEARCH-01 and the other publication, availability, and permission restrictions. It does not permit automatically combining independent cards from different sellers and does not change CAT-MATCH-01: variants of one existing card are grouped, not any similar goods. This decision does not define the final ranking algorithm for different goods.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- несколько подходящих вариантов одной карточки дают один результат, а не отдельные результаты на каждый цвет и размер;
-- если подходящего варианта с доступным предложением нет, карточка не попадает в результат, даже когда другие её варианты есть в наличии;
-- совпадение нужного цвета у одного варианта и нужного размера у другого не заменяет вариант, одновременно соответствующий обоим фильтрам;
-- более дешёвый неподходящий, отсутствующий или непубличный вариант не занижает показываемую цену;
-- при разных подходящих ценах показывается их минимум с «от…», а при единственной или одинаковых ценах — соответствующая цена;
-- открытие результата ведёт к одной карточке с выбором её вариантов, не создавая новые карточки или самостоятельные копии запаса.
+- several matching variants of one card produce one result, not separate results for each color and size;
+- if there is no matching variant with an available offer, the card does not appear in the result even when its other variants are in stock;
+- the required color matching one variant and the required size matching another do not replace a variant matching both filters at the same time;
+- a cheaper variant that does not match, is unavailable, or is non-public does not lower the displayed price;
+- with different matching prices, their minimum is shown with “from…”, while with one price or identical prices, the corresponding price is shown;
+- opening the result leads to one card with a selection of its variants, without creating new cards or independent copies of stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-STOCK-PUBLIC-01 — публично только статус наличия
+### CAT-STOCK-PUBLIC-01 — Only Availability Status Is Public
 
-**Статус:** утверждено Владиславом 2026-09-14; для публичного показа остатка во второй фазе выбран вариант «1» — только «В наличии» или «Нет в наличии», без точного количества.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for public stock display in Phase 2 — only “In stock” or “Out of stock,” without the exact quantity.
 
-Для выбранного физического варианта у конкретного продавца в публичной карточке:
+For a selected physical variant from a specific seller in a public card:
 
-- Покупатель видит статус «В наличии» или «Нет в наличии», но не точные складские цифры.
-- Точное количество не передаётся покупателю и как скрытое поле или другие данные публичной страницы. Скрыть только видимую подпись, оставив число в данных страницы, недостаточно.
-- Продавец в закрытом кабинете по-прежнему видит точные собственные остатки и может изменять их по CAT-OFFER-01.
-- Внутренний учёт не заменяется статусом наличия: сохраняются количества по вариантам и местам хранения продавца. Запасы разных продавцов и разных вариантов не складываются в одно число.
-- Статус не раскрывает данные, которые не должны быть публичными: снятые, заблокированные и черновые предложения не становятся видимыми из-за этого правила.
+- The buyer sees the “In stock” or “Out of stock” status, but not exact warehouse figures.
+- The exact quantity is not sent to the buyer either as a hidden field or as other public-page data. Hiding only the visible label while leaving the number in the page data is insufficient.
+- In the private dashboard, the seller still sees their exact stock and can change it under CAT-OFFER-01.
+- Internal tracking is not replaced by the availability status: quantities by variant and seller storage location are preserved. Stock from different sellers and different variants is not combined into one number.
+- The status does not expose data that should not be public: withdrawn, blocked, and draft offers do not become visible because of this rule.
 
-Решение относится к публичному показу во второй фазе. Оно сохраняет CAT-AVAILABILITY-01, CAT-SEARCH-01 и остальные правила видимости. Порядок повторной проверки и показа доверенных данных при оформлении заказа и перед оплатой на следующем этапе не пересогласуется. Точность дробных количеств и права доступа этим решением не меняются.
+The decision concerns public display in Phase 2. It preserves CAT-AVAILABILITY-01, CAT-SEARCH-01, and the other visibility rules. The process for rechecking and displaying trusted data during checkout and before payment in the next stage is not re-opened. This decision does not change fractional-quantity precision or access permissions.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- публичная карточка допустимого для показа предложения сообщает о наличии без точного количества;
-- точного остатка нет ни в видимом тексте для покупателя, ни в скрытых данных, переданных с публичной страницей;
-- точные собственные количества сохраняются и доступны продавцу в закрытом кабинете;
-- при исчерпании остатка применяются согласованные правила «Нет в наличии» и исключения из поиска, а не публикация складской цифры;
-- переход к показу статуса не меняет фактические количества и не объединяет запасы разных вариантов или продавцов;
-- правило не позволяет получить наличие или остаток непубличного предложения в обход ограничений видимости.
+- a public card for an offer permitted to be shown reports availability without the exact quantity;
+- the exact stock is present neither in visible text for the buyer nor in hidden data sent with the public page;
+- exact seller-owned quantities are preserved and available to the seller in the private dashboard;
+- when stock is exhausted, the agreed “Out of stock” rules and search exclusions apply rather than publishing a warehouse figure;
+- switching to status display does not change actual quantities or combine stock from different variants or sellers;
+- the rule does not allow the availability or stock of a non-public offer to be obtained by bypassing visibility restrictions.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-STOCK-PRECISION-01 — остатки в килограммах и метрах до трёх знаков
+### CAT-STOCK-PRECISION-01 — Stock in Kilograms and Meters to Three Decimal Places
 
-**Статус:** утверждено Владиславом 2026-09-14; для точности учёта остатков в килограммах и метрах выбран вариант «1» — до трёх знаков после запятой.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for stock precision in kilograms and meters — up to three decimal places.
 
-Для внутреннего учёта физических остатков во второй фазе:
+For internal tracking of physical stock in Phase 2:
 
-- Количества в килограммах и метрах сохраняются точно с шагом 0,001 выбранной единицы: один грамм для килограммов и один миллиметр для метров.
-- Допустимы значения с меньшим числом дробных знаков и целые значения. Вводить все три знака или дописывать нули не требуется: например, 1,5 м подходит наряду с 1,234 м.
-- Если количество невозможно сохранить с выбранной точностью без изменения его значения, сохранение отклоняется с понятным объяснением. Система не округляет число самостоятельно, а прежний остаток остаётся неизменным.
-- Количество в штуках по-прежнему должно быть целым по CAT-UNITS-01.
-- Единица остаётся общей для карточки и её вариантов, а запасы — отдельными по вариантам и местам хранения продавца. CAT-UNIT-LOCK-01 и CAT-STOCK-PUBLIC-01 сохраняются.
+- Quantities in kilograms and meters are stored exactly in increments of 0.001 of the selected unit: one gram for kilograms and one millimeter for meters.
+- Values with fewer decimal places and integer values are allowed. Entering all three places or adding zeros is not required: for example, 1.5 m is valid alongside 1.234 m.
+- If a quantity cannot be stored at the selected precision without changing its value, saving is rejected with a clear explanation. The system does not round the number automatically, and the previous stock remains unchanged.
+- The quantity in pieces must still be an integer under CAT-UNITS-01.
+- The unit remains common to the card and its variants, while stock remains separate by variant and seller storage location. CAT-UNIT-LOCK-01 and CAT-STOCK-PUBLIC-01 remain in force.
 
-Это точность учётного остатка, а не минимальное количество для покупки или шаг заказа. Решение не задаёт точность цены, предельный размер запаса и единицы веса или габаритов для доставки. Остальные проверки сохранения и права доступа продолжают действовать отдельно.
+This is accounting-stock precision, not a minimum purchase quantity or order increment. The decision does not define price precision, the maximum stock amount, or weight and dimension units for delivery. The remaining save checks and access permissions continue to apply separately.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при соблюдении остальных правил количества 1,234 кг, 1,234 м и 1,5 м сохраняются без изменения численного значения;
-- 1,2345 кг или 1,2345 м отклоняются по точности, без округления и без изменения прежнего остатка;
-- положительное количество меньше шага, например 0,0004 кг или 0,0004 м, не превращается молча в нулевой остаток: такое сохранение отклоняется;
-- продавцу сообщается причина отказа и допустимая точность;
-- дробное количество штук не становится допустимым из-за поддержки трёх дробных знаков у килограммов и метров;
-- сохранение допустимой дроби не меняет единицу карточки и не объединяет её запасы.
+- when the remaining quantity rules are met, quantities of 1.234 kg, 1.234 m, and 1.5 m are saved without changing their numerical values;
+- 1.2345 kg or 1.2345 m are rejected for insufficient precision, without rounding and without changing the previous stock;
+- a positive quantity smaller than the increment, such as 0.0004 kg or 0.0004 m, is not silently turned into zero stock: such a save is rejected;
+- the seller is told the reason for rejection and the permitted precision;
+- fractional quantities in pieces do not become valid because three decimal places are supported for kilograms and meters;
+- saving a permitted fraction does not change the card's unit or combine its stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-CURRENCY-01 — только рубли во второй фазе
+### CAT-CURRENCY-01 — Rubles Only in Phase 2
 
-**Статус:** утверждено Владиславом 2026-09-14; для валют цен каталога во второй фазе выбран вариант «1» — только рубли.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for catalog price currency in Phase 2 — rubles only.
 
-- Продавцы задают цены каталога в рублях; покупатели видят рублёвые цены допустимых для публичного показа предложений.
-- Это правило также относится к ценам непубличных черновиков скачиваемых товаров, но не делает такие черновики видимыми покупателям.
-- Сравнение цен во второй фазе не использует пересчёт валют и не зависит от получения валютных курсов.
-- Ввод цены в другой валюте не поддерживается: такую валюту нельзя молча заменить подписью «рубли», сохранив прежнее число, или автоматически пересчитать без согласованного порядка.
-- Другие валюты могут добавляться позже только по отдельному решению. Это ограничение текущего этапа, а не постоянный запрет расширения.
+- Sellers set catalog prices in rubles; buyers see ruble prices for offers permitted for public display.
+- This rule also applies to prices in non-public drafts of downloadable goods, but does not make those drafts visible to buyers.
+- Price comparison in Phase 2 does not use currency conversion and does not depend on obtaining exchange rates.
+- Entering a price in another currency is not supported: that currency cannot silently be relabeled “rubles” while retaining the old number or be converted automatically without an agreed process.
+- Other currencies may be added later only by a separate decision. This is a current-stage restriction, not a permanent ban on expansion.
 
-Валюта цены остаётся самостоятельной частью данных и не подменяется страной или языком интерфейса. Сохраняется разделение страны, валюты и языка из раздела «География» протокола концепции. Российский первый запуск не пересогласуется. Оплата остаётся следующим этапом; это решение не выбирает платёжного партнёра, точность цены, её пределы или международный запуск. Точность цены отдельно определена в CAT-PRICE-PRECISION-01.
+The price currency remains a separate part of the data and is not replaced by the country or interface language. The separation of country, currency, and language from the concept protocol's “Geography” section remains in force. The initial Russian launch is not re-opened. Payment remains the next stage; this decision does not select a payment partner, price precision, price limits, or international launch. Price precision is defined separately in CAT-PRICE-PRECISION-01.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- цены физических предложений и непубличных цифровых черновиков во второй фазе задаются в рублях;
-- публичная цена явно обозначена как рублёвая и сохраняет указание единицы учёта там, где оно применимо;
-- попытка задать цену в другой валюте отклоняется без её молчаливого переобозначения, пересчёта или изменения прежней действующей цены;
-- сохранение, показ и сравнение цен не требуют запроса валютного курса;
-- выбор рублёвой цены не открывает покупателю цифровой черновик и не добавляет оплату.
+- prices for physical offers and non-public digital drafts are set in rubles in Phase 2;
+- a public price is explicitly labeled as a ruble price and retains the unit-of-measure indication where applicable;
+- an attempt to set a price in another currency is rejected without silently relabeling or converting it and without changing the previous active price;
+- saving, displaying, and comparing prices do not require an exchange-rate request;
+- selecting a ruble price does not open a digital draft to the buyer or add payment.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-PRICE-PRECISION-01 — цена в рублях и копейках
+### CAT-PRICE-PRECISION-01 — Price in Rubles and Kopecks
 
-**Статус:** утверждено Владиславом 2026-09-14; для точности цены товара выбран вариант «1» — до копеек, максимум два знака после запятой.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for product-price precision — to kopecks, with a maximum of two decimal places.
 
-Для задаваемых продавцом цен товаров во второй фазе:
+For seller-set product prices in Phase 2:
 
-- Цена в рублях сохраняется и показывается точно с шагом 0,01 рубля, без дробных частей копейки.
-- Целые цены и цены с меньшим числом дробных знаков также допустимы; вводить ровно два знака не требуется.
-- Если значение невозможно сохранить с этой точностью без изменения численного значения, система объясняет ограничение и отклоняет сохранение. Прежняя действующая цена остаётся неизменной; самостоятельное округление не выполняется.
-- Показываемая цена не теряет согласованную точность.
-- Для физического товара это цена за одну выбранную единицу по CAT-UNITS-01. Точность остатков в килограммах и метрах по CAT-STOCK-PRECISION-01 остаётся отдельным правилом.
+- A price in rubles is stored and displayed exactly in increments of 0.01 ruble, without fractional kopecks.
+- Integer prices and prices with fewer decimal places are also allowed; entering exactly two places is not required.
+- If a value cannot be stored at this precision without changing its numerical value, the system explains the restriction and rejects saving. The previous active price remains unchanged; automatic rounding is not performed.
+- The displayed price does not lose the agreed precision.
+- For a physical good, this is the price for one selected unit under CAT-UNITS-01. Stock precision in kilograms and meters under CAT-STOCK-PRECISION-01 remains a separate rule.
 
-Решение относится к исходной цене товара, а не к вычисленной сумме заказа. Расчёт суммы с учётом количества и доставки, её округление и платёжные правила остаются для следующего этапа. Допустимость нулевой цены отдельно определена в CAT-ZERO-PRICE-01; верхний предел этим решением не задаётся. Сохраняются CAT-CURRENCY-01, CAT-OFFER-01 и ограничения публичного показа.
+The decision concerns the original product price, not the calculated order total. Calculating the total including quantity and delivery, rounding it, and payment rules remain for the next stage. CAT-ZERO-PRICE-01 separately defines whether a zero price is allowed; this decision does not set an upper limit. CAT-CURRENCY-01, CAT-OFFER-01, and public-display restrictions remain in force.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при соблюдении остальных правил цена 12,34 рубля сохраняется и показывается без изменения значения;
-- целая рублёвая цена не отклоняется только из-за отсутствия дробной части;
-- значение 12,3456 рубля отклоняется по точности, без округления и без изменения прежней цены;
-- продавцу сообщается причина отказа и допустимая точность;
-- поддержка трёх дробных знаков для остатков не разрешает дробные части копейки в цене;
-- изменение точности цены не добавляет расчёт заказа или оплату.
+- when the remaining rules are met, a price of 12.34 rubles is saved and displayed without changing its value;
+- an integer ruble price is not rejected merely because it has no fractional part;
+- a value of 12.3456 rubles is rejected for insufficient precision, without rounding and without changing the previous price;
+- the seller is told the reason for rejection and the permitted precision;
+- support for three decimal places in stock does not permit fractional kopecks in a price;
+- changing price precision does not add order calculation or payment.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-ZERO-PRICE-01 — нулевая цена означает бесплатный товар
+### CAT-ZERO-PRICE-01 — A Zero Price Means a Free Good
 
-**Статус:** утверждено Владиславом 2026-09-14; для нулевой цены выбран вариант «2» — разрешить бесплатный сам товар.
+**Status:** approved by Vladislav on 2026-09-14; option “2” was selected for a zero price — allow the good itself to be free.
 
-Для цен товаров во второй фазе:
+For product prices in Phase 2:
 
-- Цена 0 рублей допустима и означает, что сам товар бесплатный. Ноль не является признаком неизвестной цены или цены по запросу.
-- У допустимого к публикации физического предложения с нулевой ценой показывается «Бесплатно». Сохраняются обычные проверки публикации и отдельного изменения цены; условия публичного показа по наличию, правам и ограничениям категории применяются отдельно и не отменяются.
-- Нулевая цена не исключает подходящее опубликованное предложение из каталога, поиска или сравнения цен только из-за самого нуля. Она учитывается как действительная цена, а не как отсутствующее значение.
-- Пометка о бесплатном товаре не обещает бесплатную доставку или нулевую итоговую стоимость заказа. Сохраняется предупреждение «Доставка ещё не рассчитана» по CAT-COMPARE-DELIVERY-SCOPE-01.
-- Пустая цена отличается от нулевой. Черновик можно сохранить без цены, но опубликовать предложение без указанной допустимой цены нельзя.
-- Попытка очистить цену уже опубликованного предложения не должна молча удалять действующую цену или превращать отсутствие значения в ноль.
-- Скачиваемые товары по-прежнему остаются непубличными черновиками, в том числе при указанной нулевой цене.
+- A price of 0 rubles is allowed and means that the good itself is free. Zero is not a sign of an unknown or “price on request” value.
+- An eligible physical offer with a zero price displays “Free.” The normal publication and separate price-change checks remain; public-display conditions for availability, permissions, and category restrictions apply separately and are not canceled.
+- A zero price does not exclude a suitable published offer from the catalog, search, or price comparison merely because it is zero. It is treated as an actual price, not as a missing value.
+- The free-good label does not promise free delivery or a zero total order cost. The “Delivery has not been calculated yet” warning under CAT-COMPARE-DELIVERY-SCOPE-01 remains.
+- An empty price differs from zero. A draft may be saved without a price, but an offer cannot be published without a specified permitted price.
+- An attempt to clear the price of an already published offer must not silently delete the active price or turn the missing value into zero.
+- Downloadable goods remain non-public drafts, including when a zero price is specified.
 
-Сохраняется CAT-SEARCH-GROUP-01: если один поисковый результат объединяет подходящие предложения с разными ценами, используется минимум с пометкой «от…». Наличие одного бесплатного предложения не объявляет бесплатными другие платные варианты или предложения карточки. Нулевая цена не означает наличие физического запаса и не раскрывает скрытое предложение.
+CAT-SEARCH-GROUP-01 remains in force: if one search result combines suitable offers with different prices, the minimum is used with the “from…” label. One free offer does not make other paid variants or card offers free. A zero price does not mean that physical stock exists and does not expose a hidden offer.
 
-Заказы, оплата, доставка и выдача не добавляются этим решением. Оформление и исполнение бесплатных заказов, итоговый расчёт и его округление остаются для следующего этапа. Верхний предел цены не выбирается; правила бесплатности API, экспорта и услуг платформы не пересогласуются.
+This decision does not add orders, payment, delivery, or fulfillment. Checkout and fulfillment of free orders, the final calculation, and its rounding remain for the next stage. No upper price limit is selected; the rules for free APIs, exports, and platform services are not re-opened.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- нулевая цена проходит проверку допустимости цены и считается заполненным значением при соблюдении остальных условий;
-- первое успешное сохранение нулевой цены также считается сохранением цены для фиксации единицы собственной карточки по CAT-UNIT-LOCK-01;
-- допустимое физическое предложение с нулевой ценой может быть опубликовано и показывается как бесплатный сам товар;
-- подходящее бесплатное предложение участвует в поиске и сравнении, но не получает обхода требований наличия, публикации и прав;
-- пустая цена разрешена в черновике, но блокирует публикацию, и не подставляется автоматически как 0 рублей;
-- очистка цены опубликованного предложения не стирает прежнее значение молча;
-- нулевая цена не публикует цифровой черновик, не делает товар имеющимся в наличии и не обещает бесплатную доставку;
-- при смешении бесплатных и платных предложений показ результата сохраняет правило «от…», а не объявляет весь набор бесплатным.
+- a zero price passes the price-validity check and counts as a completed value when the remaining conditions are met;
+- the first successful saving of a zero price also counts as saving the price for locking the unit of the seller's own card under CAT-UNIT-LOCK-01;
+- an eligible physical offer with a zero price can be published and is shown as a free good itself;
+- a suitable free offer participates in search and comparison but does not bypass availability, publication, or permission requirements;
+- an empty price is allowed in a draft but blocks publication and is not automatically substituted with 0 rubles;
+- clearing the price of a published offer does not silently erase the previous value;
+- a zero price does not publish a digital draft, make a good in stock, or promise free delivery;
+- when free and paid offers are mixed, the result display preserves the “from…” rule rather than declaring the entire set free.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-OFFER-CONFLICT-01 — защита цены и остатка от устаревшего сохранения
+### CAT-OFFER-CONFLICT-01 — Protecting Price and Stock from Stale Saves
 
-**Статус:** утверждено Владиславом 2026-09-14; для конфликтующих ручных сохранений цены или остатка выбран вариант «1» — не перезаписывать новые данные без проверки продавцом.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for conflicting manual saves of the price or stock — do not overwrite newer data without seller review.
 
-Решение относится к обычному ручному изменению одного и того же поля цены или остатка из двух экранов, например вкладок продавца. После открытия второй вкладки в первой уже успешно изменено это же значение; вторая вкладка всё ещё основана на старых данных.
+The decision concerns a normal manual change to the same price or stock field from two screens, such as seller tabs. After the second tab is opened, the same value is successfully changed in the first tab; the second tab is still based on old data.
 
-- Сохранение из устаревшего экрана не заменяет более новое действующее значение автоматически. Оно отклоняется как конфликтующее, а ранее успешно сохранённое значение остаётся действующим.
-- Продавцу сообщается, что значение изменилось, показывается актуальное значение и предлагается проверить свой ввод и повторить сохранение.
-- Повторное сохранение после проверки продавцом снова проверяется на актуальность. Если то же поле успели изменить ещё раз, конфликт обрабатывается тем же способом, а не превращается в разрешение безусловной перезаписи.
-- Проверка актуальности относится к принятию сохранения системой, а не только к предупреждению в интерфейсе. Одновременно пришедшие конфликтующие изменения одного поля не должны оба молча пройти на основании одного устаревшего состояния.
-- Сохраняются обычные проверки прав, допустимости цены и точности количества. Актуальное значение показывается только в пределах прав доступа; точные остатки не становятся публичными вопреки CAT-STOCK-PUBLIC-01.
+- A save from a stale screen does not automatically replace the newer active value. It is rejected as conflicting, and the previously saved value remains active.
+- The seller is told that the value has changed, shown the current value, and asked to check their input and save again.
+- A repeated save after the seller's review is checked for currency again. If the same field has changed again, the conflict is handled the same way rather than becoming permission for an unconditional overwrite.
+- The currency check applies to the system's acceptance of the save, not only to a warning in the interface. Conflicting simultaneous changes to one field must not both silently pass based on one stale state.
+- Normal permission, price-validity, and quantity-precision checks remain in force. The current value is shown only within access permissions; exact stock does not become public contrary to CAT-STOCK-PUBLIC-01.
 
-Решение не задаёт слияние разных полей или массовые операции. Оно не пересогласует уже запрещённый откат цены/остатка из старого черновика содержания по CAT-OFFER-01 и правила импорта или синхронизации из внешнего источника. У последнего отдельный порядок управления полями по протоколу концепции, разделам об импорте и синхронизации. Порядок конфликтов самого черновика содержания этим ответом не выбран.
+The decision does not define merging different fields or bulk operations. It does not re-open the already prohibited rollback of price/stock from an old content draft under CAT-OFFER-01 or the rules for importing or synchronizing from an external source. The latter has a separate field-management process under the concept protocol's import and synchronization sections. This response does not select a process for conflicts in the content draft itself.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- после успешного изменения цены в первой вкладке конфликтующее сохранение той же цены из устаревшей второй вкладки отклоняется и не заменяет новое значение;
-- тот же сценарий отдельно проверяется для остатка;
-- сообщение о конфликте даёт продавцу увидеть актуальное значение и необходимость проверить ввод перед повторным сохранением;
-- после проверки продавцом повторное сохранение на актуальном состоянии применяется при успешных обычных проверках; новое промежуточное изменение снова вызывает конфликт;
-- конфликт защищает и допустимую нулевую цену: бесплатность товара не отключает проверку актуальности;
-- одновременные конфликтующие сохранения одного поля не обходят защиту;
-- сохранение без конфликта по-прежнему не ждёт публикации черновика содержания и не публикует его само.
+- after the price is successfully changed in the first tab, a conflicting save of the same price from the stale second tab is rejected and does not replace the new value;
+- the same scenario is checked separately for stock;
+- the conflict message lets the seller see the current value and the need to check their input before saving again;
+- after the seller's review, a repeated save against the current state is applied when the normal checks succeed; a new intervening change causes another conflict;
+- the conflict also protects an allowed zero price: the fact that the good is free does not disable the currency check;
+- simultaneous conflicting saves of one field do not bypass the protection;
+- a save without a conflict still does not wait for publication of the content draft and does not publish it itself.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-TYPO-01 — подсказки исправления опечаток во второй фазе
+### CAT-SEARCH-TYPO-01 — Typo-Correction Suggestions in Phase 2
 
-**Статус:** утверждено Владиславом 2026-09-14; для помощи с опечатками первоначально выбран вариант «2» — предлагать возможное исправление уже во второй фазе, с поиском по нему только после выбора покупателем. Условие показа дополнено CAT-SEARCH-TYPO-TRIGGER-01.
+**Status:** approved by Vladislav on 2026-09-14; option “2” was initially selected for typo assistance — offer a possible correction already in Phase 2, with search for it only after the buyer selects it. The display condition is supplemented by CAT-SEARCH-TYPO-TRIGGER-01.
 
-- Если по введённому запросу нет точных совпадений и есть подходящая подсказка возможного исправления, она показывается отдельно, в том числе при наличии приблизительных результатов, по CAT-SEARCH-TYPO-TRIGGER-01. Например, для «красовки» может быть предложено: «Возможно, вы искали “кроссовки”?»
-- Подсказка не выдаётся за достоверно установленное намерение покупателя. Исходный запрос не заменяется молча, а результат поиска по другому запросу не выдаётся за результат исходного.
-- Поиск по предложенному запросу запускается только после явного выбора покупателем. До выбора исходный запрос остаётся действующим.
-- Выбор исправления сохраняет выбранные фильтры. Результаты нового поиска подчиняются обычным правилам видимости, наличия, группировки по карточке и соответствия фильтрам; подсказка не разрешает обход этих правил.
-- При пустом результате и отсутствии подходящей подсказки предлагается проверить написание или изменить фильтры. Система не обязана придумывать исправление для любого пустого результата: его причиной могут быть не опечатки.
-- Подсказки не должны раскрывать сведения из непубличных карточек, черновиков или закрытых полей продавца.
+- If there are no exact matches for the entered query and there is a suitable possible-correction suggestion, it is shown separately, including when approximate results exist, under CAT-SEARCH-TYPO-TRIGGER-01. For example, for “sneakers” the system may suggest: “Did you mean ‘trainers’?”
+- The suggestion is not presented as a reliably established buyer intent. The original query is not silently replaced, and a result for another query is not presented as the result for the original.
+- Search for the suggested query starts only after the buyer explicitly selects it. Until then, the original query remains active.
+- Selecting a correction preserves the selected filters. Results for the new search follow the normal visibility, availability, card-grouping, and filter-matching rules; the suggestion does not permit bypassing them.
+- With an empty result and no suitable suggestion, the buyer is offered the option to check the spelling or change the filters. The system is not required to invent a correction for every empty result: typos may not be the cause.
+- Suggestions must not expose information from non-public cards, drafts, or the seller's private fields.
 
-Решение включает помощь с опечатками во вторую фазу, но не выбирает словарь, библиотеку, внешнюю службу или точные пороги подбора. Подключение новых инструментов, платных служб и реализация не разрешаются этим ответом. Правила обычного сопоставления слов определяются отдельно; учитываемые текстовые поля закреплены в CAT-SEARCH-FIELDS-01. Основа порядка разных товаров — соответствие запросу — сохраняется; расчёт доставки, заказы, платное продвижение и скрытая персонализация не добавляются.
+The decision includes typo assistance in Phase 2, but does not select a dictionary, library, external service, or exact matching thresholds. This response does not authorize connecting new tools, paid services, or implementing it. The normal word-matching rules are defined separately; the text fields considered are established in CAT-SEARCH-FIELDS-01. Query matching remains the basis for ordering different goods; delivery calculation, orders, paid promotion, and hidden personalization are not added.
 
-Немедленный показ приблизительных результатов по исходному запросу дополнительно согласован в CAT-SEARCH-APPROX-01. Он не ждёт выбора исправленной строки и не означает её молчаливую подстановку. Подсказка исправления остаётся отдельным действием и по CAT-SEARCH-TYPO-TRIGGER-01 может показываться рядом с приблизительными результатами при отсутствии точных.
+Immediate display of approximate results for the original query is additionally agreed in CAT-SEARCH-APPROX-01. It does not wait for selection of the corrected string and does not mean that it is silently substituted. The correction suggestion remains a separate action and, under CAT-SEARCH-TYPO-TRIGGER-01, may be shown alongside approximate results when exact results are absent.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при отсутствии точных совпадений и наличии подходящей подсказки покупатель видит её отдельно от результатов исходного запроса, даже если приблизительные товары уже найдены;
-- до явного выбора подсказки исходный запрос не заменяется исправленным и результат исправленного запроса не выдаётся за исходный; приблизительные результаты исходного запроса могут показываться сразу по CAT-SEARCH-APPROX-01;
-- после выбора выполняется поиск по предложенному запросу с сохранением выбранных фильтров;
-- новый поиск применяет действующие ограничения видимости и наличия и не показывает скрытый товар, даже если его состояние изменилось после показа подсказки;
-- при пустой выдаче отсутствие подходящей подсказки не маскируется выдуманным исправлением;
-- данные непубличных карточек, черновиков и закрытых полей не раскрываются через подсказки.
+- when exact matches are absent and a suitable suggestion exists, the buyer sees it separately from the original-query results even if approximate goods have already been found;
+- before the suggestion is explicitly selected, the original query is not replaced with the correction and the corrected-query result is not presented as the original; approximate results for the original query may be shown immediately under CAT-SEARCH-APPROX-01;
+- after selection, search runs for the suggested query while preserving the selected filters;
+- the new search applies the current visibility and availability restrictions and does not show a hidden good even if its state changed after the suggestion was displayed;
+- with an empty result, the absence of a suitable suggestion is not masked by an invented correction;
+- data from non-public cards, drafts, and private fields is not exposed through suggestions.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-FIELDS-01 — поиск по названию, характеристикам и описанию
+### CAT-SEARCH-FIELDS-01 — Search by Name, Attributes, and Description
 
-**Статус:** утверждено Владиславом 2026-09-14; для текстовых полей поиска выбран вариант «1» — название, публичные характеристики и опубликованное описание.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for search text fields — name, public attributes, and published description.
 
-- Обычный текстовый поиск второй фазы учитывает название, публичные характеристики и описание карточки.
-- Совпадение только в описании также может позволить найти карточку; обязательное дублирование искомого слова в названии или характеристиках не требуется. Например, «Куртка “Север”» может быть найдена по слову «водонепроницаемая», которое есть только в её описании.
-- Учитываются действующие опубликованные данные. Черновые правки и закрытые поля продавца не участвуют в публичном поиске и не раскрываются через подсказки по CAT-SEARCH-TYPO-01.
-- Сохранение чернового названия, характеристик или описания не подменяет действующую публичную версию для поиска. После успешной публикации применяется новая опубликованная версия.
-- Текстовое совпадение не отменяет фильтры, условия видимости и наличия или группировку по карточке. Упоминание слова в описании не делает скрытое либо недоступное предложение допустимым к показу.
+- Normal Phase 2 text search considers the card's name, public attributes, and description.
+- A match only in the description may also find the card; the searched word does not have to be duplicated in the name or attributes. For example, “North Jacket” may be found by the word “waterproof” that appears only in its description.
+- The active published data is considered. Draft edits and the seller's private fields do not participate in public search and are not exposed through suggestions under CAT-SEARCH-TYPO-01.
+- Saving a draft name, attributes, or description does not replace the active public version for search. After successful publication, the new published version is used.
+- A text match does not cancel filters, visibility and availability conditions, or card grouping. Mentioning a word in the description does not make a hidden or unavailable offer eligible for display.
 
-Описание может содержать упоминания других товаров и давать лишние совпадения; этот недостаток более широкого поиска был представлен при выборе. Допуск совпадений по части слов, небольшим опечаткам и близкому смыслу определяет CAT-SEARCH-APPROX-01. Точные веса полей, правила словоформ, поиска по незавершённому слову и словарь исправлений этим решением не задаются. Поиск по отзывам, магазинам и тексту внутри изображений этим ответом не добавляется.
+The description may mention other goods and produce extra matches; this drawback of broader search was presented during the selection. CAT-SEARCH-APPROX-01 defines allowing matches by parts of words, small typos, and similar meaning. This decision does not define exact field weights, inflection rules, searching incomplete words, or a correction dictionary. Search through reviews, stores, and text inside images is not added by this response.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- отдельно проверяется нахождение допустимой к показу карточки по слову, присутствующему только в названии, только в публичных характеристиках и только в опубликованном описании;
-- слово, добавленное лишь в черновик, не создаёт публичного поискового совпадения; после успешной публикации оно учитывается при соблюдении остальных правил поиска;
-- закрытые поля продавца и непубличные данные не становятся источником публичных совпадений или раскрывающих их подсказок;
-- совпадение в описании не позволяет обойти фильтры, скрытие или отсутствие доступных предложений в наличии;
-- описание остаётся содержимым публичной карточки, а не только материалом для поиска.
+- separately verify finding a card eligible for display by a word present only in the name, only in the public attributes, and only in the published description;
+- a word added only to a draft does not create a public search match; after successful publication it is considered subject to the other search rules;
+- the seller's private fields and non-public data do not become a source of public matches or suggestions exposing them;
+- a match in the description does not permit bypassing filters, hiding, or the absence of available in-stock offers;
+- the description remains part of the public card content, not merely search material.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-APPROX-01 — частичные совпадения, опечатки и близкий смысл
+### CAT-SEARCH-APPROX-01 — Partial Matches, Typos, and Similar Meaning
 
-**Статус:** утверждено Владиславом 2026-09-14; после пожелания «показываем даже приблизительно» на уточняющий вопрос выбран вариант «3» — часть слов, небольшие опечатки и близкий смысл.
+**Status:** approved by Vladislav on 2026-09-14; following the wish to “show even approximate matches,” option “3” was selected in response to the clarifying question — parts of words, small typos, and similar meaning.
 
-Для обычного текстового поиска второй фазы:
+For normal Phase 2 text search:
 
-- Допускается совпадение по части слов запроса. Для «рюкзак нейлон» может быть показана карточка с совпадением лишь по «рюкзак»; совпадение всех слов не является обязательным для приблизительного результата.
-- Допускаются небольшие опечатки: например, «рюкзк» может найти «рюкзак».
-- Учитывается близкий смысл, даже без буквального совпадения слов: например, «непромокаемый» может находить «водонепроницаемый».
-- Приблизительные результаты показываются сразу по исходному запросу, без ожидания дополнительного выбора покупателем. Введённая строка при этом не переписывается молча.
-- В обычном порядке выдачи точные совпадения располагаются выше приблизительных. Приблизительные явно помечаются и не выдаются за точные.
-- Используются допустимые опубликованные данные по CAT-SEARCH-FIELDS-01. Выбранные фильтры, наличие, права и ограничения видимости остаются обязательными; приблизительность не разрешает их ослаблять.
-- Одна карточка остаётся одним результатом по CAT-SEARCH-GROUP-01, даже если найдена несколькими способами. Смысловая близость сама по себе не подтверждает идентичность товаров и не объединяет разные карточки.
+- A match on part of the query words is allowed. For “nylon backpack,” a card matching only “backpack” may be shown; matching every word is not required for an approximate result.
+- Small typos are allowed: for example, “backpak” may find “backpack.”
+- Similar meaning is considered even without a literal word match: for example, “rainproof” may find “waterproof.”
+- Approximate results are shown immediately for the original query, without waiting for an additional buyer choice. The entered string is not silently rewritten.
+- In the normal result order, exact matches appear above approximate ones. Approximate matches are clearly labeled and are not presented as exact.
+- Eligible published data under CAT-SEARCH-FIELDS-01 is used. Selected filters, availability, permissions, and visibility restrictions remain mandatory; approximation does not permit weakening them.
+- One card remains one result under CAT-SEARCH-GROUP-01 even if it is found in several ways. Similar meaning alone does not confirm product identity or combine different cards.
 
-Поиск показывает существующие допустимые карточки, а не придумывает товары или отсутствующие в них свойства. Примеры иллюстрируют требуемое поведение и не являются единственными поддерживаемыми запросами. Точные пороги близости, порядок внутри приблизительных результатов, нормализация слов, технология поиска и способ проверки качества ещё не выбираются. Поиск по изображениям, новые инструменты, службы, расходы и реализация этим ответом не согласованы.
+Search shows existing eligible cards; it does not invent goods or properties absent from them. The examples illustrate the required behavior and are not the only supported queries. Exact similarity thresholds, ordering within approximate results, word normalization, search technology, and the quality-verification method have not yet been selected. Image search, new tools, services, expenses, and implementation are not agreed by this response.
 
-CAT-SEARCH-TYPO-01 сохраняет отдельное действие выбора исправленного запроса. Немедленные приблизительные результаты не являются таким выбором и не должны ждать его. По CAT-SEARCH-TYPO-TRIGGER-01 отсутствие точных совпадений позволяет показать подходящую подсказку и тогда, когда приблизительные результаты уже есть.
+CAT-SEARCH-TYPO-01 preserves the separate action of selecting a corrected query. Immediate approximate results are not that selection and must not wait for it. Under CAT-SEARCH-TYPO-TRIGGER-01, the absence of exact matches permits showing a suitable suggestion even when approximate results already exist.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- отдельно проверяются допустимые карточки, найденные по части слов, с небольшой опечаткой и по близкому смыслу без буквального совпадения;
-- такие карточки видны без нажатия на подсказку исправления, а введённый запрос сохраняется;
-- при наличии точных и приблизительных совпадений точные стоят выше, а приблизительные имеют явную пометку;
-- совпадение несколькими способами не дублирует карточку;
-- ни один способ поиска не обходит выбранные фильтры, наличие или ограничения видимости и не раскрывает черновики и закрытые поля;
-- исправленный запрос по отдельной подсказке применяется только после явного выбора покупателя.
+- eligible cards found by part of the words, with a small typo, and by similar meaning without a literal match are checked separately;
+- such cards are visible without clicking the correction suggestion, and the entered query is preserved;
+- when exact and approximate matches exist, exact matches appear first and approximate matches have a clear label;
+- matching in several ways does not duplicate the card;
+- no search method bypasses selected filters, availability, or visibility restrictions or exposes drafts and private fields;
+- a corrected query from a separate suggestion is applied only after the buyer explicitly selects it.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-TYPO-TRIGGER-01 — подсказка при отсутствии точных совпадений
+### CAT-SEARCH-TYPO-TRIGGER-01 — Suggestion When Exact Matches Are Absent
 
-**Статус:** утверждено Владиславом 2026-09-14; для условия показа подсказки исправления выбран вариант «1» — предлагать подходящее исправление при отсутствии точных совпадений, даже если приблизительные результаты уже есть.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for the correction-suggestion display condition — offer a suitable correction when exact matches are absent, even if approximate results already exist.
 
-- Если для исходного запроса нет точных совпадений среди допустимых результатов и есть подходящее исправление, отдельная подсказка показывается рядом с результатами. Полностью пустая выдача больше не является обязательным условием.
-- Наличие приблизительных результатов не скрывает подсказку. Например, для «рюкзк» уже могут быть видны похожие рюкзаки и одновременно предложение «Возможно, вы искали “рюкзак”?».
-- При полностью пустой выдаче подходящая подсказка также показывается. Если подходящего исправления нет, оно не придумывается; уже найденные приблизительные товары при этом не убираются.
-- Отсутствие точных совпадений относится к текущему запросу с текущими фильтрами и ограничениями показа, а не только к видимому фрагменту списка. При наличии допустимых точных совпадений это условие показа подсказки не выполнено.
-- Похожие товары показываются сразу и не ждут нажатия. Исправленная строка применяется только после явного выбора покупателем; фильтры и остальные ограничения сохраняются.
+- If there are no exact matches for the original query among eligible results and a suitable correction exists, a separate suggestion is shown next to the results. A completely empty result is no longer required.
+- The presence of approximate results does not hide the suggestion. For example, similar backpacks may already be visible for “backpak” while the “Did you mean ‘backpack’?” suggestion is shown at the same time.
+- A suitable suggestion is also shown for a completely empty result. If there is no suitable correction, none is invented; approximate goods already found are not removed.
+- The absence of exact matches concerns the current query with the current filters and display restrictions, not only the visible portion of the list. If eligible exact matches exist, this suggestion-display condition is not met.
+- Similar goods are shown immediately and do not wait for a click. The corrected string is applied only after the buyer explicitly selects it; filters and the remaining restrictions are preserved.
 
-Решение расширяет условие CAT-SEARCH-TYPO-01, но не отменяет запрет молчаливой подмены запроса, не разрешает раскрывать непубличные данные и не выбирает алгоритм формирования исправлений. Способы приблизительного поиска по CAT-SEARCH-APPROX-01 сохраняются.
+The decision expands the condition in CAT-SEARCH-TYPO-01 but does not cancel the ban on silently replacing the query, permit exposing non-public data, or select an algorithm for forming corrections. The approximate-search methods under CAT-SEARCH-APPROX-01 remain in force.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- если точных совпадений нет, приблизительные есть и подходящее исправление найдено, одновременно видны приблизительные товары и отдельная подсказка;
-- если ни точных, ни приблизительных товаров нет, подходящая подсказка по-прежнему показывается;
-- если подходящего исправления нет, подсказка не выдумывается и наличие приблизительных результатов не маскируется пустой выдачей;
-- наличие допустимого точного совпадения означает, что это условие показа подсказки не выполнено;
-- подсказка не применяется автоматически, а найденные товары не ждут её выбора;
-- выбор исправления выполняет новый поиск с сохранением фильтров, прав и условий видимости и наличия.
+- if exact matches are absent, approximate matches exist, and a suitable correction is found, the approximate goods and a separate suggestion are visible at the same time;
+- if neither exact nor approximate goods exist, a suitable suggestion is still shown;
+- if no suitable correction exists, no suggestion is invented, and the presence of approximate results is not masked by an empty result;
+- the presence of an eligible exact match means that this suggestion-display condition is not met;
+- the suggestion is not applied automatically, and the goods found do not wait for its selection;
+- selecting the correction performs a new search while preserving filters, permissions, and visibility and availability conditions.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-SCROLL-01 — автоматическая подгрузка при прокрутке
+### CAT-SEARCH-SCROLL-01 — Automatic Loading on Scroll
 
-**Статус:** утверждено Владиславом 2026-09-14; вместо предложенных страниц или кнопки задан свой способ: «автоматически добавляются позиции при прокручивании вниз».
+**Status:** approved by Vladislav on 2026-09-14; instead of the proposed pages or button, a specific method was set: “items are added automatically when scrolling down.”
 
-Для длинного списка результатов поиска во второй фазе:
+For a long list of search results in Phase 2:
 
-- Когда покупатель прокручивает вниз к концу уже показанной части списка, следующая порция автоматически подгружается и добавляется внизу.
-- Уже показанные результаты остаются в списке; новая порция не заменяет их другой страницей. В обычном просмотре не требуется нажимать «Далее» или «Показать ещё».
-- Сохраняются запрос, выбранные фильтры и общий порядок результатов. Точные совпадения предшествуют приблизительным во всём списке, а не перемешиваются заново в каждой порции.
-- Повторное срабатывание подгрузки не должно дублировать карточки. Сохраняется правило одного результата на карточку по CAT-SEARCH-GROUP-01.
-- Когда доступные результаты закончились, дальнейшая подгрузка прекращается; уже показанный список остаётся доступным.
-- Ошибка подгрузки не стирает уже показанные результаты и не выдаётся за подтверждённый конец списка.
+- When the buyer scrolls down to the end of the portion of the list already shown, the next batch is loaded automatically and added at the bottom.
+- Results already shown remain in the list; the new batch does not replace them with another page. Normal browsing does not require clicking “Next” or “Show more.”
+- The query, selected filters, and overall result order are preserved. Exact matches precede approximate ones throughout the list rather than being reordered within each batch.
+- Repeated loading must not duplicate cards. The one-result-per-card rule under CAT-SEARCH-GROUP-01 remains in force.
+- When available results run out, further loading stops; the list already shown remains available.
+- A loading error does not erase results already shown or present an unconfirmed end of the list as confirmed.
 
-Подгружаемые результаты по-прежнему подчиняются правилам наличия, прав и видимости. Решение не обещает неизменность состава списка при последующих изменениях цен, наличия или публикации товаров. Размер порции, технический механизм подгрузки и порядок повтора после ошибки ещё не определены. Возврат к списку после открытия карточки регулирует CAT-SEARCH-RETURN-01. Постоянное хранение поисковой сессии или синхронизация между устройствами этим ответом не добавляются.
+Loaded results remain subject to availability, permission, and visibility rules. The decision does not promise that the list composition will remain unchanged after subsequent changes to product prices, availability, or publication. The batch size, technical loading mechanism, and retry process after an error have not yet been defined. CAT-SEARCH-RETURN-01 governs returning to the list after opening a card. Persistent search-session storage or synchronization between devices is not added by this response.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- прокрутка к концу загруженной части вызывает получение следующей порции без нажатия кнопки;
-- полученные карточки добавляются внизу, сохраняя прежнюю часть списка;
-- подгрузка сохраняет запрос, фильтры и согласованный порядок точных и приблизительных результатов;
-- повторное срабатывание не добавляет одну карточку повторно;
-- после подтверждённого окончания результатов новые подгрузки не продолжаются бесконечно;
-- ошибка получения очередной порции не очищает список и не изображается как отсутствие дальнейших результатов.
+- scrolling to the end of the loaded portion triggers retrieval of the next batch without clicking a button;
+- retrieved cards are added at the bottom while preserving the previous part of the list;
+- loading preserves the query, filters, and agreed order of exact and approximate results;
+- repeated triggering does not add the same card again;
+- after the end of the results is confirmed, new loads do not continue indefinitely;
+- an error retrieving the next batch does not clear the list or present the absence of further results as confirmed.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-RETURN-01 — возврат к прежнему месту результатов
+### CAT-SEARCH-RETURN-01 — Returning to the Previous Place in the Results
 
-**Статус:** утверждено Владиславом 2026-09-14; для возврата из карточки товара выбран вариант «1» — восстанавливать просмотренную часть списка и место прокрутки.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for returning from a product card — restore the viewed portion of the list and the scroll position.
 
-Решение относится к текущему просмотру в той же вкладке браузера: покупатель пролистал результаты, открыл из них карточку товара и нажал «Назад».
+The decision concerns the current view in the same browser tab: the buyer browsed through the results, opened a product card from them, and clicked “Back.”
 
-- Восстанавливаются поисковый запрос, выбранные фильтры, просмотренная часть списка и положение прокрутки. При неизменившихся результатах покупатель продолжает с прежнего места, а не начинает прокрутку заново.
-- Если прежняя карточка больше недоступна или состав результатов изменился, возврат выполняется как можно ближе к прежнему месту среди актуально допустимых результатов.
-- Сохранение позиции не возвращает скрытую карточку и не закрепляет прежние цены, наличие или право показа. Состав восстановленного списка не обязан в точности совпадать со старым, если данные изменились.
-- После возврата сохраняется автоматическая подгрузка следующих результатов по CAT-SEARCH-SCROLL-01, без повторного добавления уже восстановленных карточек.
+- The search query, selected filters, viewed portion of the list, and scroll position are restored. If the results have not changed, the buyer continues from the previous place rather than starting to scroll again.
+- If the previous card is no longer available or the result composition has changed, the return is made as close as possible to the previous place among currently eligible results.
+- Preserving the position does not return a hidden card or lock in its former prices, availability, or display permission. If the data changed, the restored list does not have to exactly match the old one.
+- After returning, automatic loading of subsequent results under CAT-SEARCH-SCROLL-01 remains in force without adding already restored cards again.
 
-Решение не добавляет постоянную историю поиска, восстановление после перезапуска браузера, перенос состояния между вкладками или устройствами. Технический способ сохранения и восстановления состояния ещё не выбран.
+The decision does not add persistent search history, restoration after a browser restart, or state transfer between tabs or devices. The technical method for saving and restoring state has not yet been selected.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при неизменившемся наборе результатов возврат из карточки в той же вкладке восстанавливает просмотренную часть списка и прежнюю позицию;
-- поисковый запрос и фильтры не сбрасываются;
-- при исчезновении прежней карточки возвращается ближайшее доступное место, а не скрытая карточка или безусловно старый снимок данных;
-- восстановление позиции не фиксирует прежние цены и остатки и не обходит действующие ограничения видимости;
-- дальнейшая прокрутка продолжает подгрузку без дублирования восстановленных результатов.
+- when the result set has not changed, returning from a card in the same tab restores the viewed portion of the list and the former position;
+- the search query and filters are not reset;
+- when the previous card disappears, the nearest available place is restored rather than a hidden card or an unconditionally old data snapshot;
+- restoring the position does not lock in former prices and stock or bypass current visibility restrictions;
+- further scrolling continues loading without duplicating restored results.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-FILTER-APPLY-01 — автоматическое применение фильтров
+### CAT-SEARCH-FILTER-APPLY-01 — Automatic Filter Application
 
-**Статус:** утверждено Владиславом 2026-09-14; для применения фильтров выбран вариант «1» — автоматически после изменения, без отдельной кнопки «Показать».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for applying filters — automatically after a change, without a separate “Show” button.
 
-- После изменения фильтра, например выбора цвета или размера, результаты обновляются автоматически. Дополнительное подтверждение кнопкой не требуется.
-- Применение изменённого набора фильтров начинает обновлённый список с начала. Набранный в строке текст не сбрасывается; если он ещё не применён, изменение фильтра одновременно применяет его по CAT-SEARCH-FILTER-TEXT-01.
-- Новая выдача и её дальнейшая автоматическая подгрузка относятся к текущему набору фильтров; ранее загруженные части другого набора не примешиваются к ней.
-- Если покупатель изменил фильтры ещё раз, запоздалый ответ для предыдущего набора не должен подменять актуальную выдачу. Ошибка обновления не выдаётся за успешное применение новых условий.
-- Приблизительные совпадения, опечатки и близкий смысл не отменяют выбранные фильтры. Сохраняются ограничения наличия и видимости и правило подходящего варианта по CAT-SEARCH-GROUP-01.
+- After a filter is changed, for example by selecting a color or size, the results update automatically. Additional confirmation with a button is not required.
+- Applying the changed filter set starts the updated list from the beginning. Text entered in the field is not reset; if it has not yet been applied, changing the filter applies it at the same time under CAT-SEARCH-FILTER-TEXT-01.
+- The new result and its subsequent automatic loading concern the current filter set; previously loaded portions of another set are not mixed into it.
+- If the buyer changes the filters again, a late response for the previous set must not replace the current result. An update error is not presented as successful application of the new conditions.
+- Approximate matches, typos, and similar meaning do not cancel selected filters. Availability and visibility restrictions and the matching-variant rule under CAT-SEARCH-GROUP-01 remain in force.
 
-CAT-SEARCH-RETURN-01 продолжает восстанавливать место при возврате из карточки к прежнему поиску; он не сохраняет прежнюю позицию после применения другого набора фильтров. Этот ответ не выбирает поведение при наборе текста в поисковой строке, конкретные задержки обновления, число сетевых запросов или технический механизм их обработки.
+CAT-SEARCH-RETURN-01 continues to restore the position when returning from a card to the previous search; it does not preserve the previous position after another filter set is applied. This response does not select behavior while text is being entered in the search field, specific update delays, the number of network requests, or their technical handling mechanism.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- изменение фильтра запускает обновление без нажатия отдельной кнопки подтверждения;
-- после применения изменённых фильтров виден начальный участок обновлённого списка, а поисковый запрос не сбрасывается;
-- результаты и следующая подгрузка соответствуют текущим фильтрам, а не прежнему набору;
-- запоздалые ответы прежнего набора не заменяют новую выдачу и не добавляются к ней;
-- ошибка обновления не маскируется успешно применёнными фильтрами;
-- приблизительный поиск не подставляет товары, не соответствующие выбранным фильтрам, наличию или ограничениям видимости.
+- changing a filter starts an update without clicking a separate confirmation button;
+- after the changed filters are applied, the initial portion of the updated list is visible and the search query is not reset;
+- the results and next load match the current filters, not the previous set;
+- late responses for the previous set do not replace or join the new result;
+- an update error is not masked by filters that were supposedly applied successfully;
+- approximate search does not substitute goods that do not match the selected filters, availability, or visibility restrictions.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-FILTER-MULTI-01 — несколько значений одного фильтра
+### CAT-SEARCH-FILTER-MULTI-01 — Multiple Values for One Filter
 
-**Статус:** утверждено Владиславом 2026-09-14; для фильтров с готовым перечнем значений выбран вариант «1» — разрешить несколько значений как альтернативы.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for filters with a predefined list of values — allow multiple values as alternatives.
 
-- В одном таком фильтре покупатель может выбрать несколько значений. Выбор красного и синего означает «красный ИЛИ синий», а не обязательное сочетание двух цветов в одном варианте.
-- Выбор дополнительного значения не заменяет ранее отмеченное значение того же фильтра.
-- Разные фильтры продолжают действовать одновременно и должны подходить одному допустимому варианту по CAT-SEARCH-GROUP-01. При красном или синем цвете и размере M подходит красный M либо синий M.
-- Нужный цвет у одного варианта и нужный размер у другого не заменяют один вариант, удовлетворяющий всему выбранному набору условий.
-- Изменения применяются автоматически по CAT-SEARCH-FILTER-APPLY-01. Приблизительный поиск не отменяет выбранные условия, наличие или ограничения видимости.
-- Несколько подходящих значений или вариантов не дублируют карточку в результатах. Показываемые цена и наличие по-прежнему определяются только по подходящим вариантам и предложениям.
+- In one such filter, the buyer can select multiple values. Selecting red and blue means “red OR blue,” not a required combination of two colors in one variant.
+- Selecting an additional value does not replace a previously selected value in the same filter.
+- Different filters continue to operate simultaneously and must match one eligible variant under CAT-SEARCH-GROUP-01. With red or blue and size M, red M or blue M is suitable.
+- The required color on one variant and the required size on another do not replace one variant satisfying the entire selected set of conditions.
+- Changes are applied automatically under CAT-SEARCH-FILTER-APPLY-01. Approximate search does not cancel the selected conditions, availability, or visibility restrictions.
+- Multiple matching values or variants do not duplicate the card in the results. The displayed price and availability are still determined only from matching variants and offers.
 
-Решение касается фильтров с готовыми значениями, а не числовых диапазонов и не устройства характеристик самого товара. Оно не разрешает произвольно менять справочники категорий или объединять разные варианты товара.
+The decision concerns filters with predefined values, not numeric ranges or the structure of the product's attributes. It does not permit arbitrarily changing category directories or combining different product variants.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- после выбора красного и синего оба значения остаются выбранными, а подходить может вариант любого из этих цветов;
-- при добавлении размера M остаются допустимы красный M и синий M, но не вариант другого размера;
-- совпадения разных фильтров у разных вариантов не дают ложного подходящего результата;
-- карточка с несколькими подходящими вариантами показывается один раз, с ценой и наличием только подходящих предложений;
-- изменения выбора применяются автоматически и не отменяют ограничения наличия и видимости.
+- after red and blue are selected, both values remain selected, and a variant of either color may match;
+- after size M is added, red M and blue M remain eligible, but a variant of another size is not;
+- matches from different filters on different variants do not produce a false matching result;
+- a card with several matching variants is shown once, with the price and availability of only matching offers;
+- selection changes are applied automatically and do not cancel availability and visibility restrictions.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-FILTER-AVAILABILITY-01 — значения фильтра без подходящих товаров
+### CAT-SEARCH-FILTER-AVAILABILITY-01 — Filter Values with No Matching Goods
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — оставлять ещё не выбранное значение видимым, но не давать выбрать его, если под текущие условия нет подходящих доступных товаров.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — keep an unselected value visible but do not allow selecting it if no suitable available goods meet the current conditions.
 
-- Такое значение не скрывается: оно показывается серым и с подписью «Нет подходящих товаров». Недоступность не обозначается только цветом оформления.
-- Например, если выбран размер M, подходящих красных вариантов нет и красный ещё не отмечен, значение «Красный» видно, но недоступно для нового выбора.
-- Уже отмеченные значения остаются видимыми и доступными для снятия, даже если для них больше нет результатов. Система самостоятельно не прячет и не отменяет выбор.
-- При оценке значения учитываются текущий поисковый запрос, остальные фильтры, наличие и ограничения видимости. Все выбранные характеристики должны подходить одному варианту по CAT-SEARCH-GROUP-01.
-- Альтернативный цвет не считается неподходящим только потому, что сейчас отмечен другой цвет. Проверяется пригодность самого проверяемого значения с остальными фильтрами, без требования совпасть с уже выбранной альтернативой того же фильтра: внутри одного фильтра действует «ИЛИ» по CAT-SEARCH-FILTER-MULTI-01.
-- Оценка не ограничивается уже подгруженной частью списка. Подходящий вариант в ещё не просмотренной части результатов также делает значение доступным для выбора.
-- Используются только разрешённые к публичному показу значения и данные. Черновики и скрытые товары не должны раскрывать себя через появление или доступность значений фильтра.
+- Such a value is not hidden: it is shown in gray with the “No matching goods” label. Unavailability is not indicated only by presentation color.
+- For example, if size M is selected, there are no suitable red variants, and red has not yet been selected, the “Red” value is visible but unavailable for a new selection.
+- Already selected values remain visible and available for deselection even if they no longer have results. The system does not hide or cancel the selection on its own.
+- The current search query, other filters, availability, and visibility restrictions are considered when evaluating a value. All selected attributes must match one variant under CAT-SEARCH-GROUP-01.
+- An alternative color is not considered unsuitable merely because another color is currently selected. The suitability of the value being checked is evaluated with the other filters, without requiring it to match an already selected alternative in the same filter: within one filter, “OR” applies under CAT-SEARCH-FILTER-MULTI-01.
+- Evaluation is not limited to the portion of the list already loaded. A matching variant in a portion of the results not yet viewed also makes the value available for selection.
+- Only values and data permitted for public display are used. Drafts and hidden goods must not expose themselves through the appearance or availability of filter values.
 
-Это правило отображения фильтра, а не изменение справочника характеристик. Отсутствие подходящих товаров под запрос и фильтры не означает, что у продавцов обязательно нулевой остаток. Ошибка получения данных не доказывает отсутствие подходящих товаров и не выдаётся за это состояние.
+This is a filter-display rule, not a change to the attribute directory. The absence of suitable goods for the query and filters does not mean that sellers necessarily have zero stock. A data-retrieval error does not prove that suitable goods are absent and is not presented as that state.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- ещё не выбранное значение без подходящих доступных товаров остаётся видимым, с подписью «Нет подходящих товаров», но выбрать его нельзя;
-- уже выбранное значение без результатов остаётся видимым и позволяет снять выбор; система не отменяет его самостоятельно;
-- подходящий альтернативный цвет можно выбрать, несмотря на ранее отмеченный другой цвет;
-- наличие подходящего варианта только в ещё не подгруженной части результатов не делает значение недоступным;
-- совпадения характеристик у разных вариантов, черновики и скрытые товары не создают ложную доступность значения;
-- ошибка получения данных не маскируется сообщением об отсутствии подходящих товаров.
+- an unselected value with no suitable available goods remains visible with the “No matching goods” label, but cannot be selected;
+- an already selected value with no results remains visible and can be deselected; the system does not cancel it on its own;
+- a suitable alternative color can be selected despite another color having been selected earlier;
+- a suitable variant existing only in a portion of the results not yet loaded does not make the value unavailable;
+- attribute matches on different variants, drafts, and hidden goods do not create false value availability;
+- a data-retrieval error is not masked by a “No matching goods” message.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-TEXT-APPLY-01 — запуск текстового поиска по подтверждению
+### CAT-SEARCH-TEXT-APPLY-01 — Starting Text Search upon Confirmation
 
-**Статус:** утверждено Владиславом 2026-09-14; для поиска при наборе фразы выбран вариант «1» — после Enter или кнопки «Найти».
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected for searching while entering a phrase — after Enter or the “Find” button.
 
-- Покупатель вводит фразу и запускает текстовый поиск нажатием Enter или кнопки «Найти». Сам набор текста и паузы в наборе не запускают поиск по новому тексту и не перестраивают по нему прежний список.
-- Применение нового поискового запроса начинает обновлённый список сверху. Выбранные фильтры сохраняются.
-- Изменение фильтров по-прежнему применяется автоматически по CAT-SEARCH-FILTER-APPLY-01 и одновременно подтверждает набранный текст по CAT-SEARCH-FILTER-TEXT-01. Это дополнительный способ применить текст наряду с Enter или кнопкой «Найти», а не поиск от самого набора.
-- Явный выбор подсказки исправления остаётся согласованным действием, выполняющим новый поиск по CAT-SEARCH-TYPO-TRIGGER-01. Дополнительное нажатие «Найти» после выбора исправления этим решением не вводится, а автоматическая подмена текста по-прежнему запрещена.
-- Дальнейшая подгрузка относится к применённому запросу и его фильтрам. Ответы и порции прежнего запроса не подменяют и не дополняют выдачу уже применённого нового запроса.
-- Сохраняются порядок точных и приблизительных совпадений, проверка подходящего варианта, наличие и ограничения видимости. Отсутствие поиска при наборе не означает закрепления старых цен, наличия или права показа товара.
+- The buyer enters a phrase and starts text search by pressing Enter or the “Find” button. Merely typing and pausing while typing do not start a search for the new text or rebuild the previous list around it.
+- Applying a new search query starts the updated list at the top. Selected filters are preserved.
+- Filter changes continue to be applied automatically under CAT-SEARCH-FILTER-APPLY-01 and simultaneously confirm the entered text under CAT-SEARCH-FILTER-TEXT-01. This is an additional way to apply text alongside Enter or the “Find” button, not a search triggered by typing itself.
+- Explicitly selecting a correction suggestion remains an agreed action that performs a new search under CAT-SEARCH-TYPO-TRIGGER-01. This decision does not introduce an additional “Find” click after selecting a correction, and automatic text substitution remains prohibited.
+- Further loading concerns the applied query and its filters. Responses and batches for the previous query do not replace or supplement the results for the new query already applied.
+- The order of exact and approximate matches, matching-variant checks, availability, and visibility restrictions remain in force. The absence of search while typing does not mean that old prices, availability, or product-display permission are locked in.
 
-Ошибка поиска не выдаётся за пустой результат или успешное применение нового запроса. Решение определяет действие покупателя, а не технологию поиска или механизм сетевых запросов.
+A search error is not presented as an empty result or successful application of the new query. The decision defines the buyer action, not the search technology or network-request mechanism.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- ввод и пауза без подтверждения не запускают поиск по новому тексту;
-- и Enter, и кнопка «Найти» позволяют применить введённую фразу;
-- применение нового запроса сохраняет фильтры и показывает начало обновлённого списка;
-- явный выбор подсказки исправления по-прежнему выполняет новый поиск, без молчаливой замены текста;
-- ответы и подгрузки прежнего запроса не смешиваются с новым;
-- ошибка не маскируется пустой выдачей или успешным применением запроса, а ограничения наличия и видимости не отменяются.
+- entering text and pausing without confirmation do not start a search for the new text;
+- both Enter and the “Find” button can apply the entered phrase;
+- applying a new query preserves the filters and shows the beginning of the updated list;
+- explicitly selecting a correction suggestion still performs a new search without silently replacing the text;
+- responses and loads for the previous query are not mixed with the new one;
+- an error is not masked by an empty result or successful query application, and availability and visibility restrictions are not canceled.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-FILTER-TEXT-01 — изменение фильтра подтверждает набранный текст
+### CAT-SEARCH-FILTER-TEXT-01 — Changing a Filter Confirms Entered Text
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «2» — при изменении фильтра применять одновременно фильтры и набранный в строке текст.
+**Status:** approved by Vladislav on 2026-09-14; option “2” was selected — when a filter changes, apply the filters and the text entered in the field at the same time.
 
-- Если в поисковой строке есть ещё не подтверждённый текст, изменение фильтра также подтверждает этот текст. Дополнительное нажатие Enter или кнопки «Найти» не требуется.
-- Например, после поиска «футболка» покупатель набрал «толстовка» без подтверждения, затем выбрал доступный синий цвет. Выполняется поиск «толстовка» с синим цветом, а не поиск «футболка» с новым цветом.
-- Набранный текст не теряется; используется изменённый набор фильтров без сброса остальных выбранных условий. Обновлённый список начинается сверху.
-- Сам набор текста и паузы без изменения фильтра или другого согласованного действия подтверждения по-прежнему не запускают новый поиск. Enter, кнопка «Найти» и явный выбор предложенного исправления сохраняют свои согласованные действия.
-- Завершённая выдача, доступность значений фильтра и дальнейшая подгрузка относятся к совместно применённым тексту и фильтрам. Результат по прежнему тексту с новым фильтром не выдаётся за результат этого действия; запоздалые ответы прежних условий не подмешиваются к новой выдаче.
-- Сохраняются правила нескольких значений, одного подходящего варианта, наличия и видимости. Даже если новое сочетание не даёт результатов, система не снимает фильтры и не возвращает прежний запрос самостоятельно.
+- If the search field contains text that has not yet been confirmed, changing a filter also confirms that text. An additional press of Enter or the “Find” button is not required.
+- For example, after searching for “T-shirt,” the buyer types “sweatshirt” without confirming it and then selects the available blue color. The system searches for “sweatshirt” with blue, not for “T-shirt” with the new color.
+- The entered text is not lost; the changed filter set is used without resetting the other selected conditions. The updated list starts at the top.
+- Merely typing and pausing without a filter change or another agreed confirmation action still does not start a new search. Enter, the “Find” button, and explicit selection of a suggested correction retain their agreed actions.
+- The completed result, availability of filter values, and further loading concern the jointly applied text and filters. A result for the previous text with the new filter is not presented as the result of this action; late responses for the previous conditions are not mixed into the new result.
+- The rules for multiple values, one matching variant, availability, and visibility remain in force. Even if the new combination produces no results, the system does not remove filters or restore the previous query on its own.
 
-Это уточнение добавляет изменение фильтра как действие подтверждения текста к CAT-SEARCH-TEXT-APPLY-01, но не включает автоматический поиск при печати. Ошибка совместного обновления не выдаётся за успешное применение новых условий или пустую выдачу.
+This clarification adds changing a filter as a text-confirmation action to CAT-SEARCH-TEXT-APPLY-01, but does not enable automatic search while typing. An error in the joint update is not presented as successful application of the new conditions or an empty result.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- изменение фильтра после ввода неподтверждённой фразы запускает поиск по этой фразе и изменённым фильтрам без дополнительного Enter или «Найти»;
-- ввод и пауза без действия подтверждения по-прежнему не запускают новый поиск;
-- набранный текст и остальные выбранные фильтры сохраняются, а список начинается сверху;
-- выдача, доступность значений и подгрузка соответствуют новой паре «текст и фильтры», без смешения с прежними условиями;
-- отсутствие подходящих товаров или ошибка обновления не приводят к самостоятельной замене запроса, снятию фильтров или обходу ограничений показа.
+- changing a filter after entering an unconfirmed phrase starts a search for that phrase and the changed filters without an additional Enter or “Find”;
+- typing and pausing without a confirmation action still do not start a new search;
+- the entered text and the other selected filters are preserved, and the list starts at the top;
+- the result, value availability, and loading correspond to the new “text and filters” pair without mixing in the previous conditions;
+- the absence of suitable goods or an update error does not cause the query to be replaced, filters to be removed, or display restrictions to be bypassed automatically.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-LINK-01 — передача условий поиска по ссылке
+### CAT-SEARCH-LINK-01 — Passing Search Conditions through a Link
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — сохранять применённый поисковый запрос и фильтры в копируемой ссылке.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — preserve the applied search query and filters in a copyable link.
 
-- Покупатель может скопировать ссылку на каталог или поиск и передать её другому человеку. Получатель открывает поиск с тем же применённым запросом и выбранными фильтрами, без повторного ручного ввода этих условий.
-- В ссылку попадают только уже применённые условия. Ещё не подтверждённый текст в поисковой строке не заменяет применённый запрос в ссылке. Изменение фильтра, подтвердившее новый текст по CAT-SEARCH-FILTER-TEXT-01, уже создаёт новое применённое сочетание условий.
-- При первом открытии ссылки получателем список начинается сверху. Просмотренная часть списка и место прокрутки отправителя не переносятся; возврат в той же вкладке по CAT-SEARCH-RETURN-01 остаётся отдельным сценарием.
-- Ссылка передаёт условия поиска, а не фиксированный снимок результатов. Состав товаров, цены и наличие проверяются на момент открытия; действует текущая доступность для получателя.
-- Права отправителя не передаются. Ссылка не предоставляет доступ к закрытым товарам, черновикам или служебным данным и не содержит данных сеанса или входа в аккаунт.
-- Если корректные условия больше не дают результатов, запрос и фильтры не снимаются самостоятельно. Применяется честная пустая выдача и ранее согласованные правила подсказок; выбранные значения фильтров остаются доступными для снятия по CAT-SEARCH-FILTER-AVAILABILITY-01.
+- The buyer can copy a link to the catalog or search and send it to another person. The recipient opens the search with the same applied query and selected filters, without manually entering these conditions again.
+- Only already applied conditions are included in the link. Text not yet confirmed in the search field does not replace the applied query in the link. A filter change that confirms new text under CAT-SEARCH-FILTER-TEXT-01 already creates a new applied combination of conditions.
+- When the recipient first opens the link, the list starts at the top. The sender's viewed portion of the list and scroll position are not transferred; returning in the same tab under CAT-SEARCH-RETURN-01 remains a separate scenario.
+- The link passes search conditions, not a fixed snapshot of results. The product set, prices, and availability are checked when it is opened; the recipient's current access applies.
+- The sender's permissions are not transferred. The link does not provide access to private goods, drafts, or service data and contains no session or account-login data.
+- If valid conditions no longer produce results, the query and filters are not removed automatically. An honest empty result and the previously agreed suggestion rules apply; selected filter values remain available for removal under CAT-SEARCH-FILTER-AVAILABILITY-01.
 
-Решение не определяет конкретный формат ссылки и не вводит сохранённые подборки в аккаунте или отдельный сервис ссылок. Корректный фильтр без подходящих товаров не равен повреждённому или неподдерживаемому параметру ссылки; обработку последнего случая определяет CAT-SEARCH-LINK-VALIDATION-01.
+The decision does not define a specific link format or introduce saved collections in an account or a separate link service. A valid filter with no suitable goods is not the same as a damaged or unsupported link parameter; CAT-SEARCH-LINK-VALIDATION-01 defines handling of the latter case.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- получатель корректной ссылки видит тот же применённый запрос и выбранные фильтры;
-- изменение текста без подтверждения не меняет передаваемый запрос, а применение текста вместе с изменением фильтра учитывается в ссылке;
-- при первом открытии получателем виден начальный участок списка, а не место прокрутки отправителя;
-- изменение цены, наличия или видимости после копирования ссылки учитывается при её открытии, без восстановления старого снимка;
-- ссылка не передаёт права отправителя и не раскрывает непубличные данные;
-- отсутствие результатов для корректных условий не приводит к автоматическому сбросу запроса или фильтров.
+- the recipient of a valid link sees the same applied query and selected filters;
+- changing text without confirmation does not change the query being passed, while applying text together with a filter change is reflected in the link;
+- when the recipient first opens it, the beginning of the list is visible rather than the sender's scroll position;
+- changes to price, availability, or visibility after the link is copied are considered when it is opened, without restoring an old snapshot;
+- the link does not pass the sender's permissions or expose non-public data;
+- the absence of results for valid conditions does not automatically reset the query or filters.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-LINK-VALIDATION-01 — ошибочное условие ссылки блокирует поиск
+### CAT-SEARCH-LINK-VALIDATION-01 — An Invalid Link Condition Blocks Search
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — не запускать поиск, пока покупатель не исправит или не уберёт ошибочное условие ссылки.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — do not start search until the buyer corrects or removes the invalid link condition.
 
-- Если ссылка содержит ошибочное или больше не поддерживаемое условие фильтра, поиск не запускается. Покупателю понятно сообщается, какое условие требует исправления, и предлагается исправить или убрать его самостоятельно.
-- Поисковый текст и остальные распознанные условия сохраняются. Система не удаляет проблемный фильтр автоматически и не выполняет поиск по сокращённому набору условий вместо переданного.
-- Нераспознанное значение не заменяется догадкой или похожим значением. Объяснение ошибки не раскрывает закрытые данные и не предоставляет дополнительных прав.
-- После явного исправления или снятия проблемного условия поиск допускается при корректном оставшемся наборе. Действуют согласованные правила применения текста и фильтров, включая CAT-SEARCH-FILTER-TEXT-01; остальные ограничения не снимаются самостоятельно.
-- Корректный фильтр, которому сейчас не соответствует ни один доступный товар, не считается ошибочным. Он сохраняется, а поиск может честно вернуть пустой результат.
-- Сбой получения данных не доказывает ошибочность фильтра и не выдаётся за неё. Права получателя, ограничения наличия и видимости сохраняются.
+- If the link contains an invalid or no-longer-supported filter condition, search does not start. The buyer is clearly told which condition requires correction and is offered the option to correct or remove it themselves.
+- The search text and the other recognized conditions are preserved. The system does not automatically delete the problem filter or search with a reduced set of conditions instead of those passed in the link.
+- An unrecognized value is not replaced with a guess or a similar value. The error explanation does not expose private data or provide additional permissions.
+- After the problem condition is explicitly corrected or removed, search is allowed with the valid remaining set. The agreed rules for applying text and filters, including CAT-SEARCH-FILTER-TEXT-01, apply; the other restrictions are not removed automatically.
+- A valid filter that currently matches no available goods is not considered invalid. It is preserved, and search may honestly return an empty result.
+- A data-retrieval failure does not prove that a filter is invalid and is not presented as such. The recipient's permissions and availability and visibility restrictions remain in force.
 
-Решение относится к проверке условий ссылки, не разрешает удаление категорий или характеристик и не определяет порядок изменения справочника или формат параметров ссылки.
+The decision concerns checking link conditions; it does not authorize deleting categories or attributes and does not define how the directory is changed or the format of link parameters.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- ошибочное или неподдерживаемое условие не запускает поиск и сопровождается понятным объяснением с возможностью исправить или убрать его;
-- текст и остальные распознанные условия не теряются, а проблемное условие не снимается и не заменяется автоматически;
-- явное исправление или снятие проблемы позволяет выполнить поиск по корректным оставшимся условиям без обхода ограничений;
-- корректный фильтр с пустым результатом не вызывает ошибку распознавания и не удаляется;
-- сбой получения данных не объявляется ошибочным условием ссылки, а сообщения не раскрывают непубличные сведения.
+- an invalid or unsupported condition does not start search and is accompanied by a clear explanation with the option to correct or remove it;
+- the text and other recognized conditions are not lost, and the problem condition is not removed or replaced automatically;
+- explicitly correcting or removing the problem allows search with the valid remaining conditions without bypassing restrictions;
+- a valid filter with an empty result does not cause a recognition error and is not deleted;
+- a data-retrieval failure is not declared an invalid link condition, and messages do not expose non-public information.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-PHOTOS-01 — фотографии переключаются вместе с вариантом
+### CAT-VARIANT-PHOTOS-01 — Photos Switch with the Variant
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — при выборе варианта показывать связанные с ним фотографии.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — show the photos associated with a variant when it is selected.
 
-Решение относится к собственной карточке физического товара продавца, не присоединённой к общей карточке, и к случаю, когда подходящие фотографии вариантов уже опубликованы и разрешены к показу.
+The decision concerns the seller's own physical-goods card that is not attached to a common card, when suitable variant photos have already been published and permitted for display.
 
-- Продавец указывает, какие фотографии относятся к каждому варианту. Покупатель при выборе варианта видит связанные с ним снимки, а не неизменную общую галерею всех вариантов.
-- Например, при выборе синей футболки показываются связанные с синим вариантом фотографии, при выборе красной — связанные с красным.
-- Связи фотографий с вариантами относятся к содержанию карточки. Продавец меняет их через согласованный черновик по CAT-EDIT-01; до публикации правок покупатель продолжает видеть прежнее опубликованное содержание и связи.
-- Переключение варианта покупателем меняет показ галереи, но не публикует черновик и не изменяет данные продавца.
-- Используются только опубликованные и разрешённые к показу изображения. Выбор варианта не раскрывает черновые или запрещённые снимки и не отменяет ограничения показа самого варианта.
-- Снимки прежнего выбранного варианта не выдаются за фотографии текущего. Запоздалая загрузка прежних снимков не подменяет галерею уже выбранного другого варианта.
+- The seller specifies which photos belong to each variant. When the buyer selects a variant, they see its associated photos rather than an unchanged common gallery of all variants.
+- For example, selecting the blue T-shirt shows photos associated with the blue variant, while selecting the red one shows photos associated with the red variant.
+- Photo-to-variant associations are part of the card content. The seller changes them through the agreed draft under CAT-EDIT-01; until the edits are published, the buyer continues to see the previous published content and associations.
+- When the buyer switches variants, the gallery display changes, but the draft is not published and the seller's data is not changed.
+- Only published images permitted for display are used. Selecting a variant does not expose draft or prohibited photos and does not cancel restrictions on displaying the variant itself.
+- Photos from the previously selected variant are not presented as photos of the current one. A late load of former photos does not replace the gallery of another variant that has already been selected.
 
-Сохраняются правила реального исходника, неизменности свойств товара, маркировки и сравнения из раздела 11 концепции. Минимум фотографий перед публикацией собственной физической карточки отдельно определён в CAT-PUBLISH-MINIMUM-01; этап реализации AI-обработки этим решением не устанавливается. Показ при отсутствии связанных доступных снимков определяет CAT-VARIANT-PHOTOS-EMPTY-01, а отдельную обложку результата поиска — CAT-SEARCH-COVER-01.
+The rules for the real source, preserving product properties, labeling, and comparison from section 11 of the concept remain in force. CAT-PUBLISH-MINIMUM-01 separately defines the minimum number of photos before publishing the seller's own physical card; this decision does not establish the implementation stage for AI processing. CAT-VARIANT-PHOTOS-EMPTY-01 defines display when associated available photos are absent, and CAT-SEARCH-COVER-01 defines a separate search-result cover.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при переключении между вариантами с опубликованными связанными фотографиями галерея показывает снимки выбранного варианта;
-- сохранение черновой привязки снимков не меняет публичную галерею до публикации содержания;
-- покупатель не получает черновые или запрещённые изображения через выбор варианта;
-- запоздалая загрузка снимков ранее выбранного варианта не заменяет фотографии текущего и не выдаётся за них;
-- переключение покупателем не публикует подготовленные продавцом изменения.
+- when switching between variants with published associated photos, the gallery shows photos of the selected variant;
+- saving a draft photo association does not change the public gallery before content publication;
+- the buyer does not receive draft or prohibited images by selecting a variant;
+- a late load of photos from the previously selected variant does not replace or masquerade as photos of the current one;
+- switching by the buyer does not publish changes prepared by the seller.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-PHOTOS-EMPTY-01 — сообщение при отсутствии фотографий варианта
+### CAT-VARIANT-PHOTOS-EMPTY-01 — Message When Variant Photos Are Absent
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — показывать сообщение вместо фотографий, без подстановки общих снимков или фотографий других вариантов.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — show a message instead of photos, without substituting common photos or photos of other variants.
 
-Для собственной физической карточки в сценарии CAT-VARIANT-PHOTOS-01:
+For the seller's own physical card in the CAT-VARIANT-PHOTOS-01 scenario:
 
-- Если у выбранного видимого варианта подтверждённо нет связанных фотографий, доступных для публичного показа, вместо галереи показывается сообщение «Для этого варианта нет доступных фотографий».
-- Общая галерея карточки и снимки других вариантов не подставляются, даже если они опубликованы и доступны. Фотографии ранее выбранного другого варианта не остаются как фотографии текущего.
-- Выбранный вариант не заменяется самостоятельно ради наличия снимков. Отсутствие фотографий само по себе не переключает покупателя на другой цвет, размер или исполнение.
-- Продолжающаяся загрузка и ошибка получения данных не выдаются за подтверждённое отсутствие фотографий. Запрещённые или черновые снимки не используются для заполнения пустого места.
-- Вместо отсутствующего снимка не создаётся выдуманное изображение товара. Сохраняются ограничения показа самого варианта и правила AI-медиа из концепции.
+- If the selected visible variant is confirmed to have no associated photos available for public display, the “No available photos for this variant” message is shown instead of the gallery.
+- The card's common gallery and photos of other variants are not substituted, even if they are published and available. Photos from a previously selected other variant do not remain as photos of the current one.
+- The selected variant is not replaced automatically to obtain photos. The absence of photos does not by itself switch the buyer to another color, size, or version.
+- An ongoing load and a data-retrieval error are not presented as confirmed absence of photos. Prohibited or draft photos are not used to fill the empty space.
+- An invented product image is not created instead of a missing photo. Restrictions on displaying the variant itself and the concept's AI-media rules remain in force.
 
-Это правило отображения страницы, а не разрешение публиковать вариант без требуемого реального исходного материала. Минимум фотографий перед публикацией собственной физической карточки отдельно определён в CAT-PUBLISH-MINIMUM-01 и не отменяет это состояние просмотра. Отдельную обложку результата поиска определяет CAT-SEARCH-COVER-01.
+This is a page-display rule, not permission to publish a variant without the required real source material. CAT-PUBLISH-MINIMUM-01 separately defines the minimum photos before publishing the seller's own physical card and does not cancel this viewing state. CAT-SEARCH-COVER-01 defines the separate search-result cover.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- подтверждённое отсутствие доступных связанных фотографий показывает согласованное сообщение;
-- наличие общих снимков или фотографий других вариантов не приводит к их подстановке;
-- при переходе от варианта с фотографиями к варианту без них прежняя галерея заменяется сообщением, а не выдаётся за снимки нового выбора;
-- выбранный вариант не меняется автоматически;
-- загрузка или ошибка не маскируются отсутствием фотографий, а черновые и запрещённые изображения не раскрываются.
+- confirmed absence of available associated photos displays the agreed message;
+- the existence of common photos or photos of other variants does not cause their substitution;
+- when moving from a variant with photos to one without them, the previous gallery is replaced by a message rather than presented as photos of the new selection;
+- the selected variant is not changed automatically;
+- a load or error is not masked as absent photos, and draft and prohibited images are not exposed.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-COVER-01 — общая обложка собственной карточки в поиске
+### CAT-SEARCH-COVER-01 — Common Cover for the Seller's Own Card in Search
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «2» — показывать общую обложку, выбранную продавцом, независимо от поисковых фильтров.
+**Status:** approved by Vladislav on 2026-09-14; option “2” was selected — show the common cover selected by the seller regardless of search filters.
 
-Решение относится к результату поиска собственной физической карточки продавца, не присоединённой к общей карточке.
+The decision concerns a search result for the seller's own physical-goods card that is not attached to a common card.
 
-- В результате показывается опубликованная и разрешённая общая обложка карточки с явной пометкой «Общее фото товара».
-- Изменение фильтров не переключает обложку на снимок подходящего или самого дешёвого варианта. Она может показывать другой цвет, размер или исполнение и не выдаётся за фотографию конкретного варианта, на котором основана цена.
-- Цена и наличие по-прежнему определяются только подходящими вариантами и предложениями по CAT-SEARCH-GROUP-01. Изображённый на общей обложке неподходящий вариант не занижает цену результата и не делает карточку подходящей для поиска.
-- Если подходящего опубликованного предложения в наличии нет, карточка не остаётся в выдаче только из-за наличия обложки.
-- Обычный выбор или замена обложки продавцом относится к содержанию и публикуется через черновик по CAT-EDIT-01. Сохранение черновой обложки не заменяет публичную.
-- Постоянство обложки относительно фильтров не отменяет ограничения показа и правила AI-медиа. В частности, скрытие спорного AI-изображения и переход к доступному реальному изображению по разделу 11 концепции сохраняются; запрещённый снимок не удерживается ради постоянства.
-- Если разрешённого изображения для обложки нет, показывается сообщение, а не выдуманный снимок. Загрузка и ошибка получения изображения не выдаются за подтверждённое отсутствие.
+- The result shows the published common card cover permitted for display, with the explicit “Common product photo” label.
+- Changing filters does not switch the cover to a photo of the matching or cheapest variant. It may show another color, size, or version and is not presented as a photo of the specific variant on which the price is based.
+- Price and availability continue to be determined only from matching variants and offers under CAT-SEARCH-GROUP-01. A variant shown on the common cover that does not match does not lower the result price or make the card suitable for the search.
+- If no suitable published offer is in stock, the card does not remain in the result merely because a cover exists.
+- The seller's normal selection or replacement of the cover is part of the content and is published through a draft under CAT-EDIT-01. Saving a draft cover does not replace the public one.
+- Keeping the cover constant across filters does not cancel display restrictions or the AI-media rules. In particular, hiding a disputed AI image and switching to an available real image under section 11 of the concept remain in force; a prohibited photo is not retained for the sake of consistency.
+- If no permitted cover image exists, a message is shown rather than an invented photo. A load and an image-retrieval error are not presented as confirmed absence.
 
-Правило относится к изображению результата поиска, а не к галерее внутри открытой карточки. После выбора варианта внутри неё действуют CAT-VARIANT-PHOTOS-01 и CAT-VARIANT-PHOTOS-EMPTY-01: связанные фотографии либо сообщение об их отсутствии, без подстановки общей галереи.
+The rule concerns the search-result image, not the gallery inside the opened card. After selecting a variant inside it, CAT-VARIANT-PHOTOS-01 and CAT-VARIANT-PHOTOS-EMPTY-01 apply: associated photos or a message that they are absent, without substituting the common gallery.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- изменение фильтров сохраняет разрешённую опубликованную общую обложку и пометку «Общее фото товара»;
-- цена не берётся у изображённого на обложке варианта, если он не соответствует условиям, а отсутствие подходящих предложений исключает карточку из выдачи;
-- черновая замена обложки не видна покупателю до публикации содержания;
-- общая обложка не отменяет запреты показа, AI-маркировку и предусмотренное концепцией скрытие спорного изображения;
-- внутри карточки выбор варианта по-прежнему переключает связанные фотографии или показывает сообщение об их отсутствии;
-- отсутствие разрешённой обложки обозначается честно и не маскируется выдуманным изображением.
+- changing filters preserves the permitted published common cover and the “Common product photo” label;
+- the price is not taken from the variant shown on the cover if it does not meet the conditions, and the absence of suitable offers excludes the card from the result;
+- a draft cover replacement is not visible to the buyer before content publication;
+- the common cover does not cancel display prohibitions, AI labeling, or the concept's specified hiding of a disputed image;
+- inside the card, selecting a variant still switches the associated photos or shows a message that they are absent;
+- the absence of a permitted cover is reported honestly and is not masked with an invented image.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-SEARCH-OPEN-VARIANT-01 — первоначальный выбор варианта при переходе из поиска
+### CAT-SEARCH-OPEN-VARIANT-01 — Initial Variant Selection when Navigating from Search
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — сразу выбирать подходящий доступный вариант с минимальной ценой.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — immediately select the suitable available variant with the lowest price.
 
-Решение относится к открытию из результатов поиска собственной физической карточки продавца, не присоединённой к общей карточке.
+The decision concerns opening the seller's own physical-goods card from search results when it is not attached to a common card.
 
-- На момент открытия проверяются актуальные опубликованные варианты, предложения, цены, наличие и права показа. Из вариантов, одновременно соответствующих переданным выбранным фильтрам и имеющих доступное предложение в наличии, выбирается один с минимальной подходящей ценой.
-- Например, при фильтрах «синий» и «M» заранее выбирается подходящий синий вариант M, а не вариант, изображённый на общей обложке поиска.
-- Покупателю явно видны выбранные цвет, размер или другие характеристики и актуальные данные выбранного варианта. Он может изменить выбор вручную; условия исходного поиска не теряются.
-- Предварительный выбор не закрепляет прежние цену, наличие или состав результата. Если подходящих вариантов к моменту открытия уже нет, система сообщает об этом и не подставляет другой цвет, размер или исполнение как соответствующие поиску.
-- Галерея выбранного варианта следует CAT-VARIANT-PHOTOS-01 и CAT-VARIANT-PHOTOS-EMPTY-01. Отсутствие связанных доступных фотографий не является причиной выбирать более дорогой или неподходящий вариант вместо предусмотренного правилом выбора.
-- Скрытые и черновые варианты не выбираются. Ошибочные переданные фильтры не снимаются молча ради предварительного выбора; сохраняется порядок исправления условий по CAT-SEARCH-LINK-VALIDATION-01.
-- Предварительный выбор на странице ничего не покупает, не резервирует и не списывает, не изменяет цену или остатки продавца. Корзина и оформление остаются следующим этапом.
+- At the time of opening, current published variants, offers, prices, availability, and display permissions are checked. One variant with the lowest matching price is selected from those that both match the passed selected filters and have an available offer in stock.
+- For example, with the “blue” and “M” filters, a suitable blue M variant is selected in advance rather than the variant shown on the common search cover.
+- The buyer clearly sees the selected color, size, or other attributes and the current data for the selected variant. They can change the selection manually; the original search conditions are not lost.
+- The preliminary selection does not lock in the former price, availability, or result composition. If no suitable variants remain when the card is opened, the system reports this and does not substitute another color, size, or version as matching the search.
+- The selected variant's gallery follows CAT-VARIANT-PHOTOS-01 and CAT-VARIANT-PHOTOS-EMPTY-01. The absence of associated available photos is not a reason to select a more expensive or unsuitable variant instead of the one chosen by the rule.
+- Hidden and draft variants are not selected. Invalid passed filters are not silently removed for the sake of preliminary selection; the condition-correction process under CAT-SEARCH-LINK-VALIDATION-01 remains in force.
+- The preliminary selection on the page does not purchase, reserve, or deduct anything and does not change the seller's price or stock. The cart and checkout remain the next stage.
 
-Решение не определяет порядок выбора между несколькими одинаково дешёвыми подходящими вариантами. Обычную прямую ссылку без условий поиска и без указания конкретного варианта регулирует CAT-DIRECT-OPEN-VARIANT-01. Общая обложка результата по CAT-SEARCH-COVER-01 остаётся отдельным правилом и не определяет, какой вариант выбран внутри карточки.
+The decision does not define the selection order among several equally inexpensive matching variants. CAT-DIRECT-OPEN-VARIANT-01 governs a normal direct link without search conditions and without a specified variant. The common result cover under CAT-SEARCH-COVER-01 remains a separate rule and does not determine which variant is selected inside the card.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при наличии подходящих доступных вариантов один из них с минимальной актуальной ценой уже выбран после открытия карточки из поиска;
-- выбранный вариант одновременно удовлетворяет переданным фильтрам, а его характеристики и актуальные данные понятны покупателю;
-- изображённый на общей обложке неподходящий вариант не получает предварительный выбор;
-- изменение цены, наличия или видимости между выдачей и открытием учитывается, а отсутствие подходящих вариантов не маскируется другим цветом или размером;
-- отсутствие фотографий показывает согласованное сообщение, а не вызывает замену на более дорогой или неподходящий вариант;
-- покупатель может изменить выбор вручную, при этом сам предварительный выбор не создаёт покупку или резерв и не меняет остатки.
+- when suitable available variants exist, one with the lowest current suitable price is already selected after opening the card from search;
+- the selected variant simultaneously satisfies the passed filters, and its attributes and current data are clear to the buyer;
+- an unsuitable variant shown on the common cover is not selected in advance;
+- changes to price, availability, or visibility between the result and opening are considered, and the absence of suitable variants is not masked by another color or size;
+- the absence of photos shows the agreed message rather than causing a switch to a more expensive or unsuitable variant;
+- the buyer can change the selection manually, while the preliminary selection itself does not create a purchase or reservation or change stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-DIRECT-OPEN-VARIANT-01 — первоначальный выбор по обычной прямой ссылке
+### CAT-DIRECT-OPEN-VARIANT-01 — Initial Selection through a Normal Direct Link
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — сразу выбирать самый дешёвый доступный вариант в наличии.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — immediately select the cheapest available in-stock variant.
 
-Решение относится к собственной физической карточке продавца, не присоединённой к общей карточке, с несколькими вариантами. Покупатель открывает обычную прямую ссылку без условий поиска и без указания конкретного варианта.
+The decision concerns the seller's own physical-goods card, not attached to a common card, with multiple variants. The buyer opens a normal direct link without search conditions and without specifying a particular variant.
 
-- При открытии проверяются актуальные опубликованные варианты, предложения, цены, наличие и права показа. Из вариантов с доступным предложением в наличии заранее выбирается один с минимальной актуальной ценой.
-- Покупателю сразу видны выбранные цвет, размер или другие характеристики, актуальная цена и фотографии выбранного варианта, если они доступны. Выбор можно изменить вручную. Это первоначальный выбор при открытии, а не ограничение последующего ручного выбора самым дешёвым вариантом.
-- Фотографии следуют CAT-VARIANT-PHOTOS-01 и CAT-VARIANT-PHOTOS-EMPTY-01: при подтверждённом отсутствии связанных доступных снимков показывается согласованное сообщение, а не общие снимки или фотографии другого исполнения. Отсутствие фотографий не заменяет критерий минимальной цены.
-- Прежние цена и наличие не закрепляются ссылкой. Скрытые, черновые или снятые с публикации варианты не участвуют в предварительном выборе и не становятся доступными из-за наличия ссылки.
-- Если ранее опубликованный товар просто закончился во всех вариантах, сохраняется CAT-AVAILABILITY-01: по прямой ссылке остаются опубликованные описание и фотографии с заметной отметкой «Нет в наличии». Добровольное снятие с публикации и ограничения безопасности или модерации этим правилом не отменяются.
-- Предварительный выбор ничего не покупает, не резервирует и не списывает, не меняет цену или остатки продавца. Корзина и оформление остаются следующим этапом.
+- On opening, current published variants, offers, prices, availability, and display permissions are checked. One variant with an available in-stock offer and the lowest current price is selected in advance.
+- The buyer immediately sees the selected color, size, or other attributes, the current price, and photos of the selected variant if available. The selection can be changed manually. This is the initial selection on opening, not a restriction that limits subsequent manual selection to the cheapest variant.
+- Photos follow CAT-VARIANT-PHOTOS-01 and CAT-VARIANT-PHOTOS-EMPTY-01: when associated available photos are confirmed absent, the agreed message is shown rather than common photos or photos of another version. The absence of photos does not replace the lowest-price criterion.
+- The link does not lock in the former price or availability. Hidden, draft, or withdrawn variants do not participate in the preliminary selection and do not become available because a link exists.
+- If the previously published good has simply run out in all variants, CAT-AVAILABILITY-01 remains in force: the published description and photos remain available through the direct link with a prominent “Out of stock” label. Voluntary withdrawal from publication and security or moderation restrictions are not canceled by this rule.
+- The preliminary selection does not purchase, reserve, or deduct anything and does not change the seller's price or stock. The cart and checkout remain the next stage.
 
-Решение не определяет порядок выбора между одинаково дешёвыми доступными вариантами. Ссылку с конкретным выбранным вариантом регулирует CAT-VARIANT-LINK-01. Переход из поиска остаётся отдельным случаем по CAT-SEARCH-OPEN-VARIANT-01: его выбранные фильтры нельзя заменить отсутствием условий ради выбора более дешёвого неподходящего варианта.
+The decision does not define the selection order among equally inexpensive available variants. CAT-VARIANT-LINK-01 governs a link with a specific selected variant. Navigation from search remains a separate case under CAT-SEARCH-OPEN-VARIANT-01: its selected filters cannot be replaced by the absence of conditions to select a cheaper unsuitable variant.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- если есть доступные варианты в наличии, обычная прямая ссылка без условий поиска и конкретного варианта открывает карточку с уже выбранным вариантом минимальной актуальной цены среди них;
-- выбранные характеристики и цена явно показаны, покупатель может выбрать другой вариант вручную;
-- отсутствие фотографий у самого дешёвого варианта показывает согласованное сообщение, а не вызывает подстановку чужих снимков или более дорогого варианта;
-- выбор учитывает текущие цену, наличие и права показа, а не данные на момент копирования ссылки;
-- при обычном исчерпании всех вариантов остаются опубликованные описание и фотографии с отметкой «Нет в наличии», без раскрытия черновиков или обхода снятия с публикации;
-- само открытие и предварительный выбор не создают покупку или резерв и не меняют остатки.
+- if available variants are in stock, a normal direct link without search conditions or a specific variant opens the card with the variant having the lowest current price among them already selected;
+- the selected attributes and price are clearly shown, and the buyer can select another variant manually;
+- the absence of photos for the cheapest variant shows the agreed message rather than causing substitution of someone else's photos or a more expensive variant;
+- the selection considers the current price, availability, and display permissions rather than data from when the link was copied;
+- when all variants normally run out, the published description and photos remain with the “Out of stock” label, without exposing drafts or bypassing withdrawal from publication;
+- opening itself and the preliminary selection do not create a purchase or reservation or change stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-LINK-01 — ссылка сохраняет выбранный вариант товара
+### CAT-VARIANT-LINK-01 — Link Preserves the Selected Product Variant
 
-**Статус:** утверждено Владиславом 2026-09-14; выбран вариант «1» — сохранять конкретный выбранный вариант в копируемой ссылке.
+**Status:** approved by Vladislav on 2026-09-14; option “1” was selected — preserve the specifically selected variant in the copyable link.
 
-Решение относится к ссылке на собственную физическую карточку продавца, не присоединённую к общей карточке, когда покупатель уже выбрал конкретный вариант. Передача условий поиска по CAT-SEARCH-LINK-01 остаётся отдельным случаем; ссылка на оформление заказа здесь не вводится.
+The decision concerns a link to the seller's own physical-goods card, not attached to a common card, after the buyer has selected a specific variant. Passing search conditions under CAT-SEARCH-LINK-01 remains a separate case; a checkout link is not introduced here.
 
-- Копируемая ссылка на товар сохраняет выбранный вариант этой карточки, а не только карточку в целом. Например, после выбора синей футболки M ссылка указывает именно на этот вариант.
-- При открытии проверяются текущие публикация, права показа получателю, наличие и цена. Если указанный вариант по-прежнему опубликован, доступен получателю и есть в наличии, именно он заранее выбран, даже если другой вариант карточки дешевле.
-- Правило самой дешёвой доступной позиции для обычной ссылки без выбранного варианта по CAT-DIRECT-OPEN-VARIANT-01 не заменяет явно указанный вариант. Более дешёвый красный вариант не подставляется вместо переданного синего M.
-- Получатель видит актуальные характеристики и цену выбранного варианта и может изменить выбор вручную. Фотографии следуют CAT-VARIANT-PHOTOS-01 и CAT-VARIANT-PHOTOS-EMPTY-01; отсутствие снимков не является причиной заменить переданный вариант другим.
-- Если указанный вариант к моменту открытия уже недоступен, система сообщает об этом и не выбирает другой вариант автоматически. Недоступность не превращает такую ссылку в обычную ссылку без выбранного варианта.
-- Ссылка не закрепляет прежние цену или наличие, не переносит права отправителя и не делает публичными черновые, снятые или заблокированные данные. Сообщение о недоступности не раскрывает содержание или наличие непубличного варианта.
-- Само открытие ссылки и предварительный выбор не создают покупку или резерв, не списывают остаток и не меняют цену продавца. Корзина и оформление остаются следующим этапом.
+- A copyable product link preserves the selected variant of this card, not only the card as a whole. For example, after selecting blue T-shirt M, the link points specifically to that variant.
+- On opening, the current publication, recipient display permissions, availability, and price are checked. If the specified variant is still published, available to the recipient, and in stock, it is selected in advance even if another card variant is cheaper.
+- The cheapest available item rule for a normal link without a selected variant under CAT-DIRECT-OPEN-VARIANT-01 does not replace an explicitly specified variant. A cheaper red variant is not substituted for the passed blue M.
+- The recipient sees the current attributes and price of the selected variant and can change the selection manually. Photos follow CAT-VARIANT-PHOTOS-01 and CAT-VARIANT-PHOTOS-EMPTY-01; missing photos are not a reason to replace the passed variant with another.
+- If the specified variant is already unavailable when the link is opened, the system reports this and does not select another variant automatically. Unavailability does not turn this link into an ordinary link without a selected variant.
+- The link does not lock in the former price or availability, transfer the sender's permissions, or make draft, withdrawn, or blocked data public. The unavailability message does not expose the content or availability of a non-public variant.
+- Opening the link and the preliminary selection do not create a purchase or reservation, deduct stock, or change the seller's price. The cart and checkout remain the next stage.
 
-Сохраняется различие обычного исчерпания остатка и запрета публичного показа по CAT-AVAILABILITY-01, CAT-STOCK-PUBLIC-01 и CAT-CARD-WITHDRAW-01. Решение не определяет технический формат ссылки или способ её копирования. Показ закончившихся опубликованных вариантов в списке ручного выбора внутри карточки регулирует CAT-VARIANT-OUT-OF-STOCK-01.
+The distinction between normal stock exhaustion and prohibition of public display under CAT-AVAILABILITY-01, CAT-STOCK-PUBLIC-01, and CAT-CARD-WITHDRAW-01 remains in force. The decision does not define the technical link format or how it is copied. CAT-VARIANT-OUT-OF-STOCK-01 governs display of exhausted published variants in the manual-selection list inside the card.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- ссылка после выбора синего M открывает именно этот вариант, если он по-прежнему опубликован, доступен получателю и есть в наличии;
-- наличие более дешёвого другого варианта не меняет переданный выбор;
-- цена и наличие проверяются на момент открытия, а не восстанавливаются из состояния отправителя;
-- отсутствие связанных фотографий показывает согласованное сообщение и не вызывает замену выбранного варианта;
-- если указанный вариант уже недоступен, есть сообщение без автоматической подстановки другого исполнения;
-- получатель не получает права отправителя, скрытое содержание или остатки непубличного варианта;
-- открытие ссылки не создаёт покупку или резерв и не меняет фактические остатки.
+- a link after blue M is selected opens that exact variant if it is still published, available to the recipient, and in stock;
+- the existence of another, cheaper variant does not change the passed selection;
+- price and availability are checked when the link is opened rather than restored from the sender's state;
+- missing associated photos show the agreed message and do not cause the selected variant to be replaced;
+- if the specified variant is already unavailable, a message appears without automatic substitution of another version;
+- the recipient does not receive the sender's permissions, hidden content, or the stock of a non-public variant;
+- opening the link does not create a purchase or reservation or change actual stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-VARIANT-OUT-OF-STOCK-01 — просмотр временно закончившегося варианта
+### CAT-VARIANT-OUT-OF-STOCK-01 — Viewing a Temporarily Out-of-Stock Variant
 
-**Статус:** утверждено Владиславом; выбран вариант «1» — оставлять вариант видимым с пометкой «Нет в наличии» и возможностью просмотра. Запись внесена 2026-09-15.
+**Status:** approved by Vladislav; option “1” was selected — keep the variant visible with an “Out of stock” label and allow viewing. Entry added on 2026-09-15.
 
-Решение относится к ручному выбору внутри собственной физической карточки продавца, не присоединённой к общей карточке. Один опубликованный вариант временно закончился, а другие варианты этой карточки ещё есть в наличии.
+The decision concerns manual selection inside the seller's own physical-goods card, not attached to a common card. One published variant is temporarily out of stock while other variants of the card are still in stock.
 
-- Обычное исчерпание остатка не убирает такой опубликованный вариант из списка вариантов внутри карточки. Рядом явно показывается «Нет в наличии».
-- Покупатель может выбрать закончившийся вариант, чтобы посмотреть его опубликованные характеристики и связанные фотографии. Просмотр не означает наличие товара или доступность для покупки.
-- Фотографии соответствуют выбранному варианту по CAT-VARIANT-PHOTOS-01. При подтверждённом отсутствии доступных связанных фотографий действует CAT-VARIANT-PHOTOS-EMPTY-01, без подстановки снимков другого исполнения.
-- Точные складские количества покупателю не раскрываются; применяется CAT-STOCK-PUBLIC-01. Выбор для просмотра не пополняет остаток, не создаёт покупку и не резервирует товар.
-- Снятые с публикации, заблокированные и черновые варианты не становятся видимыми или доступными для выбора. Нулевой остаток и запрет публичного показа остаются разными состояниями.
-- Это не изменение фильтров или выдачи поиска. Правила первоначального выбора доступного варианта в наличии по CAT-SEARCH-OPEN-VARIANT-01 и CAT-DIRECT-OPEN-VARIANT-01 сохраняются. По CAT-VARIANT-LINK-01 недоступность указанного в ссылке варианта по-прежнему не разрешает автоматическую подстановку другого.
+- Normal stock exhaustion does not remove this published variant from the list of variants inside the card. “Out of stock” is shown clearly next to it.
+- The buyer can select the exhausted variant to view its published attributes and associated photos. Viewing does not mean that the good is in stock or available for purchase.
+- Photos correspond to the selected variant under CAT-VARIANT-PHOTOS-01. When the absence of available associated photos is confirmed, CAT-VARIANT-PHOTOS-EMPTY-01 applies without substituting photos of another version.
+- Exact warehouse quantities are not exposed to the buyer; CAT-STOCK-PUBLIC-01 applies. Selecting for viewing does not replenish stock, create a purchase, or reserve the good.
+- Withdrawn, blocked, and draft variants do not become visible or available for selection. Zero stock and prohibition of public display remain different states.
+- This does not change filters or search results. The initial selection rules for an available in-stock variant under CAT-SEARCH-OPEN-VARIANT-01 and CAT-DIRECT-OPEN-VARIANT-01 remain in force. Under CAT-VARIANT-LINK-01, the unavailability of the variant specified in a link still does not permit automatic substitution of another.
 
-Случай исчерпания всех вариантов остаётся под CAT-AVAILABILITY-01: опубликованные описание и фотографии доступны с отметкой «Нет в наличии», если нет иных оснований скрытия. Решение не переносится автоматически на общие карточки и предложения других продавцов.
+The case where all variants are exhausted remains under CAT-AVAILABILITY-01: the published description and photos are available with the “Out of stock” label unless there are other grounds for hiding them. The decision does not automatically extend to common cards and offers from other sellers.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- при наличии красного M и обычном исчерпании опубликованного синего M оба остаются в списке вариантов, у синего явно показано «Нет в наличии»;
-- синий M можно выбрать для просмотра его опубликованных характеристик и связанных фотографий, не выдавая его за имеющийся в наличии;
-- отсутствие фотографий показывает согласованное сообщение, а не снимки красного варианта;
-- предварительный выбор самого дешёвого доступного варианта не выбирает закончившийся только из-за его меньшей цены;
-- снятые, заблокированные и черновые варианты не раскрываются, точные остатки не передаются покупателю;
-- просмотр закончившегося варианта не создаёт покупку или резерв и не меняет фактические остатки.
+- when red M exists and published blue M is normally exhausted, both remain in the variant list, with “Out of stock” clearly shown for blue;
+- blue M can be selected to view its published attributes and associated photos without presenting it as in stock;
+- missing photos show the agreed message rather than photos of the red variant;
+- preliminary selection of the cheapest available variant does not select an exhausted one merely because its price is lower;
+- withdrawn, blocked, and draft variants are not exposed, and exact stock is not sent to the buyer;
+- viewing an exhausted variant does not create a purchase or reservation or change actual stock.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-PILOT-SCOPE-01 — первый доступ как закрытый каталог без покупок
+### CAT-PILOT-SCOPE-01 — Initial Access as a Private Catalog without Purchases
 
-**Статус:** утверждено Владиславом 2026-09-15; выбран вариант «1» — сначала закрытая пробная версия каталога для приглашённых участников.
+**Status:** approved by Vladislav on 2026-09-15; option “1” was selected — first, a private trial version of the catalog for invited participants.
 
-- Первый пользовательский доступ готовится для приглашённых продавцов и покупателей, а не для открытого публичного запуска маркетплейса.
-- Продавцы создают товары, а покупатели ищут их, выбирают варианты и просматривают карточки. На этом этапе нет заказов, оплаты и приёма денег.
-- Обратная связь участников используется до следующего этапа с покупкой, оплатой и исполнением. Пробная версия каталога не выдаётся за готовый магазин и не заменяет конечную цель общей спецификации.
-- Согласованный объём второй фазы не сокращается: сохраняются поиск по близкому смыслу, общие карточки и непубличные цифровые черновики. Доступ к каталогу не меняет прав продавца на чужие данные или полномочий сотрудников.
-- Для закрытого доступа прежний термин «публичная карточка» означает опубликованное содержание, доступное допущенному участнику с учётом его прав. Публикация карточки внутри пилота не означает разрешение раскрыть её всему Интернету. Ссылки, фотографии, выдача и подсказки не должны обходить ограничение доступа к пилоту.
-- Способ допуска приглашённых участников и способ развёртывания ещё не выбраны. Этот ответ не разрешает отправку приглашений, внешний запуск, подключение платежей, новые расходы или реализацию до утверждения письменной спецификации.
+- Initial user access is prepared for invited sellers and buyers, not for an open public launch of the marketplace.
+- Sellers create goods, and buyers search for them, select variants, and view cards. At this stage there are no orders, payments, or collection of money.
+- Participant feedback is used before the next stage with purchase, payment, and fulfillment. The trial catalog is not presented as a finished store and does not replace the end goal of the general specification.
+- The agreed Phase 2 scope is not reduced: similar-meaning search, common cards, and non-public digital drafts remain. Catalog access does not change a seller's rights to other people's data or staff permissions.
+- For private access, the former term “public card” means published content available to an admitted participant subject to their permissions. Publishing a card within the pilot does not authorize exposing it to the entire Internet. Links, photos, results, and suggestions must not bypass the pilot access restriction.
+- The method for admitting invited participants and the deployment method have not yet been selected. This response does not authorize sending invitations, external launch, connecting payments, new expenses, or implementation before the written specification is approved.
 
-Проверяемые следствия для будущего допуска участников:
+Verifiable consequences for future participant admission:
 
-- допущенные участники могут выполнить согласованные действия продавца и покупателя, не совершая заказов или платежей;
-- человек вне закрытого тестирования не получает доступ к содержимому каталога через прямую ссылку, фотографию, поиск или подсказку;
-- участие в тестировании не выдаёт дополнительных прав продавца или сотрудника;
-- интерфейс не изображает оформленный заказ, оплату, резерв или выдачу товара;
-- перед внешним доступом отдельно проверены и согласованы развёртывание и защита данных; каталог не объявлен полноценной публичной бетой.
+- admitted participants can perform the agreed seller and buyer actions without placing orders or making payments;
+- a person outside the private test does not gain access to catalog content through a direct link, photo, search, or suggestion;
+- participation in testing does not grant additional seller or staff permissions;
+- the interface does not pretend that an order, payment, reservation, or item delivery has been completed;
+- deployment and data protection are separately checked and agreed before external access; the catalog is not declared a full public beta.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-### CAT-PUBLISH-MINIMUM-01 — минимальные данные перед публикацией
+### CAT-PUBLISH-MINIMUM-01 — Minimum Data before Publication
 
-**Статус:** утверждено Владиславом 2026-09-15; выбран вариант «1» — принять предложенный обязательный минимум.
+**Status:** approved by Vladislav on 2026-09-15; option “1” was selected — accept the proposed mandatory minimum.
 
-Решение относится к публикации собственной физической карточки продавца, не присоединённой к общей карточке, и публикуемых в ней вариантов. Минимум для публикации не означает обязательность полного заполнения незавершённого черновика.
+The decision concerns publication of the seller's own physical-goods card, not attached to a common card, and the variants published in it. The publication minimum does not mean that an unfinished draft must be fully completed.
 
-- У карточки заполнены название, действующая категория и непустое описание, а также обязательные характеристики категории.
-- Есть хотя бы один публикуемый вариант. У каждого публикуемого варианта заполнены обязательные характеристики, указаны цена и остаток. Единица измерения одна для всей карточки по CAT-UNITS-01; сохраняется её фиксация по CAT-UNIT-LOCK-01.
-- Цена и остаток не отрицательные. Сохраняются рубли, допустимая точность и отказ без округления по CAT-CURRENCY-01, CAT-PRICE-PRECISION-01 и CAT-STOCK-PRECISION-01. Нулевая цена означает «Бесплатно» по CAT-ZERO-PRICE-01, а не отсутствие значения.
-- Нулевой остаток допустим, в том числе при первой публикации. Для такого варианта показывается «Нет в наличии». Если ни у одного опубликованного варианта карточки нет доступного предложения в наличии, карточка не попадает в каталог и поиск. Допустимое опубликованное содержание по прямой ссылке остаётся доступным участнику в пределах его прав; первый нулевой остаток не требует выдумывать предыдущее наличие.
-- У каждого публикуемого варианта есть хотя бы одна связанная доступная фотография реального товара без AI-дорисовок. Разрешённая техническая коррекция света, кадрирования и размера без синтетических добавлений не запрещается. Один снимок можно связать с несколькими вариантами, только если он правдиво показывает каждый из них.
-- Неполные данные можно сохранять в черновик. При неуспешной попытке публикации система сообщает, что нужно заполнить или исправить; подготовленные изменения не публикуются частично.
+- The card has a name, an active category, and a non-empty description, as well as the category's required attributes.
+- There is at least one variant to publish. Each variant to be published has its required attributes completed and has a specified price and stock. The unit of measure is one for the entire card under CAT-UNITS-01; its lock under CAT-UNIT-LOCK-01 remains in force.
+- The price and stock are not negative. Rubles, permitted precision, and rejection without rounding under CAT-CURRENCY-01, CAT-PRICE-PRECISION-01, and CAT-STOCK-PRECISION-01 remain in force. A zero price means “Free” under CAT-ZERO-PRICE-01, not a missing value.
+- Zero stock is allowed, including on first publication. “Out of stock” is shown for such a variant. If no published variant of the card has an available offer in stock, the card is not included in the catalog or search. Eligible published content remains available to a participant through the direct link within their permissions; initial zero stock does not require inventing previous availability.
+- Each variant to be published has at least one associated available photo of the real good without AI additions. Permitted technical correction of lighting, cropping, and size without synthetic additions is not prohibited. One photo may be associated with multiple variants only if it truthfully shows each of them.
+- Incomplete data can be saved as a draft. If publication fails, the system tells the seller what must be completed or corrected; the prepared changes are not published partially.
 
-Сохраняются разделение содержания и оперативных изменений цены/остатка по CAT-OFFER-01, защита от устаревшего сохранения и права доступа. Наличие неполного черновика само по себе не останавливает допустимое изменение действующей цены или остатка. Пустое числовое поле не подменяется нулём. Если уже опубликованные фотографии недоступны, применяется CAT-VARIANT-PHOTOS-EMPTY-01; это состояние просмотра не заменяет проверку фотографий при публикации и не раскрывает запрещённые снимки.
+The separation of content from operational price/stock changes under CAT-OFFER-01, protection against stale saves, and access permissions remain in force. An incomplete draft does not by itself stop a permitted change to the active price or stock. An empty numeric field is not replaced with zero. If already published photos are unavailable, CAT-VARIANT-PHOTOS-EMPTY-01 applies; this viewing state does not replace the photo check at publication and does not expose prohibited photos.
 
-Требование реального снимка не является утверждением, что обычная автоматическая проверка умеет доказать подлинность фотографии. Сохраняются правила неизменности товара, маркировки, исходников и проверки AI-версий из раздела 11 концепции. Генератор или платный сервис этим решением не добавляется. Минимум не переносится автоматически на общие карточки или непубличные цифровые черновики. Верхние пределы цены и остатка, ограничения файлов и техническая обработка фотографий ещё не определены.
+The real-photo requirement does not assert that a normal automated check can prove a photo's authenticity. The rules for preserving the product, labeling, source material, and checking AI versions from section 11 of the concept remain in force. This decision does not add a generator or paid service. The minimum is not automatically extended to common cards or non-public digital drafts. Upper limits for price and stock, file restrictions, and technical photo processing have not yet been defined.
 
-Проверяемые следствия для будущей реализации:
+Verifiable consequences for future implementation:
 
-- отсутствие названия, категории, описания, обязательной характеристики или публикуемого варианта не позволяет опубликовать собственную физическую карточку;
-- у каждого публикуемого варианта должны быть указаны цена и остаток с согласованными единицей и точностью; отсутствие значения отличается от нуля, отрицательные значения не допускаются к публикации;
-- при соблюдении остальных условий возможна первая публикация с нулевой ценой и нулевым остатком; показываются согласованные статусы, а отсутствующее предложение не попадает в поиск;
-- отсутствие связанного допустимого реального снимка хотя бы у одного публикуемого варианта не приводит к частичной публикации остальных подготовленных изменений;
-- один правдиво соответствующий нескольким вариантам снимок не требуется дублировать отдельными загрузками для каждого из них;
-- неполный черновик сохраняется непубличным, отказ публикации содержит причину, а прежнее опубликованное содержание не заменяется неуспешными правками;
-- обязательный минимум не раскрывает скрытые данные, не отключает разделение цены/остатка и содержания и не создаёт покупку или резерв.
+- the absence of a name, category, description, required attribute, or variant to publish prevents publication of the seller's own physical card;
+- each variant to be published must have a price and stock specified with the agreed unit and precision; a missing value differs from zero, and negative values are not eligible for publication;
+- when the remaining conditions are met, first publication with a zero price and zero stock is possible; the agreed statuses are shown, and an unavailable offer is not included in search;
+- the absence of an associated permitted real photo for at least one variant to be published does not result in partial publication of the other prepared changes;
+- one photo that truthfully corresponds to multiple variants does not have to be duplicated in separate uploads for each of them;
+- an incomplete draft remains non-public, the publication rejection contains a reason, and the previous published content is not replaced by unsuccessful edits;
+- the mandatory minimum does not expose hidden data, disable the separation of price/stock from content, or create a purchase or reservation.
 
-Это требования к будущим проверкам, а не отчёт о выполненных тестах.
+These are requirements for future checks, not a report of completed tests.
 
-## Контрольная точка — путь к версии для пользователей
+## Checkpoint — Path to the User Version
 
-**Статус на 2026-09-15:** ближайший результат выбран по CAT-PILOT-SCOPE-01. Спецификация в целом, реализация и внешний запуск ещё не утверждены.
+**Status as of 2026-09-15:** the nearest result was selected under CAT-PILOT-SCOPE-01. The specification as a whole, implementation, and external launch have not yet been approved.
 
-Владислав обозначил цель: «продолжаем дальше доводить до результата выхода уже для пользователей». Конечная цель остаётся полноценным маркетплейсом по общей спецификации; готовность каталога нельзя выдавать за готовность публичной беты с покупками.
+Vladislav stated the goal: “we continue working toward a release result for users.” The end goal remains a full marketplace under the general specification; catalog readiness must not be presented as readiness of a public beta with purchases.
 
-### Проверенное текущее состояние
+### Verified Current State
 
-- В текущей основной ветке находится первая фаза: вход и учётные записи, права, допуск продавцов, аудит и доставка служебных сообщений. Локальная проверка этой фазы описана в [отчёте](../../security/phase-1-review.md); это исторические результаты, не новый запуск тестов.
-- Настоящий документ остаётся локальным черновиком требований второй фазы. Зафиксированные продуктовые решения не равны реализованным и проверенным функциям.
-- По разделу 15 общей спецификации каталог предшествует корзине, заказу, оплате и исполнению. По её разделу 16 публичная бета требует отдельных юридических, платёжных, операционных и безопасностных условий. Эти условия не отменяются ради более раннего показа интерфейса.
+- The current main branch contains Phase 1: sign-in and accounts, permissions, seller admission, auditing, and delivery of service messages. Local validation of this phase is described in the [report](../../security/phase-1-review.md); these are historical results, not a new test run.
+- This document remains a local draft of Phase 2 requirements. Recorded product decisions are not the same as implemented and tested functions.
+- Under section 15 of the general specification, the catalog precedes the cart, order, payment, and fulfillment. Under section 16, the public beta requires separate legal, payment, operational, and security conditions. These conditions are not canceled for the sake of showing the interface earlier.
 
-### Согласованный ближайший рабочий результат
+### Agreed Nearest Working Result
 
-Завершить и проверить вторую фазу как рабочий каталог для закрытого тестирования: продавец создаёт физическую карточку с вариантами, фотографиями, ценами и остатками; покупатель находит её, фильтрует результаты, просматривает варианты и делится ссылкой; сотрудник управляет справочниками и подтверждением общих карточек. Непубличные цифровые черновики сохраняются в согласованном объёме.
+Complete and validate Phase 2 as a working catalog for private testing: the seller creates a physical card with variants, photos, prices, and stock; the buyer finds it, filters results, views variants, and shares a link; a staff member manages directories and confirms common cards. Non-public digital drafts remain within the agreed scope.
 
-Это не предложение заменить согласованный поиск по близкому смыслу простым поиском по словам или исключить общие карточки. Покупки, оплата, доставка и выдача файла не имитируются: они остаются следующим этапом. Доступ приглашённых тестировщиков вне локальной среды потребует отдельного согласования развёртывания и проверки защиты данных.
+This is not a proposal to replace the agreed similar-meaning search with simple word search or to exclude common cards. Purchases, payment, delivery, and file delivery are not simulated: they remain the next stage. Access for invited testers outside the local environment will require separate agreement on deployment and data-protection validation.
 
-### Незакрытые блоки перед реализацией второй фазы
+### Open Blocks before Phase 2 Implementation
 
-- **Публикация и допустимые данные:** обязательный минимум принят в CAT-PUBLISH-MINIMUM-01, включая неотрицательные значения и реальный снимок каждого публикуемого варианта. Осталось определить верхние пределы цены и остатка, ограничения файлов и полный состав технических проверок. Согласованный минимум пока не является полным контрактом обработки входных данных.
-- **Цельный каталог:** свести уже принятые правила собственной карточки, общей карточки и предложения продавца в непротиворечивую схему; закрыть недоопределённые переходы и связь с единым запасом по местам хранения. Не переносить правила собственной карточки на общую без отдельного обоснованного решения.
-- **Поиск:** выбрать и обосновать способ выполнения поиска по словам, опечаткам и близкому смыслу, проверку его качества и воспроизводимый порядок выдачи. Новые службы, инструменты и расходы остаются предметом отдельного согласования.
-- **Доступ к пилоту:** выбрать способ допуска приглашённых участников и границу защиты каталога и фотографий; не использовать выдачу прав сотрудника как обходной способ допуска покупателя.
-- **Приёмка:** сводные сценарии собраны ниже. После закрытия остальных блоков детализировать проверки доступа, цены и остатка, фотографий, поиска и совместимости с первой фазой; утвердить критерии завершения и план реализации. Будущие проверки не отмечать выполненными без реального результата.
+- **Publication and eligible data:** the mandatory minimum is accepted in CAT-PUBLISH-MINIMUM-01, including non-negative values and a real photo for every variant to be published. The upper limits for price and stock, file restrictions, and the full set of technical checks still need to be defined. The agreed minimum is not yet a complete input-processing contract.
+- **Coherent catalog:** bring the already accepted rules for the seller's own card, common card, and seller offer into a consistent scheme; close underdefined transitions and the connection to one stock amount across storage locations. Do not extend the own-card rules to a common card without a separate justified decision.
+- **Search:** select and justify how search by words, typos, and similar meaning will run, how its quality will be checked, and a reproducible result order. New services, tools, and expenses remain subject to separate agreement.
+- **Pilot access:** select how invited participants are admitted and the protection boundary for the catalog and photos; do not use granting staff permissions as a workaround for admitting a buyer.
+- **Acceptance:** summary scenarios are collected below. After the remaining blocks are closed, detail checks for access, price and stock, photos, search, and compatibility with Phase 1; approve completion criteria and an implementation plan. Do not mark future checks complete without an actual result.
 
-Эта группировка заменяет очередной отдельный вопрос о мелкой детали интерфейса, но не разрешает молча назначить отсутствующие продуктовые правила. Отложенные на следующий этап заказы, доставка и платежи не становятся условиями завершения кода каталога; они остаются условиями соответствующего этапа и публичного запуска.
+This grouping replaces another separate question about a minor interface detail, but does not authorize silently assigning missing product rules. Orders, delivery, and payments deferred to the next stage do not become conditions for completing catalog code; they remain conditions of the relevant stage and public launch.
 
-### Сводная приёмка закрытого каталога — проект проверок
+### Summary Acceptance of the Private Catalog — Test Draft
 
-Ниже собраны основные пользовательские сценарии, а не новые отметки о готовности. Подробные проверяемые следствия каждого CAT-решения сохраняются; этот список их не заменяет и не объявляет недоопределённые правила согласованными. Все пункты пока не выполнены.
+The main user scenarios are collected below, not new readiness marks. The detailed verifiable consequences of each CAT decision remain; this list does not replace them or declare underdefined rules agreed. None of the items has been completed yet.
 
-- [ ] **Допуск и права.** Приглашённый участник получает только положенный ему доступ. Человек вне пилота не открывает каталог или фотографии обходным путём. Продавец не получает чужие закрытые данные; участие в тесте не делает покупателя сотрудником. Основание: CAT-PILOT-SCOPE-01 и правила доступа первой фазы.
-- [ ] **Создание и публикация.** Продавец создаёт физическую карточку и публикует её после проверок, без обязательной предварительной ручной очереди. Проверяется принятый минимум, включая данные каждого публикуемого варианта, реальный снимок и допустимость нулевого остатка при первой публикации. Несоответствующие обязательным условиям данные не публикуются. Черновик правок не виден покупателю; успешная публикация применяет согласованную версию содержания. Основание: CAT-PUBLISH-01, CAT-PUBLISH-MINIMUM-01, CAT-EDIT-01, CAT-EDIT-FIELDS-01; оставшиеся технические проверки ещё согласуются.
-- [ ] **Цена, остаток и единица.** Изменение цены или остатка применяется отдельно от содержания. Старый черновик и устаревшая вкладка не затирают актуальные значения. Соблюдаются единая зафиксированная единица, согласованная точность, рубли и бесплатная нулевая цена. Покупатель видит статус, не складские количества. Основание: CAT-OFFER-01, CAT-OFFER-CONFLICT-01, CAT-UNITS-01, CAT-UNIT-LOCK-01, CAT-STOCK-PUBLIC-01, CAT-STOCK-PRECISION-01, CAT-CURRENCY-01, CAT-PRICE-PRECISION-01, CAT-ZERO-PRICE-01.
-- [ ] **Жизненный цикл варианта.** Добавление и явное возвращение варианта проходят через общий черновик; снятие происходит отдельно. Обычное исчерпание остатка не приравнивается к снятию. Проверяются последний снятый вариант, обычное исчерпание всех вариантов и просмотр закончившегося варианта рядом с имеющимися в наличии. Запас не копируется от публикации. Основание: CAT-VARIANT-ADD-01, CAT-VARIANT-WITHDRAW-01, CAT-CARD-WITHDRAW-01, CAT-VARIANT-RESTORE-01, CAT-AVAILABILITY-01, CAT-VARIANT-OUT-OF-STOCK-01 и принцип единого реального запаса.
-- [ ] **Справочники и общие карточки.** Сотрудник управляет категориями и подтверждает сопоставление; продавец не меняет общее содержание самостоятельно. Новое обычное обязательное поле не скрывает прежнюю карточку, но проверяется при следующей публикации содержания. Сравнение предложений использует только цену товара за одинаковую единицу с предупреждением о нерассчитанной доставке. Основание: CAT-MATCH-01, CAT-COMMON-EDIT-01, CAT-TAXONOMY-01, CAT-TAXONOMY-CHANGE-01, CAT-COMPARE-DELIVERY-SCOPE-01.
-- [ ] **Поиск и фильтры.** Есть совпадения по словам, опечаткам и близкому смыслу; точные результаты выше приблизительных, без выдуманных товаров. Фильтры выполняются совместно у одного варианта, выбранные условия не ослабляются. Карточка не дублируется; цена и наличие вычисляются только по подходящим предложениям. Основание: CAT-SEARCH-01, CAT-SEARCH-GROUP-01, CAT-SEARCH-FIELDS-01, CAT-SEARCH-APPROX-01, CAT-SEARCH-FILTER-MULTI-01, CAT-SEARCH-FILTER-AVAILABILITY-01.
-- [ ] **Управление поиском.** Печать сама не запускает поиск; Enter, «Найти» и изменение фильтра применяют текст по согласованным правилам. Работают подсказка исправления, автоподгрузка, возврат к прежнему месту и передача применённых условий по ссылке. Ошибочное условие не снимается молча, сбой не выдаётся за пустую выдачу, старый ответ не подменяет текущий поиск. Основание: CAT-SEARCH-TYPO-01, CAT-SEARCH-TYPO-TRIGGER-01, CAT-SEARCH-SCROLL-01, CAT-SEARCH-RETURN-01, CAT-SEARCH-FILTER-APPLY-01, CAT-SEARCH-TEXT-APPLY-01, CAT-SEARCH-FILTER-TEXT-01, CAT-SEARCH-LINK-01, CAT-SEARCH-LINK-VALIDATION-01.
-- [ ] **Карточка, фотографии и ссылки.** Проверяются раздельно открытие из поиска, обычная прямая ссылка и ссылка на выбранный вариант. Общая поисковая обложка не меняет цену или выбранный вариант; внутри карточки фотографии соответствуют выбору, отсутствие снимков не подменяется чужими. Неподходящий или недоступный вариант не подставляется вместо переданного. Основание: CAT-VARIANT-PHOTOS-01, CAT-VARIANT-PHOTOS-EMPTY-01, CAT-SEARCH-COVER-01, CAT-SEARCH-OPEN-VARIANT-01, CAT-DIRECT-OPEN-VARIANT-01, CAT-VARIANT-LINK-01.
-- [ ] **Ограниченный цифровой черновик.** Продавец сохраняет описание и цену скачиваемого товара, но не публикует его, не загружает продаваемый файл и не выдаёт его покупателю во второй фазе. Основание: CAT-DIGITAL-SCOPE-01.
-- [ ] **Общий прогон и защита состояния.** Реальный последовательный сценарий «продавец публикует → покупатель находит → данные меняются → покупатель видит корректное состояние» проходит вместе с проверкой первой фазы, миграций и восстановления. Отказы доступа не раскрывают черновики, скрытые варианты, складские количества или секреты. Результаты подтверждены запуском, а не только наличием тестов. Это проект итогового допуска; подробный план проверки ещё предстоит утвердить.
+- [ ] **Admission and permissions.** An invited participant receives only the access they are entitled to. A person outside the pilot cannot open the catalog or photos by a workaround. The seller does not receive another person's private data; test participation does not make a buyer a staff member. Basis: CAT-PILOT-SCOPE-01 and Phase 1 access rules.
+- [ ] **Creation and publication.** The seller creates and publishes a physical card after checks, without a mandatory preliminary manual queue. The accepted minimum is checked, including the data for every variant to be published, a real photo, and the acceptability of zero stock on first publication. Data that does not meet mandatory conditions is not published. Draft edits are not visible to the buyer; successful publication applies the agreed content version. Basis: CAT-PUBLISH-01, CAT-PUBLISH-MINIMUM-01, CAT-EDIT-01, CAT-EDIT-FIELDS-01; the remaining technical checks are still being agreed.
+- [ ] **Price, stock, and unit.** Price or stock changes are applied separately from content. An old draft and a stale tab do not overwrite current values. The single locked unit, agreed precision, rubles, and a free zero price are respected. The buyer sees a status, not warehouse quantities. Basis: CAT-OFFER-01, CAT-OFFER-CONFLICT-01, CAT-UNITS-01, CAT-UNIT-LOCK-01, CAT-STOCK-PUBLIC-01, CAT-STOCK-PRECISION-01, CAT-CURRENCY-01, CAT-PRICE-PRECISION-01, CAT-ZERO-PRICE-01.
+- [ ] **Variant lifecycle.** Adding and explicitly returning a variant go through the common draft; withdrawal occurs separately. Normal stock exhaustion is not equated with withdrawal. The last withdrawn variant, normal exhaustion of all variants, and viewing an exhausted variant beside in-stock variants are checked. Stock is not copied on publication. Basis: CAT-VARIANT-ADD-01, CAT-VARIANT-WITHDRAW-01, CAT-CARD-WITHDRAW-01, CAT-VARIANT-RESTORE-01, CAT-AVAILABILITY-01, CAT-VARIANT-OUT-OF-STOCK-01, and the principle of one actual stock amount.
+- [ ] **Directories and common cards.** A staff member manages categories and confirms matching; the seller does not independently change common content. A new normal required field does not hide the old card but is checked at the next content publication. Offer comparison uses only the item price for the same unit, with a warning that delivery has not been calculated. Basis: CAT-MATCH-01, CAT-COMMON-EDIT-01, CAT-TAXONOMY-01, CAT-TAXONOMY-CHANGE-01, CAT-COMPARE-DELIVERY-SCOPE-01.
+- [ ] **Search and filters.** There are matches by words, typos, and similar meaning; exact results rank above approximate ones, with no invented goods. Filters are jointly applied to one variant, and selected conditions are not weakened. The card is not duplicated; price and availability are calculated only from matching offers. Basis: CAT-SEARCH-01, CAT-SEARCH-GROUP-01, CAT-SEARCH-FIELDS-01, CAT-SEARCH-APPROX-01, CAT-SEARCH-FILTER-MULTI-01, CAT-SEARCH-FILTER-AVAILABILITY-01.
+- [ ] **Search controls.** Typing alone does not start a search; Enter, “Find,” and a filter change apply text under the agreed rules. Correction suggestions, automatic loading, return to the previous position, and passing applied conditions through a link work. An invalid condition is not removed silently, a failure is not presented as an empty result, and an old response does not replace the current search. Basis: CAT-SEARCH-TYPO-01, CAT-SEARCH-TYPO-TRIGGER-01, CAT-SEARCH-SCROLL-01, CAT-SEARCH-RETURN-01, CAT-SEARCH-FILTER-APPLY-01, CAT-SEARCH-TEXT-APPLY-01, CAT-SEARCH-FILTER-TEXT-01, CAT-SEARCH-LINK-01, CAT-SEARCH-LINK-VALIDATION-01.
+- [ ] **Card, photos, and links.** Opening from search, a normal direct link, and a link to a selected variant are checked separately. The common search cover does not change the price or selected variant; inside the card, photos match the selection, and missing photos are not replaced with someone else's. An unsuitable or unavailable variant is not substituted for the passed variant. Basis: CAT-VARIANT-PHOTOS-01, CAT-VARIANT-PHOTOS-EMPTY-01, CAT-SEARCH-COVER-01, CAT-SEARCH-OPEN-VARIANT-01, CAT-DIRECT-OPEN-VARIANT-01, CAT-VARIANT-LINK-01.
+- [ ] **Limited digital draft.** The seller saves the description and price of a downloadable good but does not publish it, upload the file being sold, or deliver it to the buyer in Phase 2. Basis: CAT-DIGITAL-SCOPE-01.
+- [ ] **End-to-end run and state protection.** The real sequential scenario “seller publishes → buyer finds → data changes → buyer sees the correct state” runs together with validation of Phase 1, migrations, and recovery. Access denials do not expose drafts, hidden variants, warehouse quantities, or secrets. Results are confirmed by actual execution, not merely by the presence of tests. This is a final-acceptance draft; the detailed validation plan still needs approval.
 
-### Отложенный блок — допуск участников закрытого теста
+### Deferred Block — Admission of Private-Test Participants
 
-**Статус:** прежний вопрос о допуске к единому тестовому сайту отложен после уточнения Владислава о скачивании проекта с GitHub. Ни ручной список учётных записей, ни одноразовые почтовые приглашения не выбраны. Эти предложения не являются условием подготовки понятного скачивания и локального запуска проекта. CAT-PILOT-SCOPE-01 сохраняет согласованные функции и ограничения пробного каталога; способ допуска к данным работающей площадки нельзя считать выбранным по сообщению о GitHub.
+**Status:** the former question about admission to a single test site was deferred after Vladislav clarified that the project would be downloaded from GitHub. Neither a manual account list nor one-time email invitations has been selected. These proposals are not a condition for preparing understandable project download and local startup. CAT-PILOT-SCOPE-01 preserves the agreed functions and restrictions of the trial catalog; the method of admission to data on a running marketplace cannot be considered selected based on the GitHub message.
 
-В первой фазе уже предусмотрены обычная регистрация, подтверждение почты и вход; в `identity.public` доступны соответствующие операции и сведения о состоянии учётной записи. Приглашения в `access.public` относятся к сотрудникам. Их наличие не означает готовность приглашений покупателей в пилот и не разрешает выдавать тестировщикам служебные роли.
+Phase 1 already provides normal registration, email confirmation, and sign-in; the corresponding operations and account-state information are available in `identity.public`. Invitations in `access.public` concern staff. Their presence does not mean that buyer invitations to the pilot are ready and does not permit granting testers service roles.
 
-История двух непринятых предложений, а не текущий вопрос пользователю:
+History of two unaccepted proposals, not a current question for the user:
 
-- **Список допущенных учётных записей.** Человек создаёт личную учётную запись, подтверждает почту и входит. Уполномоченный администратор отдельно разрешает ей участие в тесте. Одна регистрация не открывает каталог. Администратор может отозвать допуск без удаления учётной записи; последующие запросы к защищённому каталогу и фотографиям должны отклоняться.
-- **Именные одноразовые приглашения по почте.** Администратор отправляет приглашение на конкретную почту; человек подтверждает владение этой почтой, принимает действующее приглашение и получает участие в пилоте. Приглашение не даёт доступ любому обладателю пересланной ссылки. Срок действия, порядок отзыва и почтовый сценарий потребуют отдельного определения и проверки.
+- **List of admitted accounts.** A person creates a personal account, confirms their email, and signs in. An authorized administrator separately permits that account to participate in the test. Registration alone does not open the catalog. The administrator can revoke admission without deleting the account; subsequent requests to the protected catalog and photos must be rejected.
+- **Named one-time email invitations.** The administrator sends an invitation to a specific email address; the person confirms ownership of that email, accepts the active invitation, and joins the pilot. The invitation does not grant access to anyone who possesses a forwarded link. The expiration period, revocation process, and email flow require separate definition and validation.
 
-Прежняя рекомендация была в пользу первого способа: явного ручного допуска без дополнительного потока одноразовых почтовых приглашений для пилота. Это не принятое решение и не уже существующий экран управления участниками. Второй способ добавлял бы отдельный жизненный цикл приглашения. Ни один из них не включается в реализацию автоматически.
+The former recommendation favored the first method: explicit manual admission without an additional one-time-email-invitation flow for the pilot. This is not an accepted decision or an existing participant-management screen. The second method would add a separate invitation lifecycle. Neither is automatically included in the implementation.
 
-В обоих предложениях участие в тесте не заменяет допуск продавца по первой фазе и не даёт прав сотрудника. Соблюдаются блокировки учётной записи и ограничения каждой операции. Каталог, фотографии, поиск и подсказки защищены согласованной границей пилота. Ни один из этих вариантов пока не разрешает автоматически отправлять приглашения, менять реальные доступы или запускать внешний сервер. Формат хранения допуска и конкретный набор административных полномочий не заданы. Актуальное уточнение приведено ниже; прежнее предложение нельзя считать выбранным по сообщению о GitHub.
+Under both proposals, test participation does not replace Phase 1 seller admission or grant staff permissions. Account locks and the restrictions of each operation are respected. The catalog, photos, search, and suggestions are protected by the agreed pilot boundary. Neither option currently authorizes automatically sending invitations, changing real access, or starting an external server. The admission-storage format and the specific set of administrative permissions are not defined. The current clarification is given below; the former proposal cannot be considered selected based on the GitHub message.
 
-### Рабочий путь — скачивание проекта с GitHub и понятный запуск
+### Working Path — Downloading the Project from GitHub and Understandable Startup
 
-**Статус на 2026-09-15:** пользовательский результат понятен: человек получает проект с GitHub и может запустить его по понятной инструкции. Владислав сообщил, что не знает технической разницы предложенных способов скачивания. Выбор между исходниками, установщиком и готовой сборкой снят с текущего интервью; требовать от пользователя ответа на это меню было ошибкой. Ни один из предложенных вариантов не записывается как его выбор.
+**Status as of 2026-09-15:** the user outcome is clear: a person obtains the project from GitHub and can start it using understandable instructions. Vladislav said that he does not know the technical difference between the proposed download methods. The choice between source code, an installer, and a ready-made build was removed from the current interview; asking the user to answer this menu was a mistake. None of the proposed options is recorded as his choice.
 
-Сообщение Владислава: «Мы сразу укладываем проект на гитхап, и люди оттуда будут скачивать.»
+Vladislav's message: “We will put the project on GitHub right away, and people will download it from there.”
 
-**Техническая основа подготовки, выбранная архитектором:** существующий проект и описанный в `README.md` локальный запуск через Docker Compose — совместный запуск веб-приложения и необходимых ему служб. Уже указанные зависимости: Docker Desktop, подходящая командная оболочка и Python для первоначального создания собственного `.env`. Это не обещание запуска без предварительной подготовки и не готовый установщик. Новый установщик, отдельное настольное приложение, новый репозиторий или внешний сервер в текущую работу не добавляются.
+**Technical preparation basis selected by the architect:** the existing project and the local startup through Docker Compose described in `README.md` — joint startup of the web application and the services it requires. Already specified dependencies: Docker Desktop, a suitable command shell, and Python for initially creating the user's own `.env`. This is not a promise of startup without preparation and is not a ready-made installer. A new installer, a separate desktop application, a new repository, or an external server is not added to the current work.
 
-**Сценарий готовности скачиваемого проекта — будущая проверка, ещё не выполненная для каталога:**
+**Downloaded-project readiness scenario — a future check not yet completed for the catalog:**
 
-1. Получить чистую копию предназначенной для выпуска версии с GitHub, без файлов рабочей среды разработчика. Проверять именно способ получения, описанный в инструкции.
-2. По инструкции подготовить необходимые зависимости и собственное локальное окружение. Не переносить чужой `.env`, секреты, рабочие базы или пользовательские данные; не перезаписывать существующие ключи и базы.
-3. Запустить проект и открыть его в браузере. Инструкция должна прямо объяснять первоначальную настройку, создание первого администратора и безопасную остановку; установка приложения и его первый вход не должны зависеть от догадок пользователя.
-4. Пройти согласованные сценарии продавца и покупателя: подготовить и опубликовать физический товар, найти его, применить фильтры, выбрать вариант и просмотреть карточку. Заказы и оплата в этот выпуск не входят.
-5. Зафиксировать реальный результат проверки на чистом отдельном окружении. Нынешняя готовность первой фазы и наличие команды запуска не доказывают готовность ещё не реализованного каталога.
+1. Obtain a clean copy of the release-designated version from GitHub, without developer-workspace files. Check specifically the acquisition method described in the instructions.
+2. Prepare the required dependencies and the user's own local environment according to the instructions. Do not transfer someone else's `.env`, secrets, working databases, or user data; do not overwrite existing keys or databases.
+3. Start the project and open it in a browser. The instructions must directly explain initial setup, creation of the first administrator, and safe shutdown; installing the application and signing in for the first time must not depend on user guesses.
+4. Run the agreed seller and buyer scenarios: prepare and publish a physical good, find it, apply filters, select a variant, and view the card. Orders and payment are not included in this release.
+5. Record the actual validation result in a clean separate environment. Current Phase 1 readiness and the presence of a startup command do not prove readiness of the catalog that has not yet been implemented.
 
-Техническая основа выше — способ подготовки и проверки, а не новое бизнес-решение Владислава и не утверждение всей спецификации. Проверка локальной копии не определяет автоматически, будут ли пользовательские установки независимыми или подключёнными к общей площадке. Никакого общего подключения к рабочей базе она не разрешает.
+The technical basis above is a preparation and validation method, not a new business decision by Vladislav or approval of the entire specification. Validating a local copy does not automatically determine whether user installations will be independent or connected to a shared marketplace. It does not authorize any shared connection to a production database.
 
-**Граница публикации:** проверенный ранее репозиторий `VibeSan7/Open_Marketplace` закрыт; раздел 2 `concept-protocol.md` сохраняет исходный код официального сервиса закрытым. Подготовка понятного запуска не меняет эти условия. Смена видимости, лицензия, выдача реальных доступов и состав внешней публикации требуют отдельного разрешения перед соответствующим действием, но не блокируют локальную подготовку требований. Никакие секреты, рабочие базы и пользовательские данные не включаются в распространяемый материал.
+**Publication boundary:** the previously checked repository `VibeSan7/Open_Marketplace` is private; section 2 of `concept-protocol.md` keeps the official service's source code private. Preparing understandable startup does not change these conditions. Changing visibility, licensing, granting real access, and the contents of an external publication require separate authorization before the respective action, but do not block local requirements preparation. No secrets, working databases, or user data are included in distributable material.
 
-**Продолжение работы:** собрать цельный черновик требований к рабочему каталогу и его проверяемому запуску. Технические предложения обосновывать существующим проектом и отмечать отдельно от уже согласованных правил. Не повторять меню форматов скачивания и не возвращаться автоматически к спискам допуска или почтовым приглашениям. Реализация каталога, публикация и внешний запуск пока не выполнялись.
+**Continuation of work:** assemble a coherent draft of requirements for the working catalog and its verifiable startup. Ground technical proposals in the existing project and mark them separately from the rules already agreed. Do not repeat the download-format menu or automatically return to admission lists or email invitations. Catalog implementation, publication, and external startup have not yet been performed.

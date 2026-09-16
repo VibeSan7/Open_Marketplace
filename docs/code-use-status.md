@@ -1,11 +1,11 @@
-# Статус использования кода
+# Code-use status
 
-По состоянию на 2026-09-16 в репозитории нет файла `LICENSE` и не опубликован явный текст лицензии, разрешающий повторное использование кода. Это нерешённый вопрос о предоставлении прав на использование, а не разрешение по умолчанию.
+As of 2026-09-16, the repository has no `LICENSE` file and no explicit license text permitting reuse of the code has been published. The grant of usage rights remains unresolved; permission is not granted by default.
 
-Публичность репозитория сама по себе не является свободной лицензией. По условиям GitHub пользователи платформы могут просматривать публичный репозиторий и создавать его форки (копии на GitHub). Дополнительные условия повторного использования, изменения, распространения и коммерческого применения кода владелец отдельно не выбрал. Этот документ не выдаёт новых прав и не заменяет правовую проверку.
+A public repository is not, by itself, an open-source license. Under GitHub's terms, platform users may view a public repository and create forks (copies on GitHub). The owner has not separately selected additional terms for reusing, modifying, distributing or commercially using the code. This document grants no new rights and does not replace legal review.
 
-Официальная документация GitHub объясняет назначение лицензии и последствия отсутствия явных условий: [Licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository). В этот репозиторий не добавляются вымышленные сведения об авторстве и лицензия MIT/Apache без отдельного решения владельца.
+GitHub's official documentation explains the purpose of a license and the consequences of having no explicit terms: [Licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository). Do not add invented authorship information or an MIT/Apache license to this repository without a separate decision by the owner.
 
-## Сторонние изображения
+## Third-party images
 
-Приведённый выше статус относится к коду проекта, а не отменяет лицензии сторонних материалов. Фотографии демонстрационного каталога распространяются по индивидуальным лицензиям их авторов. Источники, авторы, условия распространения и описание преобразований перечислены в [demo-image-credits.md](demo-image-credits.md); эти сведения также доступны на странице `/demo-content/credits/`. Изображённые товарные знаки не означают связи проекта с владельцами брендов.
+The status above applies to the project code; it does not override third-party material licenses. Demo-catalog photographs are distributed under their authors' individual licenses. Sources, authors, distribution conditions and descriptions of transformations are listed in [demo-image-credits.md](demo-image-credits.md) and are also available at `/demo-content/credits/`. Depicted trademarks do not imply an association between this project and the brand owners.

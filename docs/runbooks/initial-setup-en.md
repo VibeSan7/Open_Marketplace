@@ -10,7 +10,7 @@ Download the current branch as a ZIP or clone the repository. Change to the dire
 
 ## 2. Create settings once
 
-Use the Python generator in the [README settings section](../../README.en.md#3-create-settings-first-run-only). It creates a new `.env`, prints no secrets, and refuses to overwrite an existing file. Do not delete `.env` for an existing database, and never send its contents to chat or logs.
+Use the Python generator in the [README settings section](../../README.md#3-create-settings-first-run-only). It creates a new `.env`, prints no secrets, and refuses to overwrite an existing file. Do not delete `.env` for an existing database, and never send its contents to chat or logs.
 
 ## 3. Start the application
 

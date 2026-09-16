@@ -1,88 +1,88 @@
-# Фаза 1 — локальная проверка 2026-09-11
+# Phase 1 — local validation 2026-09-11
 
-Проверка завершена 2026-09-11 в 02:16:27 +03:00. Это локальная проверка текущих исправлений, **не независимое заключение и не разрешение на объединение или пользовательский запуск**.
+Validation completed on 2026-09-11 at 02:16:27 +03:00. This is local validation of the current fixes, **not an independent assessment and not authorization to merge or for user launch**.
 
-## Объём и исходное состояние
+## Scope and initial state
 
-- Владелец выбрал: «Пока выполняй только локальные проверки сам».
-- Рабочая папка: `D:/Open_Marketplace/.worktrees/task20-phase1-completion`.
-- Ветка: `task20-phase1-completion`.
+- The owner chose: “For now, perform only local checks yourself.”
+- Working directory: `D:/Open_Marketplace/.worktrees/task20-phase1-completion`.
+- Branch: `task20-phase1-completion`.
 - HEAD: `d2a37bc18f2dcc688ff1afe333294c333a0dc7eb`.
-- Проверялись существующие незакоммиченные исправления, включая повторную настройку TOTP по приглашению сотрудника, ограничение попыток, аудит и изменения `Referrer-Policy`.
-- Код приложения, тесты, зависимости и настройки Compose в этой проверке не изменялись. После выполнения команд изменена только документация и сохранены результаты.
-- Другие модели не запускались. Коммит, push, объединение ветки, настройка внешних ресурсов и развёртывание не выполнялись.
+- Existing uncommitted fixes were checked, including TOTP reconfiguration through the employee invitation, attempt limiting, audit logging, and `Referrer-Policy` changes.
+- Application code, tests, dependencies, and Compose settings were not changed in this validation. After the commands ran, only the documentation was changed and the results were preserved.
+- No other models were run. Commit, push, branch merge, external-resource setup, and deployment were not performed.
 
-## Изоляция и сохранность данных
+## Isolation and data preservation
 
-Использован отдельный временный Compose-проект `omp-localcheck-20260910t230519z` из существующих `compose.yaml` и `compose.test.yaml`.
+Separate temporary Compose project `omp-localcheck-20260910t230519z` was used with the existing `compose.yaml` and `compose.test.yaml`.
 
-- База для проверок: только `postgres-test`; данные размещались в `tmpfs`, то есть во временной памяти контейнера.
-- Живая конфигурация Docker подтвердила `HostConfig.Tmpfs["/var/lib/postgresql/data"]`. Поле `Mounts` у этого контейнера было пустым; само по себе оно не доказывает отсутствие `tmpfs`.
-- Том приложения `task20-phase1-completion_postgres_data` не подключался к тестам. Существующий контейнер базы приложения не запускался.
-- Mailpit был отдельным тестовым экземпляром. Это важно: `open_marketplace/outbox/tests/test_mail_delivery.py` очищает ящик через `DELETE /api/v1/messages`.
-- Существующий `.env` остался неизменным, игнорируемым Git и неотслеживаемым. Секреты не выводились в отчёты.
-- Для попытки браузерной проверки текущий runtime-образ запущен с `DATABASE_HOST=postgres-test` и привязкой порта только к `127.0.0.1:8000`.
+- Validation used only `postgres-test`; its data was stored in `tmpfs`, that is, the container’s temporary memory.
+- The live Docker configuration confirmed `HostConfig.Tmpfs["/var/lib/postgresql/data"]`. This container’s `Mounts` field was empty; by itself, that does not prove the absence of `tmpfs`.
+- The application volume `task20-phase1-completion_postgres_data` was not attached to the tests. The existing application database container was not started.
+- Mailpit was a separate test instance. This matters because `open_marketplace/outbox/tests/test_mail_delivery.py` clears the mailbox through `DELETE /api/v1/messages`.
+- The existing `.env` remained unchanged, Git-ignored, and untracked. Secrets were not printed in reports.
+- For the browser-validation attempt, the current runtime image was started with `DATABASE_HOST=postgres-test` and the port bound only to `127.0.0.1:8000`.
 
-## Подтверждённые результаты
+## Confirmed results
 
-Все команды выполнялись на заново собранных образах текущего рабочего дерева, последовательно относительно тестовой базы.
+All commands ran on newly built images of the current working tree, sequentially against the test database.
 
-- Сборка runtime- и test-образов: успешно.
+- Runtime and test image builds: successful.
 - `makemigrations --check --dry-run`: `No changes detected`.
-- `migrate --noinput`: успешно в изолированной тестовой среде.
-- `check --deploy`: только четыре ранее описанных предупреждения локального HTTP-профиля: `security.W004`, `security.W008`, `security.W012`, `security.W016`. Это не разрешение использовать HTTP-настройки в production.
+- `migrate --noinput`: successful in the isolated test environment.
+- `check --deploy`: only the four previously documented warnings for the local HTTP profile: `security.W004`, `security.W008`, `security.W012`, `security.W016`. This is not authorization to use HTTP settings in production.
 - `lint-imports --no-cache`: `11 kept, 0 broken`.
-- Полный набор тестов: `Ran 407 tests in 175.159s`, `OK`; пропущенных тестов нет.
-- Все 17 сценариев из `open_marketplace/tests/test_full_flows.py` присутствуют в успешном полном прогоне.
-- Runtime- и test-образы прошли проверку отсутствия `/app/.env` и `/app/.git`.
-- Проверки отслеживаемых файлов на заданные шаблоны приватных ключей и непустые присваивания шести проектных секретов: совпадений нет. Это ограниченные проверки шаблонов, не утверждение об абсолютном отсутствии любых секретов.
-- `git diff --check` и `bash -n ops/verify_restore.sh`: успешно.
+- Full test suite: `Ran 407 tests in 175.159s`, `OK`; no tests were skipped.
+- All 17 scenarios from `open_marketplace/tests/test_full_flows.py` are present in the successful full run.
+- Runtime and test images passed the check for the absence of `/app/.env` and `/app/.git`.
+- Checks of tracked files for the specified private-key patterns and non-empty assignments of the six project secrets found no matches. These are limited pattern checks, not a claim that all secrets are absolutely absent.
+- `git diff --check` and `bash -n ops/verify_restore.sh`: successful.
 
-## Реальное восстановление базы
+## Actual database restoration
 
-Выполнена штатная команда с явным именем временного Compose-проекта:
+The standard command was run with an explicit temporary Compose-project name:
 
 ```bash
 COMPOSE_PROJECT_NAME=omp-localcheck-20260910t230519z bash ops/verify_restore.sh
 ```
 
-Результат: код выхода `0`. Созданы отдельные временные исходная и целевая базы; выполнены `pg_dump` и `pg_restore`. Проверки исходной и восстановленной схемы и связанного графа данных совпали. После выполнения отдельно подтверждено отсутствие временных баз `restore_source_*` / `restore_target_*` и временных файлов дампа/частичного отчёта.
+Result: exit code `0`. Separate temporary source and target databases were created; `pg_dump` and `pg_restore` were run. Checks of the source and restored schemas and their related data graph matched. After completion, the absence of temporary `restore_source_*` / `restore_target_*` databases and temporary dump/partial-report files was separately confirmed.
 
-## Браузерная приёмка — не выполнена
+## Browser acceptance — not completed
 
-Попытка открыть `http://127.0.0.1:8000/login/` через `browser_exec` с `local=true` завершилась отказом инструмента:
+An attempt to open `http://127.0.0.1:8000/login/` through `browser_exec` with `local=true` ended with a tool refusal:
 
 ```text
 Blocked: URL targets a private or internal address
 ```
 
-Ограничение не обходилось. Пароли, коды TOTP и другие секреты через браузер не вводились. Регистрация и вход в настоящем браузере, принятие приглашения администратора, работа проверяющего заявок и полный путь продавца **не подтверждены**.
+The restriction was not bypassed. Passwords, TOTP codes, and other secrets were not entered through the browser. Registration and login in a real browser, administrator-invitation acceptance, reviewer application handling, and the full seller flow are **not confirmed**.
 
-Первый отдельный HTTP-запрос проверки готовности сразу после запуска вернул `curl` exit `52` (`Empty reply from server`, HTTP-код `000`). Это не успешная проверка HTTP. Позднее журнал контейнера подтвердил запуск Django 5.2.17 без ошибок системной проверки, но сам факт запуска сервера не заменяет проверку страниц или браузерную приёмку.
+The first separate readiness HTTP request immediately after startup returned `curl` exit `52` (`Empty reply from server`, HTTP code `000`). This was not a successful HTTP check. The container log later confirmed that Django 5.2.17 started without system-check errors, but the fact that the server started does not replace page checks or browser acceptance.
 
-Автоматические HTML/Admin-тесты остаются автоматическими тестами и не засчитываются вместо Task 20 Step 5.
+Automated HTML/Admin tests remain automated tests and do not count in place of Task 20 Step 5.
 
-## Наблюдение о локальном запуске
+## Observation about local startup
 
-В существующем `compose.yaml` порт web указан как `8000:8000`; Docker для штатного контейнера показывал привязку `0.0.0.0:8000`. Это шире, чем доступ только с этого компьютера. В данной проверке использована штатная опция Compose `run --publish 127.0.0.1:8000:8000`; исходная конфигурация не исправлялась.
+In the existing `compose.yaml`, the web port is specified as `8000:8000`; Docker showed the standard container bound to `0.0.0.0:8000`. This is broader than access from this computer only. This validation used the standard Compose option `run --publish 127.0.0.1:8000:8000`; the original configuration was not fixed.
 
-Перед обычным локальным запуском следует отдельно закрепить привязку к loopback в локальной конфигурации. Это не основание открывать сервис наружу или считать dev-сервер пригодным для production.
+Before ordinary local startup, the loopback binding should be separately fixed in the local configuration. This is not a reason to expose the service externally or to consider the development server suitable for production.
 
-## Завершение и следующий шаг
+## Completion and next step
 
-Созданные этой проверкой временные контейнеры и сеть остановлены и удалены; общая очистка Docker и удаление томов приложения не выполнялись. Результаты сохранены.
+The temporary containers and network created by this validation were stopped and removed; general Docker cleanup and removal of application volumes were not performed. The results were preserved.
 
-- Task 20 Step 3: локальная автоматическая проверка выполнена.
-- Task 20 Step 5: остаётся незавершённым — требуется настоящий браузерный проход по `docs/runbooks/local-development.md`, раздел 4, через разрешённый способ доступа или вручную владельцем.
-- Независимое заключение по текущим исправлениям остаётся отдельным незакрытым условием. Отказ от нового запуска модели сейчас не отменяет это условие.
-- Task 20 Step 7, объединение и пользовательский запуск не одобрены. После оставшихся проверок необходимы актуализация свидетельств и финальная проверка перед фиксацией изменений.
+- Task 20 Step 3: local automated validation completed.
+- Task 20 Step 5: remains incomplete — a real browser pass through `docs/runbooks/local-development.md`, section 4, is required via an approved access method or manually by the owner.
+- An independent assessment of the current fixes remains a separate unmet condition. Declining to run a new model now does not remove this condition.
+- Task 20 Step 7, merge, and user launch are not approved. After the remaining checks, the evidence must be updated and a final pre-commit check performed.
 
-## Где лежат свидетельства
+## Evidence location
 
-Локальная папка (игнорируется Git):
+Local directory (Git-ignored):
 
 `artifacts/local-validation-20260910T230519Z/`
 
-Основные файлы: `preflight.json`, `source-hashes-before.json`, `database-isolation.json`, `build.log`, `makemigrations.log`, `migrate.log`, `check-deploy.log`, `import-linter.log`, `full-suite.log`, `quality-gate-summary.json`, `test-image-secrecy.log`, `runtime-image-secrecy.log`, `repository-secrecy.json`, `restore.log`, `restore-result.txt`, `restore-summary.json`, `browser-status.json`.
+Main files: `preflight.json`, `source-hashes-before.json`, `database-isolation.json`, `build.log`, `makemigrations.log`, `migrate.log`, `check-deploy.log`, `import-linter.log`, `full-suite.log`, `quality-gate-summary.json`, `test-image-secrecy.log`, `runtime-image-secrecy.log`, `repository-secrecy.json`, `restore.log`, `restore-result.txt`, `restore-summary.json`, `browser-status.json`.
 
-Связанные документы: [план фазы 1](../superpowers/plans/2026-09-02-phase-1-identity-access.md), [основной отчёт](phase-1-review.md), [локальный запуск](../runbooks/local-development.md), [восстановление](../runbooks/test-and-restore.md).
+Related documents: [phase 1 plan](../superpowers/plans/2026-09-02-phase-1-identity-access.md), [main report](phase-1-review.md), [local startup](../runbooks/local-development.md), [restoration](../runbooks/test-and-restore.md).

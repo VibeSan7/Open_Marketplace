@@ -1,98 +1,98 @@
-# Фаза 1 — полный локальный прогон после VAL-001, 2026-09-14
+# Phase 1 — full local run after VAL-001, 2026-09-14
 
-**VAL-001 исправлено. Весь согласованный локальный набор проверок после R-01/R-03/R-05 и исправления README прошёл, включая реальное восстановление тестовой PostgreSQL.**
+**VAL-001 fixed. The entire approved local validation set after R-01/R-03/R-05 and the README fix passed, including actual restoration of the test PostgreSQL database.**
 
-Это не разрешение на commit, push, merge, публикацию или автоматическое закрытие Task 20. Новая независимая проверяющая модель не запускалась.
+This is not authorization for commit, push, merge, publication, or automatic closure of Task 20. No new independent reviewing model was run.
 
-## Что исправлено
+## What was fixed
 
-В `README.md:36` изменена одна строка генератора `THROTTLE_HASH_KEY`:
+One line of the `THROTTLE_HASH_KEY` generator was changed in `README.md:36`:
 
 ```python
     "THROTTLE_HASH_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("ascii"),
 ```
 
-Новый способ сохраняет требуемое заполнение Base64 — формата записи случайных байтов ключа. Прежний `secrets.token_urlsafe(32)` убирал заполнение, поэтому строгая проверка приложения отвергала результат. Каждый ключ по-прежнему получает отдельные случайные байты.
+The new method preserves the required Base64 padding, the encoding format for the key’s random bytes. The previous `secrets.token_urlsafe(32)` removed the padding, so the application’s strict check rejected the result. Each key still receives separate random bytes.
 
-- Изменение README — **+1/−1 строка**, остальные байты сохранены.
-- Прикладной код, тестовый код, проверка ключей, зависимости и скрипт восстановления **не менялись**.
-- Рабочий `.env` не заменялся, не регенерировался и не копировался в новый стенд. Ключи существующей базы не менялись.
-- После проверок обновлены только текущие сводные документы. Предыдущий [отчёт об отказе VAL-001](phase-1-local-validation-2026-09-14.md) сохранён как исторический.
+- README change — **+1/−1 line**, all other bytes preserved.
+- Application code, test code, key validation, dependencies, and the restoration script **were not changed**.
+- The working `.env` was not replaced, regenerated, or copied to a new stand. Existing database keys were not changed.
+- After validation, only the current summary documents were updated. The previous [VAL-001 failure report](phase-1-local-validation-2026-09-14.md) was retained as historical.
 
-## Проверка самой инструкции
+## Checking the instruction itself
 
-1. Предыдущий реальный RED сохранён: runtime завершился кодом 1 с `THROTTLE_HASH_KEY is invalid`. Перед исправлением контрольные суммы подтвердили точное совпадение README и исходников runtime с отказавшим снимком. Повтор старого запуска здесь не приписывается.
-2. Полный исправленный Python-блок извлечён непосредственно из README и выполнен в новой пустой папке с `.env.example`. Значения ключей не выводились.
-3. Новый ключ прошёл строгий декодер: **44 символа записи, 32 декодированных байта**. Сам ключ в отчёт не включён.
-4. Реальный заново собранный runtime с новым файлом настроек, без сети (`--network none`), выполнил `check --deploy` с **кодом 0**. Остались только четыре документированных предупреждения локального HTTP.
-5. Повторный запуск генератора отказался перезаписывать уже созданный `.env` (`FileExistsError`). Контрольная сумма файла не изменилась.
-6. Именно это новое окружение без изменения содержимого использовано для всего полного набора и настоящего восстановления базы. Это не проверка со старыми готовыми ключами.
+1. The previous real RED was preserved: the runtime exited with code 1 and `THROTTLE_HASH_KEY is invalid`. Before the fix, checksums confirmed an exact match between the README and the runtime source in the failed snapshot. The old run is not being claimed as a repeat here.
+2. The complete fixed Python block was extracted directly from the README and run in a new empty directory with `.env.example`. Key values were not printed.
+3. The new key passed the strict decoder: **44 encoded characters, 32 decoded bytes**. The key itself is not included in the report.
+4. A real newly built runtime with the new settings file, without network access (`--network none`), ran `check --deploy` with **code 0**. Only the four documented local HTTP warnings remained.
+5. A repeat run of the generator refused to overwrite the already created `.env` (`FileExistsError`). The file checksum did not change.
+6. This exact new environment, without content changes, was used for the entire full suite and actual database restoration. This was not validation with old pre-generated keys.
 
-## Свежие результаты
+## Fresh results
 
-Проект Docker: `omp-val001-20260913t230642z`. В изолированную копию вошли **203 файла** текущего рабочего дерева `task20-phase1-completion`, включая прежние незакоммиченные R-01/R-03/R-05. Исправленный README попал в оба образа до запуска тестов.
+Docker project: `omp-val001-20260913t230642z`. The isolated copy contained **203 files** from the current `task20-phase1-completion` working tree, including the earlier uncommitted R-01/R-03/R-05 changes. The fixed README was included in both images before the tests ran.
 
-- Runtime- и test-образы собраны: код 0.
-- `makemigrations --check --dry-run`: `No changes detected`, код 0.
-- `migrate --noinput` и `migrate --check`: код 0.
-- `check --deploy`: только `security.W004`, `security.W008`, `security.W012`, `security.W016`; других предупреждений нет. Это местный HTTP-режим, не конфигурация для публикации. Тест включения защищённого режима также прошёл.
+- Runtime and test images built: code 0.
+- `makemigrations --check --dry-run`: `No changes detected`, code 0.
+- `migrate --noinput` and `migrate --check`: code 0.
+- `check --deploy`: only `security.W004`, `security.W008`, `security.W012`, `security.W016`; there were no other warnings. This is local HTTP mode, not a publication configuration. The secure-mode enablement test also passed.
 - `lint-imports --no-cache`: **11 kept, 0 broken**.
-- Полный набор: **Ran 411 tests in 191.294s**, **OK**, код 0. **Нет ошибок, неудачных тестов и пропусков.**
-- По полному журналу сверены **411 уникальных успешных идентификаторов тестов**, не только строка итогового счётчика.
-- Внутри 411 прошли **17 основных сценариев**, **8 проверок миграций**, **5 проверок границ фазы** и **39 связанных проверок приглашений/чувствительных ссылок**, включающих R-01/R-03/R-05. Эти группы не суммируются повторно.
-- Отдельный дополнительный запуск `test_scope_boundaries.py`: **5/5**, код 0. Это повтор той же группы, не новые уникальные тесты.
-- В обоих образах контрольные суммы всех **203 файлов** совпали со снимком; `/app/.env` и `/app/.git` отсутствуют, UID проверочных процессов — 10001, не root.
-- Ограниченный поиск заданных шаблонов приватных ключей и непустых присваиваний шести проектных секретов не дал совпадений; `.env` игнорируется Git и не отслеживается. Это не универсальная гарантия отсутствия любых секретов.
-- `git diff --check` и `bash -n ops/verify_restore.sh`: код 0. Окончательные документы проверены отдельно.
+- Full suite: **Ran 411 tests in 191.294s**, **OK**, code 0. **There were no errors, failed tests, or skips.**
+- **411 unique successful test identifiers** were cross-checked against the full log, not only the final counter line.
+- Within 411, **17 core scenarios**, **8 migration checks**, **5 phase-boundary checks**, and **39 related invitation/sensitive-link checks** covering R-01/R-03/R-05 passed. These groups are not counted again in the total.
+- Separate additional run of `test_scope_boundaries.py`: **5/5**, code 0. This repeats the same group; they are not new unique tests.
+- Checksums of all **203 files** matched the snapshot in both images; `/app/.env` and `/app/.git` are absent, and the validation-process UID is 10001, not root.
+- A limited search for the specified private-key patterns and non-empty assignments of the six project secrets found no matches; `.env` is Git-ignored and untracked. This is not a universal guarantee that all secrets are absent.
+- `git diff --check` and `bash -n ops/verify_restore.sh`: code 0. Final documents were checked separately.
 
-Команда полного набора из папки копии:
+Full-suite command run from the copy directory:
 
 ```bash
 docker compose -p omp-val001-20260913t230642z -f compose.yaml -f compose.test.yaml run --rm --no-deps --pull never -T test python manage.py test open_marketplace --noinput --verbosity 2
 ```
 
-## Настоящее восстановление
+## Actual restoration
 
-Выполнен штатный неизменённый скрипт:
+The standard unchanged script was run:
 
 ```bash
 COMPOSE_PROJECT_NAME=omp-val001-20260913t230642z bash ops/verify_restore.sh
 ```
 
-**Код завершения 0.** Созданы отдельные временные исходная и целевая базы в новом `postgres-test`; выполнены настоящий `pg_dump` и `pg_restore`. Сценарий №17 проверяет только контракт команды и не подменяет этот отдельный запуск.
+**Exit code 0.** Separate temporary source and target databases were created in a new `postgres-test`; real `pg_dump` and `pg_restore` were run. Scenario No. 17 checks only the command contract and does not substitute for this separate run.
 
-- В обеих базах прошли **9 именованных проверок согласованности** и проверены **9 конечных миграций**.
-- Секции результата до и после восстановления полностью совпали, включая идентификаторы тестовых записей.
-- Проверки исходной и восстановленной баз выполнялись в режиме запрета записи.
-- Отдельный запрос только на чтение **до остановки PostgreSQL** подтвердил отсутствие временных `restore_source_*` и `restore_target_*` баз.
-- Временные дампы и частичные отчёты отсутствуют. Сохранён результат проверки.
+- **9 named consistency checks** passed and **9 final migrations** were checked in both databases.
+- The pre- and post-restoration result sections matched completely, including test-record identifiers.
+- Checks of the source and restored databases ran in write-prohibited mode.
+- A separate read-only query **before PostgreSQL shutdown** confirmed the absence of temporary `restore_source_*` and `restore_target_*` databases.
+- Temporary dumps and partial reports are absent. The validation result was preserved.
 
-Это доказательство восстановления одноразовой тестовой базы, **не** политика резервного копирования рабочей системы и не восстановление прежнего ручного стенда.
+This is evidence of restoring a one-time test database, **not** a backup policy for the production system and not restoration of the previous manual stand.
 
-## Сохранность и остановка
+## Preservation and shutdown
 
-Проверка остановки: `2026-09-13T23:23:10.799352+00:00` (UTC, 2026-09-14 по местному времени).
+Shutdown check: `2026-09-13T23:23:10.799352+00:00` (UTC, 2026-09-14 local time).
 
-- Запускались только свои `postgres-test`, Mailpit и одноразовые контейнеры проверок. Порт базы не публиковался; старая база и почта не использовались.
-- В копии `compose.yaml` отличаются только три loopback-привязки 18000/18025/11025. Обычный web-сервер и ручная приёмка в браузере здесь не запускались.
-- Остановлены только два новых сервисных контейнера. Работающих контейнеров проекта нет; общая очистка Docker и удаление прежних ресурсов не выполнялись.
-- По точным ID сверены **14 прежних контейнеров**: состояния, времена, счётчики перезапуска, образы, хранилища, привязки портов и сетевой режим не изменились.
-- До обновления отчётов единственное изменение исходников — одна строка README. Приложение и тесты неизменны. После прогона меняется только фиксация результатов, не код и не команды.
-- Рабочий `.env`, новое тестовое окружение на всём протяжении gate и исходный снимок копии не изменились. `HEAD` Git сохранился; коммитов и публикации не было.
-- **16 журналов** проверены по известным ключевым значениям нового тестового окружения; совпадений нет. Значения не выводились в отчёт.
-- Временная `tmpfs` база не предназначена для сохранения после остановки. Старые данные или письма этим результатом не объявляются восстановленными.
+- Only the project’s own `postgres-test`, Mailpit, and one-time validation containers were run. The database port was not published; the old database and mail were not used.
+- Only three loopback bindings, 18000/18025/11025, differ in the copy’s `compose.yaml`. The ordinary web server and manual browser acceptance were not run here.
+- Only two new service containers were stopped. No project containers are running; general Docker cleanup and removal of previous resources were not performed.
+- **14 previous containers** were cross-checked by exact ID: their states, times, restart counts, images, storage, port bindings, and network mode did not change.
+- Before the reports were updated, the only source change was one README line. The application and tests are unchanged. After the run, only the recording of results changes, not the code or commands.
+- The working `.env`, the new test environment throughout the gate, and the original copy snapshot were unchanged. Git `HEAD` was preserved; there were no commits or publication.
+- **16 logs** were checked against known key values from the new test environment; there were no matches. The values were not printed in the report.
+- The temporary `tmpfs` database is not intended to persist after shutdown. This result does not claim that old data or mail was restored.
 
-## Текущий итог
+## Current result
 
-**VAL-001 закрыто в согласованном объёме. Полный согласованный локальный gate завершён**, включая реальное восстановление после R-01/R-03/R-05 и VAL-001.
+**VAL-001 is closed within the approved scope. The full approved local gate is complete**, including actual restoration after R-01/R-03/R-05 and VAL-001.
 
-Ручная Chrome-приёмка 10/10 и обычный запуск с постоянной базой от 2026-09-13 остаются отдельными историческими доказательствами. Единственный согласованный независимый статический review был до последующих исправлений и не выдаётся за новую проверку этой версии. Платных моделей в этом шаге не запускали.
+The 10/10 manual Chrome acceptance and ordinary startup with a persistent database from 2026-09-13 remain separate historical evidence. The only approved independent static review occurred before the subsequent fixes and is not presented as a new check of this version. Paid models were not run in this step.
 
-**Task 20 Step 7, окончательная фиксация Git и решение владельца о завершении первой фазы остаются отдельными.** Merge, публикация и рабочий сервер не затрагивались.
+**Task 20 Step 7, final recording in Git, and the owner’s decision to complete the first phase remain separate.** Merge, publication, and the production server were not touched.
 
-## Свидетельства
+## Evidence
 
-Локальная папка, игнорируемая Git: `artifacts/val-001-final-local-20260913T230642Z/`.
+Local Git-ignored directory: `artifacts/val-001-final-local-20260913T230642Z/`.
 
 - `preflight.json`, `README-before.md`, `readme-only.diff`, `red-evidence.json`;
 - `generator-verification.json`, `generator-green.log`;
@@ -104,6 +104,6 @@ COMPOSE_PROJECT_NAME=omp-val001-20260913t230642z bash ops/verify_restore.sh
 - `restore.log`, `restore-result.txt`, `restore-verification.json`, `restore-database-cleanup.log`;
 - `copy-stop.log`, `copy-stop-verification.json`, `final-verification.json`.
 
-`source/.env` и `fresh-environment/.env` содержат новые тестовые ключи: их нельзя включать в вложения или архив папки. Для передачи предназначен только этот отчёт.
+`source/.env` and `fresh-environment/.env` contain new test keys: they must not be included in attachments or an archive of the directory. Only this report is intended for sharing.
 
-Документация Python проверена через Context7 с версией 3.13.9; дополнительные параметры новых версий Python не использовались. Первичный источник: https://github.com/python/cpython/blob/v3.13.9/Doc/library/base64.rst .
+Python documentation was checked through Context7 against version 3.13.9; additional parameters from newer Python versions were not used. Primary source: https://github.com/python/cpython/blob/v3.13.9/Doc/library/base64.rst .
