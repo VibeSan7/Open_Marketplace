@@ -11,7 +11,14 @@
   </div>
   <h1>{{ product.title }}</h1>
   <p class="product-meta">Категория: {{ product.category }} · Единица: {{ product.unit_label }}</p>
+  <form method="post" action="{{ product.save_url }}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="{{ product.save_action }}">
+    <button class="button-secondary" type="submit">{% if product.is_saved %}Удалить из избранного{% else %}Сохранить в избранное{% endif %}</button>
+  </form>
+  {% if product.seller_url %}<p>Продавец: <a href="{{ product.seller_url }}">{{ product.seller_name }}</a></p>{% endif %}
   {% if product.selection_message %}<p class="notice">{{ product.selection_message }}</p>{% endif %}
+  {% if product.price_filter_message %}<p class="notice">{{ product.price_filter_message }}</p>{% endif %}
   <nav class="variant-tabs" aria-label="Варианты">
     {% for variant in product.variants %}
       <a class="{% if variant.id == product.selected_variant_id %}selected{% endif %}" {% if variant.id == product.selected_variant_id %}aria-current="true"{% endif %} href="{{ variant.url }}">{{ variant.label }}{% if not variant.in_stock %} — Нет в наличии{% endif %}</a>
@@ -47,7 +54,7 @@
           <h3>Предложения</h3>
           <ul class="offer-list">
             {% for offer in product.selected_variant.offers %}
-              <li><strong>{{ offer.seller_name }}</strong><span class="offer-price">{% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %}</span><span class="offer-delivery">Доставка ещё не рассчитана</span></li>
+              <li><strong>{% if offer.seller_url %}<a href="{{ offer.seller_url }}">{{ offer.seller_name }}</a>{% else %}{{ offer.seller_name }}{% endif %}</strong><span class="offer-price">{% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %}</span><span class="offer-delivery">Доставка ещё не рассчитана</span>{% if demo_orders_enabled and request.user.kind != "service" %}<a class="button-secondary" href="{% url 'demo-order-create' variant_id=offer.variant_id %}">Создать тестовый заказ</a><span class="subtle">Без реальных денег</span>{% endif %}</li>
             {% endfor %}
           </ul>
         {% endif %}

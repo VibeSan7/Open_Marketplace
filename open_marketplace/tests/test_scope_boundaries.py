@@ -256,7 +256,10 @@ class ScopeBoundaryTests(SimpleTestCase):
             value: marker
             for value in app_values
             for marker in FORBIDDEN_APP_MARKERS
-            if marker in value
+            if marker in value and value not in {
+                "open_marketplace.demo_orders.apps.demoordersconfig",
+                "open_marketplace.demo_orders demo_orders",
+            }
         }
         self.assertEqual(forbidden, {})
 
@@ -306,9 +309,16 @@ class ScopeBoundaryTests(SimpleTestCase):
                 metadata = " ".join(
                     (model._meta.label_lower, model.__module__)
                 ).casefold()
-                self.assertFalse(
-                    any(marker in metadata for marker in FORBIDDEN_MODEL_MARKERS)
-                )
+                # v0.3 permits exactly these simulation records, not real commerce.
+                allowed_simulation = model._meta.label_lower in {
+                    "demo_orders.demoinventory",
+                    "demo_orders.demoorder",
+                    "demo_orders.demoorderevent",
+                } and model.__module__ == "open_marketplace.demo_orders.models"
+                if not allowed_simulation:
+                    self.assertFalse(
+                        any(marker in metadata for marker in FORBIDDEN_MODEL_MARKERS)
+                    )
                 self.assertEqual(
                     [
                         field.name

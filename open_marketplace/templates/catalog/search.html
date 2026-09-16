@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static l10n %}
 {% block title %}Каталог{% endblock %}
 {% block page_class %}catalog-shell{% endblock %}
 {% block extrahead %}<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">{% endblock %}
@@ -14,6 +14,17 @@
       <label for="catalog-q">Поиск</label>
       <input id="catalog-q" name="q" value="{{ search.query }}" maxlength="200" autocomplete="off" placeholder="Название или описание">
       <button type="submit">Найти</button>
+      <label for="catalog-price-min">Цена от, ₽</label>
+      <input id="catalog-price-min" name="price_min" inputmode="decimal" value="{{ search.price_min|default_if_none:''|unlocalize }}" maxlength="32" data-auto-submit>
+      <label for="catalog-price-max">Цена до, ₽</label>
+      <input id="catalog-price-max" name="price_max" inputmode="decimal" value="{{ search.price_max|default_if_none:''|unlocalize }}" maxlength="32" data-auto-submit>
+      <p class="subtle">Цена товара за указанную единицу, без доставки.</p>
+      <label for="catalog-sort">Порядок</label>
+      <select id="catalog-sort" name="sort" data-auto-submit>
+        <option value="relevance" {% if search.sort == 'relevance' %}selected{% endif %}>По соответствию запросу</option>
+        <option value="price_asc" {% if search.sort == 'price_asc' %}selected{% endif %}>Сначала дешевле</option>
+        <option value="price_desc" {% if search.sort == 'price_desc' %}selected{% endif %}>Сначала дороже</option>
+      </select>
       <label for="catalog-category">Категория</label>
       <select id="catalog-category" name="category" data-auto-submit>
         <option value="">Все категории</option>

@@ -225,7 +225,7 @@ def verify_email_complete(request):
                 raw_token=raw_token,
                 context=_context(request, anonymous=True),
             )
-            message = "Email verification completed."
+            message = "Электронная почта подтверждена."
         except (SensitiveLinkRejected, ApplicationError):
             message = EXPECTED_ERROR_MESSAGE
     return secure_render(
@@ -249,7 +249,7 @@ def password_reset_confirm(request):
                     context=_context(request, anonymous=True),
                 )
                 request.session.flush()
-                message = "Password reset completed."
+                message = "Пароль изменён."
             except (SensitiveLinkRejected, ApplicationError):
                 message = EXPECTED_ERROR_MESSAGE
         else:
@@ -333,7 +333,7 @@ def reauthenticate(request):
     return secure_render(
         request,
         "identity/form.html",
-        {"title": "Reauthenticate", "form": form, "message": message},
+        {"title": "Подтвердите личность", "form": form, "message": message},
     )
 
 
@@ -363,7 +363,7 @@ def totp_setup(request):
         return secure_render(
             request,
             "identity/form.html",
-            {"title": "Set up TOTP", "form": TotpBeginForm(), "message": message},
+            {"title": "Настройка второго фактора", "form": TotpBeginForm(), "message": message},
         )
     if request.method == "POST":
         form = TotpBeginForm(request.POST)
@@ -389,7 +389,7 @@ def totp_setup(request):
     return secure_render(
         request,
         "identity/form.html",
-        {"title": "Set up TOTP", "form": form, "message": message},
+        {"title": "Настройка второго фактора", "form": form, "message": message},
     )
 
 
@@ -418,7 +418,7 @@ def totp_disable(request):
     return secure_render(
         request,
         "identity/form.html",
-        {"title": "Disable TOTP", "form": form, "message": message},
+        {"title": "Отключение второго фактора", "form": form, "message": message},
     )
 
 
@@ -451,7 +451,7 @@ def recovery_codes_replace(request):
     return secure_render(
         request,
         "identity/form.html",
-        {"title": "Replace recovery codes", "form": form, "message": message},
+        {"title": "Замена резервных кодов", "form": form, "message": message},
     )
 
 
@@ -516,7 +516,7 @@ def mandatory_totp_recovery(request):
         request,
         "identity/form.html",
         {
-            "title": "Recover mandatory TOTP",
+            "title": "Восстановление обязательного второго фактора",
             "form": MandatoryTotpBeginForm(),
             "message": message,
         },
@@ -552,7 +552,7 @@ def session_revoke(request, *, session_id):
         return secure_render(
             request,
             "identity/form.html",
-            {"title": "Sessions", "message": EXPECTED_ERROR_MESSAGE},
+            {"title": "Сеансы", "message": EXPECTED_ERROR_MESSAGE},
         )
     if str(session_id) == str(current_id):
         request.session.flush()
@@ -569,6 +569,6 @@ def sessions_revoke_others(request):
         return secure_render(
             request,
             "identity/form.html",
-            {"title": "Sessions", "message": EXPECTED_ERROR_MESSAGE},
+            {"title": "Сеансы", "message": EXPECTED_ERROR_MESSAGE},
         )
     return _redirect_303(reverse("sessions"))

@@ -541,7 +541,7 @@ class SecurityTestCase(TestCase):
                 HTTP_X_FORWARDED_FOR=forwarded,
             )
             self.assertEqual(registration_response.status_code, 200)
-            self.assertContains(registration_response, "If the details are eligible, check your email.")
+            self.assertContains(registration_response, "Если данные подходят, проверьте электронную почту.")
         get_response = client.get(reverse("password-reset-request"), REMOTE_ADDR=source)
         token = client.cookies["csrftoken"].value
         post_response = client.post(

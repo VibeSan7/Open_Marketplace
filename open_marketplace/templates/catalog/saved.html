@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">{% endblock %}
+{% block title %}Избранное — каталог{% endblock %}
+{% block page_class %}catalog-shell{% endblock %}
+{% block content %}
+<section class="catalog-page">
+  <h1>Избранное</h1>
+  {% if products %}
+    <ul class="product-list">
+      {% for product in products %}
+        <li class="product-card">
+          <a href="{{ product.url }}"><h2>{{ product.title }}</h2></a>
+          <p>{{ product.category }} · {{ product.unit_label }}</p>
+          <p>{{ product.price_label }} · {% if product.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>
+          <form method="post" action="{{ product.save_url }}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove">
+            <button class="button-secondary" type="submit">Удалить из избранного</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Сохранённых товаров пока нет.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+<section>
+  <h2>{{ offer.title }}</h2>
+  <p><strong>Вариант:</strong> {{ offer.variant_label }}</p>
+  <p><strong>Продавец:</strong> {{ offer.seller_name }}</p>
+  <p><strong>Цена:</strong> {{ offer.unit_price|floatformat:2 }} ₽ / {{ offer.unit_label }}</p>
+  <p class="subtle">Тестовые остатки учитываются отдельно. Точные складские количества покупателю не раскрываются.</p>
+  <p class="helptext">{{ offer.simulation_notice }}</p>
+</section>

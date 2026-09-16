@@ -1,13 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Set up TOTP{% endblock %}
+{% block title %}Настройка второго фактора{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Set up TOTP</h1>
-<p>Manual secret: <code>{{ setup.manual_secret }}</code></p>
-<p>Provisioning URI: <code>{{ setup.provisioning_uri }}</code></p>
+<h1>Настройка второго фактора TOTP</h1>
+<p>TOTP — это шестизначный одноразовый код из приложения-аутентификатора.</p>
+<p>Секрет для ручной настройки: <code>{{ setup.manual_secret }}</code></p>
+<p>Ссылка для настройки приложения: <code>{{ setup.provisioning_uri }}</code></p>
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Confirm TOTP</button>
+  <button type="submit">Подтвердить код</button>
 </form>
 {% endblock %}

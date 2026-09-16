@@ -88,6 +88,17 @@ class StaffInvitationPageTests(TestCase):
         session.save()
         return account, registry, secret
 
+    def test_staff_invitation_page_uses_russian_copy(self):
+        raw_token, _ = self._invitation("copy-check@example.test")
+        self._entry(raw_token)
+
+        response = self.client.get(reverse("staff-invitation-accept"))
+
+        self.assertContains(response, "Принять приглашение сотрудника")
+        self.assertContains(response, "Продолжить")
+        self.assertNotContains(response, "Accept staff invitation")
+        self.assertNotContains(response, ">Continue<")
+
     def test_staff_invitation_entry_is_token_free_and_accept_post_requires_csrf(self):
         raw_token, invitation = self._invitation("new@example.com")
 
@@ -121,7 +132,7 @@ class StaffInvitationPageTests(TestCase):
         )
 
         self.assertContains(response, EXPECTED_ERROR_MESSAGE)
-        self.assertContains(response, "sign out and reopen the invitation link")
+        self.assertContains(response, "выйдите и снова откройте ссылку приглашения")
         self.assertEqual(response["Cache-Control"], "no-store")
         self.assertEqual(response["Referrer-Policy"], "same-origin")
         self.assertIsNone(response.context["setup"])
@@ -158,7 +169,7 @@ class StaffInvitationPageTests(TestCase):
                 self.assertContains(response, EXPECTED_ERROR_MESSAGE)
                 if signed_in:
                     self.assertContains(
-                        response, "sign out and reopen the invitation link"
+                        response, "выйдите и снова откройте ссылку приглашения"
                     )
                 else:
                     self.assertNotContains(response, "sign out")
@@ -197,12 +208,12 @@ class StaffInvitationPageTests(TestCase):
                 {"csrfmiddlewaretoken": csrf, "password": self.password},
             )
 
-            self.assertContains(repeated, "Authenticator setup has already started.")
-            self.assertContains(repeated, "enter a code from it")
-            self.assertContains(repeated, "10 minutes after it started")
-            self.assertContains(repeated, "sign out if you are signed in")
-            self.assertContains(repeated, "reopen the invitation link and enter the same password")
-            self.assertContains(repeated, "If the invitation is still valid")
+            self.assertContains(repeated, "Настройка приложения для входа уже начата.")
+            self.assertContains(repeated, "введите код из него")
+            self.assertContains(repeated, "через 10 минут после её начала")
+            self.assertContains(repeated, "выйдите из аккаунта")
+            self.assertContains(repeated, "снова откройте ссылку приглашения и введите тот же пароль")
+            self.assertContains(repeated, "Если приглашение ещё действительно")
             self.assertIsNone(repeated.context["setup"])
             self.assertNotContains(repeated, initial_setup.manual_secret)
             self.assertNotContains(repeated, initial_setup.provisioning_uri)
@@ -227,7 +238,7 @@ class StaffInvitationPageTests(TestCase):
                 },
             )
 
-        self.assertContains(finish, "Recovery codes")
+        self.assertContains(finish, "Резервные коды")
         invitation.refresh_from_db()
         acceptance.refresh_from_db()
         self.assertIsNotNone(invitation.accepted_at)
@@ -252,7 +263,7 @@ class StaffInvitationPageTests(TestCase):
         setup = begin.context["setup"]
         self.assertIsNotNone(setup)
         self.assertContains(begin, setup.manual_secret)
-        self.assertNotContains(begin, "Authenticator setup has already started.")
+        self.assertNotContains(begin, "Настройка приложения для входа уже начата.")
         self.assertFalse(RoleAssignment.objects.exists())
         self.assertNotIn(raw_token, begin.content.decode())
         self.assertNotIn(raw_token, repr(dict(self.client.session)))
@@ -264,7 +275,7 @@ class StaffInvitationPageTests(TestCase):
         )
 
         self.assertEqual(finish.status_code, 200)
-        self.assertContains(finish, "Recovery codes")
+        self.assertContains(finish, "Резервные коды")
         self.assertEqual(len(finish.context["recovery_codes"]), 10)
         invitation.refresh_from_db()
         self.assertIsNotNone(invitation.accepted_at)
@@ -333,7 +344,7 @@ class StaffInvitationPageTests(TestCase):
         new_setup = restarted.context["setup"]
         self.assertIsNotNone(new_setup)
         self.assertNotEqual(new_setup.setup_id, old_setup.setup_id)
-        self.assertNotContains(restarted, "Authenticator setup has already started.")
+        self.assertNotContains(restarted, "Настройка приложения для входа уже начата.")
         self.assertNotIn(raw_token, restarted.content.decode())
 
         with patch(
@@ -352,7 +363,7 @@ class StaffInvitationPageTests(TestCase):
             )
 
         self.assertEqual(finish.status_code, 200)
-        self.assertContains(finish, "Recovery codes")
+        self.assertContains(finish, "Резервные коды")
         self.assertEqual(len(finish.context["recovery_codes"]), 10)
         invitation.refresh_from_db()
         self.assertIsNotNone(invitation.accepted_at)
@@ -429,7 +440,7 @@ class StaffInvitationPageTests(TestCase):
 
         self.assertEqual(begin.status_code, 200)
         self.assertIsNone(begin.context["setup"])
-        self.assertNotContains(begin, "Authenticator setup has already started.")
+        self.assertNotContains(begin, "Настройка приложения для входа уже начата.")
         self.assertFalse(RoleAssignment.objects.exists())
 
         code = pyotp.TOTP(secret).at(timezone.now())

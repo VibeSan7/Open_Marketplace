@@ -1,8 +1,8 @@
 from django.shortcuts import render
 
 
-EXPECTED_ERROR_MESSAGE = "Unable to complete this request."
-NEUTRAL_EMAIL_MESSAGE = "If the details are eligible, check your email."
+EXPECTED_ERROR_MESSAGE = "Не удалось выполнить этот запрос."
+NEUTRAL_EMAIL_MESSAGE = "Если данные подходят, проверьте электронную почту."
 
 
 def secure_response(response):

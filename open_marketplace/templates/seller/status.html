@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Seller status{% endblock %}
+{% block title %}Статус продавца{% endblock %}
 {% block page_class %}content-page form-page{% endblock %}
 {% block content %}
-<h1>Seller status</h1>
+<h1>Статус продавца</h1>
 {% if profile %}
-  <p>State: {{ profile.state }}</p>
-  {% if profile.restriction_reason %}<p>Reason: {{ profile.restriction_reason }}</p>{% endif %}
+  <p>Статус: {% if profile.state == "awaiting_owner_totp" %}ожидает настройки второго фактора{% elif profile.state == "active" %}активен{% elif profile.state == "suspended" %}приостановлен{% elif profile.state == "revoked" %}отозван{% endif %}</p>
+  {% if profile.restriction_reason %}<p>Причина: {{ profile.restriction_reason }}</p>{% endif %}
 {% else %}
-  <p>No seller profile.</p>
+  <p>Профиля продавца пока нет.</p>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Предпросмотр — {{ product.title }}{% endblock %}
+{% block page_class %}catalog-shell{% endblock %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'catalog/catalog.css' %}">{% endblock %}
+{% block content %}
+<article class="product-page">
+  <p><a href="{% url 'catalog-own-product' product_id=product.id %}">← Вернуться к редактированию</a></p>
+  <p class="notice">Предпросмотр сохранённого черновика. Эта страница доступна только владельцу карточки или уполномоченному сотруднику. Просмотр не публикует товар. Несохранённые поля сюда не попадают.</p>
+  <h1>{{ product.title }}</h1>
+  <p class="product-meta">Категория: {{ product.category }} · Единица: {{ product.unit_label }}</p>
+  <div class="product-overview">
+    {% if product.cover_id %}<figure class="product-cover"><img src="{% url 'catalog-photo' photo_id=product.cover_id %}" alt="Общее фото товара"></figure>{% endif %}
+    <h2>О товаре</h2>
+    <p class="description">{{ product.description }}</p>
+  </div>
+  <h2>Варианты из сохранённого черновика</h2>
+  {% for variant in product.variants %}
+    <section class="variant-detail">
+      <h3>{{ variant.label }}</h3>
+      <p class="variant-price">{{ variant.price_label }} <span>/ {{ product.unit_label }}</span></p>
+      {% if product.kind != "common" %}<p class="stock-badge {% if not variant.in_stock %}stock-empty{% endif %}">{% if variant.in_stock %}В наличии{% else %}Нет в наличии{% endif %}</p>{% endif %}
+      <dl>{% for attribute in variant.attribute_items %}<dt>{{ attribute.label }}</dt><dd>{{ attribute.value }}</dd>{% endfor %}</dl>
+      <div class="gallery">{% for photo_id in variant.photo_ids %}<figure><img src="{% url 'catalog-photo' photo_id=photo_id %}" alt="{{ variant.label }}" loading="lazy"></figure>{% endfor %}</div>
+    </section>
+  {% endfor %}
+  <p class="notice">Показаны тексты, варианты, фотографии и текущие цены с наличием. Публикация повторно проверит данные. Предложения других продавцов для общей карточки определяются по действующим связям после публикации.</p>
+</article>
+{% endblock %}

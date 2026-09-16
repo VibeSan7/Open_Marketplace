@@ -85,8 +85,8 @@ def staff_invitation_accept(request):
             message = EXPECTED_ERROR_MESSAGE
     if message and getattr(request.user, "is_authenticated", False):
         message = (
-            f"{message} You are signed in. If this invitation is for another "
-            "account, sign out and reopen the invitation link."
+            f"{message} Вы уже вошли в аккаунт. Если приглашение предназначено "
+            "для другого аккаунта, выйдите и снова откройте ссылку приглашения."
         )
     return secure_render(
         request,

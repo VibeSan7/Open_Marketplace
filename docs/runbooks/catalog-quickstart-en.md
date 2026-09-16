@@ -4,6 +4,8 @@
 
 The [English README](../../README.en.md) contains the installation commands. This guide covers what to do after startup. It does not change the application's interface language; Russian button labels are shown alongside their English meanings.
 
+For the complete first run, start with the [installation runbook](initial-setup-en.md), then open the [built-in read-only guide](http://127.0.0.1:8000/setup/) in your copy. That page creates no accounts and changes no data.
+
 ## Keep account roles separate
 
 This installation has three account roles to distinguish:
@@ -16,7 +18,7 @@ For local testing, use separate browser profiles or a normal and a private windo
 
 ## First administrator
 
-1. Run the `bootstrap_security_admin` command from the README.
+1. Run the `bootstrap_security_admin` command from the README or the [installation runbook](initial-setup-en.md).
 2. Open the local inbox: <http://127.0.0.1:8025/>.
 3. Open the invitation email and follow its link. Do not copy the one-time link into a public chat.
 4. Set a password, add the account to an authenticator app, and confirm the current code.

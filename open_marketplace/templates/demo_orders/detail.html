@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Тестовый заказ — Open Marketplace{% endblock %}
+{% block content %}
+<article class="form-page">
+  <span class="eyebrow">Тестовый заказ</span>
+  <h1>{{ order.title }}</h1>
+  <p class="notice"><strong>Тестовый заказ — реальные деньги не списываются.</strong> Все статусы, оплата, возврат, передача и остаток ниже симулированы.</p>
+  <dl>
+    <dt>Вариант</dt><dd>{{ order.variant_label }}</dd>
+    <dt>Продавец</dt><dd>{{ order.seller_display_name }}</dd>
+    <dt>Количество</dt><dd>{{ order.quantity }} {{ order.unit_label }}</dd>
+    <dt>Цена за единицу</dt><dd>{{ order.unit_price|floatformat:2 }} ₽</dd>
+    <dt>Итого</dt><dd>{{ order.total|floatformat:2 }} ₽</dd>
+    <dt>Состояние</dt><dd>{{ order.state_label }}</dd>
+    <dt>Платёж</dt><dd>{{ order.payment_label }}</dd>
+    {% if order.simulated_remaining_quantity is not None %}<dt>Симулированный остаток</dt><dd>{{ order.simulated_remaining_quantity }} {{ order.unit_label }}</dd>{% endif %}
+  </dl>
+  <p class="subtle">Забор товара условный; дополнительная плата за доставку — 0 ₽. Реальная доставка и списание денег отсутствуют.</p>
+  {% if actions %}<h2>Действия демонстрации</h2>{% else %}<p>Сейчас для вашей роли нет доступных действий. Состояние заказа показано выше.</p>{% endif %}
+  {% for action in actions %}
+    <form method="post" action="{% url 'demo-order-action' order_id=order.id %}">
+      {% csrf_token %}
+      {{ action.form.action }}
+      <button class="button-secondary" type="submit">{{ action.label }}</button>
+    </form>
+  {% endfor %}
+  {% if order.events %}
+    <h2>История симуляции</h2>
+    <ul>{% for event in order.events %}<li>{{ event.occurred_at }} — {{ event.state_label }}</li>{% endfor %}</ul>
+  {% endif %}
+  <p><a href="{% url 'demo-orders' %}">Все тестовые заказы</a> · <a href="{% url 'catalog-search' %}">Каталог</a></p>
+</article>
+{% endblock %}

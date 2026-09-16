@@ -59,6 +59,16 @@ class Product(models.Model):
         ]
 
 
+class SavedProduct(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    account_id = models.UUIDField(db_index=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="saved_by")
+    created_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("account_id", "product"), name="catalog_saved_product_unique")]
+
+
 class Variant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="variants")
