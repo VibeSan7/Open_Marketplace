@@ -331,6 +331,8 @@ class ScopeBoundaryTests(SimpleTestCase):
                     "commerce.commerceorderevent": {"id", "order", "state", "action", "actor_id", "occurred_at"},
                     "commerce.paymentintent": {"id", "order", "provider", "provider_order_id", "deal_id", "payment_id", "amount_kopecks", "currency", "state", "created_at", "updated_at"},
                     "commerce.paymentevent": {"id", "payment", "fingerprint", "provider_status", "amount_kopecks", "payload", "received_at"},
+                    "commerce.fulfillmentshipment": {"id", "order", "seller_account_id", "seller_profile_id", "delivery_mode", "client_reference", "lines", "state", "created_at", "updated_at"},
+                    "commerce.fulfillmentevent": {"id", "shipment", "state", "action", "actor_id", "occurred_at"},
                 }
                 allowed_commerce = (
                     model._meta.label_lower in commerce_fields

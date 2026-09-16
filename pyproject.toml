@@ -174,5 +174,6 @@ type = "protected"
 protected_modules = [
   "open_marketplace.commerce.models",
   "open_marketplace.commerce.services",
+  "open_marketplace.commerce.fulfillment",
 ]
 allowed_importers = ["open_marketplace.commerce"]

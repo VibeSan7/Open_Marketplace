@@ -125,3 +125,61 @@ class PaymentEvent(models.Model):
 
     class Meta:
         ordering = ("received_at", "id")
+
+
+class FulfillmentShipment(models.Model):
+    class DeliveryMode(models.TextChoices):
+        CDEK = "cdek", "СДЭК"
+        SELLER = "seller", "Доставка продавцом"
+
+    class State(models.TextChoices):
+        PENDING = "pending", "Ожидает планирования"
+        READY = "ready", "Готово к передаче"
+        IN_TRANSIT = "in_transit", "В пути"
+        DELIVERED = "delivered", "Доставлено"
+        CANCELLED = "cancelled", "Отменено"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    order = models.ForeignKey(
+        CommerceOrder,
+        on_delete=models.PROTECT,
+        related_name="shipments",
+    )
+    seller_account_id = models.UUIDField(db_index=True)
+    seller_profile_id = models.UUIDField(db_index=True)
+    delivery_mode = models.CharField(max_length=6, choices=DeliveryMode.choices)
+    client_reference = models.CharField(max_length=30, unique=True)
+    lines = models.JSONField()
+    state = models.CharField(
+        max_length=16,
+        choices=State.choices,
+        default=State.PENDING,
+        db_index=True,
+    )
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=("order", "seller_account_id"),
+                name="commerce_one_shipment_per_seller",
+            ),
+        )
+        ordering = ("seller_account_id", "id")
+
+
+class FulfillmentEvent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    shipment = models.ForeignKey(
+        FulfillmentShipment,
+        on_delete=models.PROTECT,
+        related_name="events",
+    )
+    state = models.CharField(max_length=16)
+    action = models.CharField(max_length=32)
+    actor_id = models.UUIDField(null=True)
+    occurred_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ("occurred_at", "id")
