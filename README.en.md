@@ -1,10 +1,12 @@
-# Open Marketplace: product catalog
+# Open Marketplace: public storefront and demo cart
 
 [Русский](README.md) | English
 
-**Current source:** [download the main branch ZIP](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) · [Changes in v0.4.0](docs/releases/v0.4.0.en.md)
+**Verified release:** [v0.4.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.4.0) · [Download ZIP](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip) · [Checksum](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS)
 
-[Archived release v0.2.0](https://github.com/VibeSan7/Open_Marketplace/releases/tag/v0.2.0) remains unchanged and contains the earlier interface.
+**v0.4.0 verification:** 647 tests and 12 module-boundary contracts passed. Installation, restoration, mobile and desktop storefront checks completed. [Final report and GitHub checks](docs/releases/v0.4.0-verification.md).
+
+The [current main branch](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) may include changes newer than the immutable release archive. [Changes in v0.4.0](docs/releases/v0.4.0.en.md) · [Previous releases](https://github.com/VibeSan7/Open_Marketplace/releases).
 
 Run the project on your computer with Docker and open it in a browser. Sellers manage product listings, photos, variants, prices, and stock. Buyers search the catalog and compare verified offers from sellers.
 
@@ -40,7 +42,7 @@ The first run downloads container images and the local search model. You need an
 
 ## 2. Get the project
 
-Download the [current source ZIP with the refreshed interface](https://github.com/VibeSan7/Open_Marketplace/archive/refs/heads/main.zip) and extract it. Older versions remain available under [Releases](https://github.com/VibeSan7/Open_Marketplace/releases). Alternatively, clone the repository:
+For the verified version, download and extract the [v0.4.0 ZIP](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/open-marketplace-0.4.0-source.zip). Its checksum is published in [SHA256SUMS](https://github.com/VibeSan7/Open_Marketplace/releases/download/v0.4.0/SHA256SUMS). To use the current development branch, clone the repository:
 
 ```bash
 git clone https://github.com/VibeSan7/Open_Marketplace.git
@@ -52,7 +54,7 @@ cd Open_Marketplace
 
 If you downloaded a ZIP file, open the extracted directory that contains `compose.yaml`. Run all commands from that directory. Access to the source does not grant access to someone else's installation: configure accounts and permissions in your own copy.
 
-The original v0.2.0 archive predates both the English documentation and the refreshed interface. Download or clone the current `main` branch to get the updated interface and both documentation languages.
+The v0.4.0 archive includes the storefront and both documentation languages. Older releases are retained unchanged on the [Releases page](https://github.com/VibeSan7/Open_Marketplace/releases).
 
 ## 3. Create settings, first run only
 
@@ -191,7 +193,7 @@ The restore check uses a separate test database, not your working database:
 COMPOSE_PROJECT_NAME=open-marketplace-tests bash ops/verify_restore.sh
 ```
 
-The [release validation report (Russian)](docs/security/phase-2-local-validation.md) records the results, evidence, and limitations. Tests do not guarantee that every installation is error-free or replace the setup needed for an internet-facing server.
+The [v0.4.0 final report](docs/releases/v0.4.0-verification.md) records the results, limitations and GitHub checks. The [earlier catalog report (Russian)](docs/security/phase-2-local-validation.md) remains available as historical evidence. Tests do not guarantee that every installation is error-free or replace the setup needed for an internet-facing server.
 
 ## Limitations
 
@@ -204,6 +206,8 @@ The [release validation report (Russian)](docs/security/phase-2-local-validation
 
 ## Documents and modules
 
+- [Storefront and cart v0.4 specification](docs/superpowers/specs/2026-09-16-storefront-v04-design.md).
+- [v0.4.0 final verification](docs/releases/v0.4.0-verification.md).
 - [Agreed catalog rules (Russian)](docs/superpowers/specs/2026-09-14-phase-2-catalog-design.md).
 - [Implementation plan (Russian)](docs/superpowers/plans/2026-09-15-phase-2-catalog-implementation.md).
 - [Completed first phase: identity and access](docs/security/phase-1-review.md).
