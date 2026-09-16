@@ -11,7 +11,7 @@ The owner approved T-Bank Multi-calculation, CDEK plus seller-arranged delivery,
 - Availability views based on on-hand minus reserved quantities. Existing demo inventory remains separate.
 - Durable physical multi-seller order records with immutable reservation snapshots, buyer-scoped replay/cancellation, and atomic order events.
 - A provider-independent payment intent/event ledger that accepts only normalized verified T-Bank notifications, deduplicates callbacks, commits stock on `CONFIRMED`, and releases pre-payment reservations on rejection/reversal.
-- A provider-independent physical fulfillment plan: one immutable pending shipment snapshot per seller for a paid order, with explicit `cdek` or seller-arranged delivery mode and provider-safe client reference. It does not call CDEK or claim a parcel exists.
+- A provider-independent physical fulfillment plan: one immutable pending shipment snapshot per seller for a paid order, explicit `cdek` or seller-arranged delivery mode, provider-safe client reference, and a local seller-arranged lifecycle through buyer receipt confirmation. It does not call CDEK or claim carrier evidence.
 - An EACQ **Safe Deal** protocol adapter for the documented creation/initiation/status/confirmation/cancellation operations, signed notifications, order/payment/deal/amount binding, and uncertain-outcome handling. This is not a full mixed-recipient Multi-calculation integration.
 - A [CDEK protocol adapter](cdek-client.md) for OAuth, tariff calculation, shipment creation/read/delete and conservative parsing of async/tracking responses.
 - Both clients fail closed without explicit configuration and separate production enablement. Neither is invoked by web routes, startup hooks or the demo checkout.
@@ -19,7 +19,7 @@ The owner approved T-Bank Multi-calculation, CDEK plus seller-arranged delivery,
 ## Not implemented
 
 - The real multi-seller order/payment coordinator, durable provider intents and reconciliation jobs, payout ledger, refunds by order line, fiscalization, recipient onboarding and permissioned operational controls.
-- Shipment persistence now exists only as a local pending plan. Packaging/address UI, CDEK courier pickup/refusal/returns, seller-arranged delivery and authenticated buyer receipt confirmation are not implemented.
+- Address forms, package data, CDEK courier pickup/refusal/returns, verified CDEK lifecycle events, and browser screens for shipment operations. Seller-arranged lifecycle transitions and buyer receipt confirmation exist only in the internal service boundary; they do not create carrier evidence.
 - Private digital upload/scanning/version retention, paid-order entitlement creation, protected downloads and entitlement revocation. Existing catalog photos are not a digital-delivery system.
 - End-to-end real-commerce browser flows, authenticated provider sandbox checks, real bank/delivery operations or a production migration/deployment.
 

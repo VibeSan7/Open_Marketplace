@@ -1,4 +1,4 @@
-from .fulfillment import create_fulfillment_plan
+from .fulfillment import create_fulfillment_plan, transition_fulfillment
 from .services import (
     apply_verified_tbank_notice,
     bind_tbank_reference,
@@ -16,4 +16,5 @@ __all__ = (
     "create_order",
     "get_order",
     "prepare_payment",
+    "transition_fulfillment",
 )
