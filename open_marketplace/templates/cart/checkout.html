@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'demo_orders/cart.css' %}">{% endblock %}
+{% block title %}Подтверждение корзины — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Демонстрация</span>
+    <h1>Подтверждение корзины</h1>
+    <p>Это симуляция заказа: реальные деньги, доставка и резерв реального склада не используются.</p>
+  </div>
+</section>
+{% if orders %}
+  <p class="notice" role="status">Тестовые заказы созданы. Повторное подтверждение этого намерения вернёт те же заказы.</p>
+  <ul class="cart-orders">
+    {% for order in orders %}<li><a href="{% url 'demo-order-detail' order_id=order.id %}">{{ order.title }} — {{ order.variant_label }}</a> · {{ order.total|floatformat:2 }} ₽</li>{% endfor %}
+  </ul>
+{% elif not cart.enabled %}
+  <p class="notice" role="status">Демонстрация заказов отключена. Оформление недоступно.</p>
+{% elif cart.checkout_available %}
+  <section class="cart-confirmation">
+    <h2>Итого к симуляции: {{ cart.total|floatformat:2 }} ₽</h2>
+    <p>Перед отправкой сервер ещё раз проверит аккаунт, владельца предложения, цену и симулированный остаток.</p>
+    <form method="post">
+      {% csrf_token %}{{ form.intent_id }}
+      <button class="button" type="submit">Подтвердить тестовый заказ</button>
+    </form>
+  </section>
+{% else %}
+  <p class="notice" role="alert">Корзина изменилась или содержит недоступные строки. Вернитесь в корзину, обновите цену и подтвердите её явно.</p>
+  <a class="button" href="{% url 'cart' %}">Вернуться в корзину</a>
+{% endif %}
+{% endblock %}

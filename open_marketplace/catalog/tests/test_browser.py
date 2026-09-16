@@ -34,6 +34,19 @@ class CatalogBrowserTests(StaticLiveServerTestCase):
             finally:
                 browser.close()
 
+    @override_settings(DEMO_ORDERS_ENABLED=True)
+    def test_public_storefront_shows_products_in_first_mobile_screen(self):
+        product, _, _ = self.fixture.product(title="Открытый товар")
+        self.fixture.catalog.set_public_listing(product_id=product, enabled=True, context=self.fixture.seller_context)
+        with self.browser(self.fixture.buyer_registry, width=390) as page:
+            page.context.clear_cookies()
+            page.goto(self.live_server_url + "/")
+            expect(page.locator(".storefront-card")).to_have_count(1)
+            card = page.locator(".storefront-card").bounding_box()
+            self.assertLess(card["y"], page.viewport_size["height"] * .75)
+            self.assertFalse(page.evaluate("document.documentElement.scrollWidth > innerWidth"))
+            expect(page.locator(".storefront-card").get_by_role("link", name="Выбрать: Открытый товар", exact=True)).to_be_visible()
+
     def test_staff_pages_have_one_main_heading(self):
         with self.browser(self.fixture.staff_registry) as page:
             page.goto(self.live_server_url + "/admin/")
@@ -128,7 +141,7 @@ class CatalogBrowserTests(StaticLiveServerTestCase):
             page.wait_for_url("**/catalog/saved/")
             expect(page.locator("main")).to_contain_text("Для избранного")
             expect(page.locator(".product-card")).to_have_css("border-top-style", "solid")
-            page.get_by_role("link", name="Для избранного", exact=True).click()
+            page.get_by_role("link", name="Для избранного", exact=True).filter(has=page.get_by_role("heading")).click()
             page.locator('main a[href*="/catalog/sellers/"]').first.click()
             expect(page.locator("main")).to_contain_text("Первый продавец")
             self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
@@ -165,6 +178,59 @@ class CatalogBrowserTests(StaticLiveServerTestCase):
             expect(page.locator("main")).to_contain_text("Завершено в симуляции")
             self.assertEqual(page.locator("h1").count(), 1)
             self.assertFalse(page.evaluate("document.documentElement.scrollWidth > innerWidth"))
+
+    @override_settings(DEMO_ORDERS_ENABLED=True)
+    def test_mobile_cart_connects_fractional_selection_checkout_and_cancellation(self):
+        from open_marketplace.demo_orders.models import DemoOrder
+
+        first, first_variant, _ = self.fixture.product(title="Штучный товар", stock="3")
+        second, _, _ = self.fixture.product(title="Весовой товар", unit="kg", stock="0.5", context=self.fixture.other_context)
+        with self.browser(self.fixture.buyer_registry, width=390) as page:
+            errors = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            for product, quantity in ((first, "1"), (second, "0.5")):
+                page.goto(self.live_server_url + f"/catalog/p/{product}/")
+                page.locator('.offer-cart-form input[name="quantity"]').fill(quantity)
+                page.get_by_role("button", name="В корзину", exact=True).click()
+                page.wait_for_url("**/cart/")
+            expect(page.locator(".cart-seller")).to_have_count(2)
+            line = page.locator(".cart-item").filter(has_text="Штучный товар")
+            line.get_by_label("Количество", exact=True).fill("2")
+            line.get_by_role("button", name="Обновить", exact=True).click()
+            expect(page.locator(f'#quantity-{first_variant}')).to_have_value("2")
+            line.get_by_role("button", name="Удалить", exact=True).click()
+            expect(page.locator(".cart-item")).to_have_count(1)
+            page.goto(self.live_server_url + f"/catalog/p/{first}/")
+            page.get_by_role("button", name="В корзину", exact=True).click()
+            page.get_by_role("link", name="Перейти к подтверждению", exact=True).click()
+            page.get_by_role("button", name="Подтвердить тестовый заказ", exact=True).click()
+            expect(page.locator(".cart-orders a")).to_have_count(2)
+            order_url = page.locator(".cart-orders a").first.get_attribute("href")
+            page.goto(self.live_server_url + order_url)
+            page.get_by_role("button", name="Отменить тестовый заказ", exact=True).click()
+            expect(page.locator(".order-summary")).to_contain_text("Отменено в симуляции")
+            page.get_by_role("link", name="Все тестовые заказы", exact=True).click()
+            expect(page.locator(".order-card")).to_have_count(2)
+            page.goto(self.live_server_url + "/cart/")
+            expect(page.locator("main")).to_contain_text("В корзине пока пусто")
+            self.assertFalse(page.evaluate("document.documentElement.scrollWidth > innerWidth"))
+            self.assertEqual(errors, [])
+        self.assertEqual(DemoOrder.objects.filter(buyer_id=self.fixture.buyer.id).count(), 2)
+
+    def test_seller_public_toggle_changes_guest_visibility_in_browser(self):
+        product, _, _ = self.fixture.product(title="Доступ по выбору продавца")
+        with self.browser(self.fixture.seller_registry) as owner:
+            guest_context = owner.context.browser.new_context()
+            guest = guest_context.new_page()
+            owner.goto(self.live_server_url + f"/catalog/own/{product}/")
+            owner.get_by_role("button", name="Разрешить публичный просмотр", exact=True).click()
+            response = guest.goto(self.live_server_url + f"/catalog/p/{product}/")
+            self.assertEqual(response.status, 200)
+            expect(guest.get_by_role("heading", level=1)).to_have_text("Доступ по выбору продавца")
+            owner.get_by_role("button", name="Закрыть публичный просмотр", exact=True).click()
+            self.assertEqual(guest.reload().status, 403)
+            expect(guest.locator("main")).not_to_contain_text("Доступ по выбору продавца")
+            guest_context.close()
 
     def test_scroll_error_keeps_items_retry_and_back_restore_fresh_window(self):
         for index in range(23):

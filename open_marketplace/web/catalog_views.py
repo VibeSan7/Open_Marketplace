@@ -141,7 +141,6 @@ def _render_search(request, result, *, applied_url):
 
 
 @require_http_methods(["GET"])
-@_login_required
 def catalog_search(request):
     try:
         query, category_id, filters, cursor, minimum, maximum, sort = _search_conditions(request)
@@ -162,7 +161,6 @@ def catalog_search(request):
 
 
 @require_http_methods(["GET"])
-@_login_required
 def catalog_product(request, *, product_id):
     try:
         query, category_id, filters, _, minimum, maximum, sort = _search_conditions(request, include_cursor=False)
@@ -232,7 +230,6 @@ def save_product(request, *, product_id):
 
 
 @require_http_methods(["GET"])
-@_login_required
 def seller_store(request, *, seller_id):
     try:
         store = catalog_public.get_seller_store(seller_id=seller_id, context=_context(request))
@@ -244,7 +241,6 @@ def seller_store(request, *, seller_id):
 
 
 @require_http_methods(["GET"])
-@_login_required
 def catalog_photo(request, *, photo_id):
     try:
         photo = catalog_public.get_photo(photo_id=photo_id, context=_context(request))
@@ -412,7 +408,12 @@ def own_product(request, *, product_id):
     context = _context(request)
     forms = {}
     try:
-        if action == "save_product":
+        if action == "set_public_listing":
+            unknown = set(request.POST) - {"action", "enabled", "csrfmiddlewaretoken"}
+            if unknown or request.POST.getlist("action") != [action] or len(request.POST.getlist("enabled")) != 1 or request.POST["enabled"] not in {"true", "false"}:
+                raise ApplicationError("Укажите однозначно, показывать ли карточку всем посетителям.")
+            catalog_public.set_public_listing(product_id=product_id, enabled=request.POST["enabled"] == "true", context=context)
+        elif action == "save_product":
             form = ProductDraftForm(categories=_category_list(request, include_inactive=product["kind"] == "common"), initial=_draft_initial(product), data=request.POST, photos=product["photos"])
             forms["product"] = form
             if form.is_valid():

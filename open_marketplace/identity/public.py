@@ -1,3 +1,5 @@
+from open_marketplace.identity.demo_content import create_demo_seller_account
+
 from open_marketplace.identity.application import (
     add_totp_requirement,
     authenticate_account,
@@ -63,6 +65,7 @@ def get_account_snapshot(account_id: AccountId) -> AccountSnapshot:
 
 
 __all__ = (
+    "create_demo_seller_account",
     "AccountQuery",
     "AccountSnapshot",
     "AuthenticationResult",

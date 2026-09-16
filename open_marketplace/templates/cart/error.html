@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'demo_orders/cart.css' %}">{% endblock %}
+{% block title %}Корзина недоступна — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><span class="eyebrow">Покупки</span><h1>Корзина недоступна</h1></div>
+</section>
+<p class="notice" role="alert">{{ message }}</p>
+<a class="button" href="{% url 'cart' %}">Вернуться в корзину</a>
+{% endblock %}

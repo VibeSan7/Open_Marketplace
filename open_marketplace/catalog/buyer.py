@@ -2,15 +2,12 @@ from django.db import transaction
 
 from open_marketplace.catalog.application import _audit
 from open_marketplace.catalog.models import SavedProduct
-from open_marketplace.catalog.policy import UNAVAILABLE, identifier, participant
+from open_marketplace.catalog.policy import UNAVAILABLE, buyer, identifier
 from open_marketplace.common.errors import PermissionDenied, InputRejected
 
 
 def _buyer(context):
-    account = participant(context)
-    if account.kind != "ordinary":
-        raise PermissionDenied("Избранное доступно личным учётным записям.")
-    return account
+    return buyer(context)
 
 
 def set_saved_product(*, product_id, saved, context):

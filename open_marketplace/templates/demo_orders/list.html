@@ -10,11 +10,11 @@
 </section>
 <p class="notice"><strong>Тестовый заказ — реальные деньги не списываются.</strong> Остаток ниже относится только к изолированной симуляции.</p>
 {% if orders %}
-  <ul>
+  <ul class="order-list">
     {% for order in orders %}
-      <li>
-        <a href="{% url 'demo-order-detail' order_id=order.id %}">{{ order.title }} — {{ order.variant_label }}</a>
-        <span> · {{ order.state_label }} · {{ order.total|floatformat:2 }} ₽</span>
+      <li class="order-card">
+        <div><span class="eyebrow">Заказ · {{ order.id|slice:":8" }}</span><h2><a href="{% url 'demo-order-detail' order_id=order.id %}">{{ order.title }}</a></h2><p>{{ order.variant_label }}</p></div>
+        <div class="order-card-meta"><strong>{{ order.total|floatformat:2 }} ₽</strong><span class="state-chip">{{ order.state_label }}</span><a class="button-secondary" href="{% url 'demo-order-detail' order_id=order.id %}">Открыть заказ</a></div>
       </li>
     {% endfor %}
   </ul>

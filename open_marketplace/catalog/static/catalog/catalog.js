@@ -78,6 +78,22 @@
     });
   });
 
+  document.querySelectorAll("[data-gallery]").forEach((gallery) => {
+    const main = gallery.querySelector("[data-gallery-main]");
+    if (!main) return;
+    gallery.querySelectorAll("[data-gallery-thumb]").forEach((thumb) => {
+      thumb.addEventListener("click", () => {
+        main.src = thumb.dataset.gallerySrc;
+        main.alt = thumb.querySelector("img")?.alt || main.alt;
+        gallery.querySelectorAll("[data-gallery-thumb]").forEach((item) => {
+          const selected = item === thumb;
+          item.classList.toggle("is-selected", selected);
+          item.setAttribute("aria-pressed", String(selected));
+        });
+      });
+    });
+  });
+
   const stateKey = "catalog-navigation-state";
   if (!search) return;
   let saved = null;

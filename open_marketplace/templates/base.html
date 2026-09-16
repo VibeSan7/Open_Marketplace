@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b6d60">
+  <meta name="theme-color" content="#2859df">
   <title>{% block title %}Open Marketplace{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'catalog/site.css' %}">
   {% block extrahead %}{% endblock %}
@@ -17,14 +17,23 @@
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="m12 3 9 5v8l-9 5-9-5V8zM3 8l9 5 9-5M12 13v8M7.5 5.5l9 5"/></svg></span>
         <span><strong>Open Marketplace</strong><span class="brand-caption">Каталог товаров и предложений</span></span>
       </a>
+      {% if request.resolver_match.url_name != 'catalog-search' and request.resolver_match.url_name != 'catalog-own' and request.resolver_match.url_name != 'catalog-own-new' and request.resolver_match.url_name != 'catalog-own-product' and request.resolver_match.url_name != 'catalog-own-preview' and request.resolver_match.url_name != 'catalog-manage' and request.resolver_match.url_name != 'catalog-manage-category' %}
+        <form class="global-search" method="get" action="{% url 'catalog-search' %}" role="search">
+          <label class="visually-hidden" for="global-q">Поиск по каталогу</label>
+          <input id="global-q" name="q" type="search" maxlength="200" placeholder="Найти товар" autocomplete="off">
+          <button type="submit" aria-label="Найти в каталоге">Найти</button>
+        </form>
+      {% endif %}
+      {% url 'cart' as cart_url %}
       <nav class="site-nav" aria-label="Навигация">
         <a href="{% url 'catalog-search' %}" {% if request.resolver_match.url_name == 'catalog-search' %}aria-current="page"{% endif %}>Каталог</a>
+        <a href="{% url 'catalog-saved' %}" {% if request.resolver_match.url_name == 'catalog-saved' %}aria-current="page"{% endif %}>Избранное</a>
+        <a href="{% if cart_url %}{{ cart_url }}{% else %}/cart/{% endif %}">Корзина</a>
         <a href="{% url 'seller-start' %}" {% if request.resolver_match.url_name == 'seller-start' %}aria-current="page"{% endif %}>{% if request.user.is_authenticated and request.user.kind != "service" %}Кабинет продавца{% else %}Продавцам{% endif %}</a>
         {% if request.user.is_authenticated %}
           {% if demo_orders_enabled and request.user.kind != "service" %}<a href="{% url 'demo-orders' %}">Тестовые заказы</a>{% endif %}
-          <a href="{% url 'catalog-saved' %}" {% if request.resolver_match.url_name == 'catalog-saved' %}aria-current="page"{% endif %}>Избранное</a>
           {% if request.user.kind == "service" %}<a href="{% url 'catalog-own' %}" {% if request.resolver_match.url_name == 'catalog-own' %}aria-current="page"{% endif %}>Общие карточки</a>{% endif %}
-          <a href="{% url 'security' %}" {% if request.resolver_match.url_name == 'security' %}aria-current="page"{% endif %}>Безопасность аккаунта</a>
+          <a href="{% url 'security' %}" {% if request.resolver_match.url_name == 'security' %}aria-current="page"{% endif %}>Профиль</a>
           {% if request.user.kind == "service" %}<a href="/admin/">Панель сотрудников</a><a href="{% url 'catalog-manage' %}">Управление каталогом</a>{% endif %}
         {% else %}
           <a href="{% url 'login' %}">Войти</a>
@@ -38,7 +47,9 @@
   </main>
   <footer class="site-footer">
     <strong>Open Marketplace</strong>
-    <span>Выбор товаров и сравнение предложений. Заказы и оплата пока недоступны.</span>
+    <span>{% if demo_orders_enabled %}Учебная витрина: тестовые заказы без списания денег и настоящей доставки.{% else %}Выбор товаров и сравнение предложений. Настоящая оплата и доставка не подключены.{% endif %}</span>
+    <a href="{% url 'demo-image-credits' %}">Авторы фотографий</a>
+    <a href="{% url 'setup-guide' %}">Владельцу площадки</a>
   </footer>
 </body>
 </html>

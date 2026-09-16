@@ -1,25 +1,35 @@
 from decimal import Decimal
 
+from django.db import transaction
+
 from django.db.models import Sum
 
-from open_marketplace.catalog.models import Participant, Stock, Variant
-from open_marketplace.catalog.policy import participant
+from open_marketplace.catalog.models import Participant, Product, Stock, Variant
+from open_marketplace.catalog.policy import buyer
 from open_marketplace.catalog.queries import get_product
 from open_marketplace.common.errors import PermissionDenied
 from open_marketplace.seller_onboarding.public import get_public_sellers
 
 
 def get_demo_participant(*, context, lock=False):
-    account = participant(context)
+    account = buyer(context)
     if lock:
-        Participant.objects.select_for_update().get(account_id=account.id)
-        account = participant(context)
+        with transaction.atomic():
+            Participant.objects.get_or_create(
+                account_id=account.id,
+                defaults={"allowed": False, "changed_by_id": account.id, "changed_at": context.now},
+            )
+            Participant.objects.select_for_update().get(account_id=account.id)
     return account
 
 
 def get_demo_offer_snapshot(*, variant_id, context, lock=False):
     variants = Variant.objects.select_related("product")
     if lock:
+        product_id = Variant.objects.filter(pk=variant_id).values_list("product_id", flat=True).first()
+        if product_id is None:
+            raise PermissionDenied("Заказ недоступен.")
+        Product.objects.select_for_update().get(pk=product_id)
         variants = variants.select_for_update(of=("self",))
     variant = variants.filter(pk=variant_id).first()
     if variant is None or variant.product.kind != "physical":

@@ -11,11 +11,15 @@
   </div>
   <h1>{{ product.title }}</h1>
   <p class="product-meta">Категория: {{ product.category }} · Единица: {{ product.unit_label }}</p>
-  <form method="post" action="{{ product.save_url }}">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="{{ product.save_action }}">
-    <button class="button-secondary" type="submit">{% if product.is_saved %}Удалить из избранного{% else %}Сохранить в избранное{% endif %}</button>
-  </form>
+  {% if request.user.is_authenticated %}
+    <form method="post" action="{{ product.save_url }}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="{{ product.save_action }}">
+      <button class="button-secondary" type="submit">{% if product.is_saved %}Удалить из избранного{% else %}Сохранить в избранное{% endif %}</button>
+    </form>
+  {% else %}
+    <p><a class="button-secondary" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Войдите, чтобы сохранить товар</a></p>
+  {% endif %}
   {% if product.seller_url %}<p>Продавец: <a href="{{ product.seller_url }}">{{ product.seller_name }}</a></p>{% endif %}
   {% if product.selection_message %}<p class="notice">{{ product.selection_message }}</p>{% endif %}
   {% if product.price_filter_message %}<p class="notice">{{ product.price_filter_message }}</p>{% endif %}
@@ -42,10 +46,15 @@
           {% for key, value in product.selected_variant.attributes.items %}<dt>{{ key }}</dt><dd>{{ value }}</dd>{% endfor %}
         </dl>
         {% if product.selected_variant.photo_ids %}
-          <div class="gallery">
-            {% for photo_id in product.selected_variant.photo_ids %}
-              <figure><img src="{% url 'catalog-photo' photo_id=photo_id %}" alt="{{ product.selected_variant.label }}" loading="lazy" data-photo><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
-            {% endfor %}
+          <div class="gallery" data-gallery>
+            {% with first_photo=product.selected_variant.photo_ids|first %}
+              <figure class="gallery-main"><img src="{% url 'catalog-photo' photo_id=first_photo %}" alt="{{ product.selected_variant.label }}" data-gallery-main data-photo><p data-photo-error hidden>Не удалось загрузить фото. <button type="button" data-photo-retry>Повторить</button></p></figure>
+            {% endwith %}
+            <div class="gallery-thumbs" role="list" aria-label="Фотографии варианта">
+              {% for photo_id in product.selected_variant.photo_ids %}
+                <button type="button" class="gallery-thumb{% if forloop.first %} is-selected{% endif %}" data-gallery-thumb data-gallery-src="{% url 'catalog-photo' photo_id=photo_id %}" aria-label="Фото {{ forloop.counter }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"><img src="{% url 'catalog-photo' photo_id=photo_id %}" alt="" loading="lazy" data-photo></button>
+              {% endfor %}
+            </div>
           </div>
         {% else %}
           <p class="subtle">Для этого варианта нет доступных фотографий</p>
@@ -54,7 +63,23 @@
           <h3>Предложения</h3>
           <ul class="offer-list">
             {% for offer in product.selected_variant.offers %}
-              <li><strong>{% if offer.seller_url %}<a href="{{ offer.seller_url }}">{{ offer.seller_name }}</a>{% else %}{{ offer.seller_name }}{% endif %}</strong><span class="offer-price">{% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %}</span><span class="offer-delivery">Доставка ещё не рассчитана</span>{% if demo_orders_enabled and request.user.kind != "service" %}<a class="button-secondary" href="{% url 'demo-order-create' variant_id=offer.variant_id %}">Создать тестовый заказ</a><span class="subtle">Без реальных денег</span>{% endif %}</li>
+              <li>
+                <strong>{% if offer.seller_url %}<a href="{{ offer.seller_url }}">{{ offer.seller_name }}</a>{% else %}{{ offer.seller_name }}{% endif %}</strong>
+                <span class="offer-price">{% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %}</span>
+                <span class="offer-delivery">Доставка не включена в демонстрационный расчёт.</span>
+                {% url 'cart-add' variant_id=offer.variant_id as cart_add_url %}
+                {% if demo_orders_enabled and cart_add_url and request.user.is_authenticated and request.user.kind != "service" %}
+                  <form class="offer-cart-form" method="post" action="{{ cart_add_url }}">
+                    {% csrf_token %}
+                    <label for="offer-quantity-{{ offer.variant_id }}">Количество, {{ product.unit_label }}</label>
+                    <input id="offer-quantity-{{ offer.variant_id }}" type="number" name="quantity" value="1" min="{% if product.unit == 'pc' %}1{% else %}0.001{% endif %}" step="{% if product.unit == 'pc' %}1{% else %}0.001{% endif %}" inputmode="decimal" required>
+                    <button type="submit">В корзину</button>
+                  </form>
+                {% elif demo_orders_enabled and not request.user.is_authenticated %}
+                  <a class="button-secondary" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Войдите, чтобы купить</a>
+                {% endif %}
+                {% if demo_orders_enabled and request.user.kind != "service" %}<a class="button-secondary" href="{% url 'demo-order-create' variant_id=offer.variant_id %}">Создать тестовый заказ</a><span class="subtle">Без реальных денег</span>{% endif %}
+              </li>
             {% endfor %}
           </ul>
         {% endif %}

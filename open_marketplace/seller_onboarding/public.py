@@ -1,3 +1,5 @@
+from open_marketplace.seller_onboarding.demo_content import create_demo_seller_profile
+
 from open_marketplace.seller_onboarding.application import (
     activate_seller_after_totp,
     approve_seller_application,
@@ -35,6 +37,7 @@ from open_marketplace.seller_onboarding.domain import (
 )
 
 __all__ = (
+    "create_demo_seller_profile",
     "SellerApplicationState",
     "SellerApplicationVersionView",
     "SellerApplicationView",

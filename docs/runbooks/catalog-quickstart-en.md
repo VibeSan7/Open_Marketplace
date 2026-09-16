@@ -36,7 +36,7 @@ If a sensitive action requires reauthentication, open <http://127.0.0.1:8000/sec
 5. In another browser window, sign in as the reviewer. Open the application queue in the staff panel, start the review, and approve the application.
 6. The administrator opens <http://127.0.0.1:8000/catalog/manage/>, enters the seller's email, enables participation, and saves it.
 
-Catalog admission does not replace seller approval. A buyer only needs a verified personal account and permission to participate; they do not need to submit a seller application.
+Admission does not replace seller approval. Public listings are visible without signing in. Saved products and public-product demo orders require an active personal account with verified email; private listings additionally require admission. Buyers do not need seller applications.
 
 ## Create a category
 
@@ -56,7 +56,7 @@ In catalog management, create a category such as Clothing. Add attributes such a
 5. Create a variant, such as Red S, fill in its attributes, and select the photos that belong to that variant.
 6. Save the price and stock separately. An empty field is not zero. Enter `0` for a free product or `0` stock when it is out of stock.
 7. Click "Опубликовать" (Publish). If anything is missing, fix the reported issue and publish again.
-8. Open the catalog and check the listing. A product with zero stock does not appear in search, but its published description remains available through a direct link.
+8. Separately enable "Открыть публичный показ" for guest visibility, then open the catalog and check the listing. Existing listings never become public automatically. A product with zero stock does not appear in search, but its published description remains available through a direct link.
 
 Listing-level attributes must be the same for every variant. Color and size normally belong to variants, rather than having conflicting values at both listing and variant level.
 
@@ -136,6 +136,6 @@ Keep a verified backup before updating. Update the code in the same directory wh
 - **A port is busy:** another application is using 8000, 8025, or 1025. Do not stop another project blindly. Configure separate ports for your copy and update `APP_BASE_URL` in `.env` accordingly.
 - **The model is not prepared:** repeat `docker compose run --rm web python manage.py prepare_catalog_search`. Internet access is needed for the download, not for normal searches afterward.
 - **Email does not arrive:** check `docker compose ps`, then run one delivery pass with `docker compose run --rm web python manage.py run_outbox_worker --once`. Check the local Mailpit inbox, not an external mailbox.
-- **No catalog access:** verify your email and ask the installation's administrator to check your admission. The editor also requires an active seller and two-factor authentication.
+- **No private-listing access:** verify your email and ask the administrator to check admission. Public listings do not require signing in. The editor also requires an active seller and two-factor authentication.
 - **No products:** a new installation is empty, and published variants with zero stock do not appear in search.
 - **Reauthentication required:** open the identity confirmation page and repeat the action immediately after confirmation.

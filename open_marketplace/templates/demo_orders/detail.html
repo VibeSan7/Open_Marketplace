@@ -5,7 +5,8 @@
   <span class="eyebrow">Тестовый заказ</span>
   <h1>{{ order.title }}</h1>
   <p class="notice"><strong>Тестовый заказ — реальные деньги не списываются.</strong> Все статусы, оплата, возврат, передача и остаток ниже симулированы.</p>
-  <dl>
+  <div class="order-summary">
+    <dl>
     <dt>Вариант</dt><dd>{{ order.variant_label }}</dd>
     <dt>Продавец</dt><dd>{{ order.seller_display_name }}</dd>
     <dt>Количество</dt><dd>{{ order.quantity }} {{ order.unit_label }}</dd>
@@ -14,9 +15,10 @@
     <dt>Состояние</dt><dd>{{ order.state_label }}</dd>
     <dt>Платёж</dt><dd>{{ order.payment_label }}</dd>
     {% if order.simulated_remaining_quantity is not None %}<dt>Симулированный остаток</dt><dd>{{ order.simulated_remaining_quantity }} {{ order.unit_label }}</dd>{% endif %}
-  </dl>
-  <p class="subtle">Забор товара условный; дополнительная плата за доставку — 0 ₽. Реальная доставка и списание денег отсутствуют.</p>
-  {% if actions %}<h2>Действия демонстрации</h2>{% else %}<p>Сейчас для вашей роли нет доступных действий. Состояние заказа показано выше.</p>{% endif %}
+    </dl>
+  </div>
+  <p class="subtle">Забор товара условный; доставка и списание денег отсутствуют.</p>
+  {% if actions %}<h2>Следующий шаг</h2>{% else %}<p>Сейчас для вашей роли нет доступных действий. Состояние заказа показано выше.</p>{% endif %}
   {% for action in actions %}
     <form method="post" action="{% url 'demo-order-action' order_id=order.id %}">
       {% csrf_token %}
@@ -26,7 +28,7 @@
   {% endfor %}
   {% if order.events %}
     <h2>История симуляции</h2>
-    <ul>{% for event in order.events %}<li>{{ event.occurred_at }} — {{ event.state_label }}</li>{% endfor %}</ul>
+    <ol class="order-timeline">{% for event in order.events %}<li><span class="timeline-dot" aria-hidden="true"></span><div><strong>{{ event.state_label }}</strong><time datetime="{{ event.occurred_at|date:'c' }}">{{ event.occurred_at }}</time></div></li>{% endfor %}</ol>
   {% endif %}
   <p><a href="{% url 'demo-orders' %}">Все тестовые заказы</a> · <a href="{% url 'catalog-search' %}">Каталог</a></p>
 </article>

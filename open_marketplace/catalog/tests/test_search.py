@@ -85,8 +85,7 @@ class CatalogSearchTests(CatalogTestCase):
     def test_participant_revocation_applies_to_search_too(self):
         self.product()
         self.catalog.set_participant(account_id=self.buyer.id, allowed=False, context=self.staff_context)
-        with self.assertRaises(PermissionDenied):
-            self.search()
+        self.assertEqual(self.search()["items"], [])
 
     def test_keyset_pagination_has_no_duplicates_and_reports_real_total(self):
         expected = set()

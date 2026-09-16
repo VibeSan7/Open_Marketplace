@@ -79,7 +79,7 @@ class UserJourneyTests(TestCase):
         posted = Client().post(reverse("seller-start"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Безопасность аккаунта")
+        self.assertContains(response, ">безопасности аккаунта</a>")
         self.assertContains(response, reverse("security"))
         self.assertContains(response, reverse("seller-applications"))
         self.assertContains(response, reverse("seller-application-create"))

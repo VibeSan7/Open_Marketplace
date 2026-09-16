@@ -17,6 +17,18 @@
   {% if readiness.can_view_published %}<p><a href="{% url 'catalog-product' product_id=product.id %}">Открыть текущую опубликованную карточку</a></p>{% endif %}
   <p>Перед публикацией данные будут проверены повторно. Готовность черновика не отменяет проверку доступа и свежего подтверждения личности.</p>
 </section>
+{% if product.kind != "digital" %}
+<section aria-labelledby="public-listing-title">
+  <h2 id="public-listing-title">Кто видит товар</h2>
+  <p>{% if product.public_listing %}Опубликованная карточка доступна всем посетителям, в том числе без входа.{% else %}Карточка закрыта: её видят только допущенные участники.{% endif %} Черновики и неопубликованные фотографии остаются закрытыми.</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="action" value="set_public_listing">
+    <input type="hidden" name="enabled" value="{% if product.public_listing %}false{% else %}true{% endif %}">
+    <button type="submit">{% if product.public_listing %}Закрыть публичный просмотр{% else %}Разрешить публичный просмотр{% endif %}</button>
+  </form>
+  <p class="subtle">Это отдельное разрешение на показ опубликованного содержания и его фотографий. Оно не публикует черновик и не снимает блокировки.</p>
+</section>
+{% endif %}
 <section>
   <h2>Основное содержание</h2>
   <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_product">{{ product_form.as_p }}<button type="submit">Сохранить черновик</button></form>
