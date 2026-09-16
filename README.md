@@ -30,6 +30,7 @@ The preview uses synthetic data. A fresh installation is empty; an [optional com
 - Keyword, typo-tolerant and semantic search, price range and sorting, automatic loading, and links preserving search conditions. Semantic search matches meaning rather than just spelling.
 - Personal saved products, seller pages, clear listing status and private publication previews.
 - [Optional order demonstration](docs/runbooks/demo-orders-en.md): multi-seller cart, quantities, totals, price reconfirmation, duplicate-safe checkout, simulated payment, handover, receipt and cancellation. Disabled by default; no real money or shipments.
+- The local commerce foundation persists reservations, immutable paid-order snapshots, a payment ledger, and pending physical shipment plans per seller. It does not call payment or shipping providers.
 - Photos and the database are stored in separate persistent Docker volumes. Private photos are not served as public files.
 
 ## 1. Prerequisites
