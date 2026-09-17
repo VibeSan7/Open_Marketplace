@@ -1,10 +1,12 @@
 from copy import deepcopy
+from django.db.models import F, Sum
+
 
 from open_marketplace.catalog.application import _publication_data
 from open_marketplace.catalog.common_cards import compose_common_cards
 
 from open_marketplace.catalog.domain import UNITS, price_label, price_limited_variant, price_range
-from open_marketplace.catalog.models import Category, Participant, Photo, Product, SavedProduct, StorageLocation, Variant
+from open_marketplace.catalog.models import Category, Participant, Photo, Product, SavedProduct, StorageLocation, Stock, Variant
 from open_marketplace.catalog.photos import photo_path
 from open_marketplace.catalog.policy import (
     UNAVAILABLE, browse_account, identifier, manager, owned_product, participant, private_catalog_access, seller,
@@ -284,6 +286,45 @@ def get_product(*, product_id, context, variant_id=None, filters=None, category_
     product["selected_variant_id"] = selected["id"] if selected else None
     product["selected_variant"] = selected
     return product
+
+
+def get_offer_snapshot(*, variant_id, context, lock=False):
+    variant_id = identifier(variant_id)
+    variants = Variant.objects.select_related("product")
+    if lock:
+        product_id = Variant.objects.filter(pk=variant_id).values_list("product_id", flat=True).first()
+        if product_id is None:
+            raise PermissionDenied(UNAVAILABLE)
+        Product.objects.select_for_update().get(pk=product_id)
+        variants = variants.select_for_update(of=("self",))
+    variant = variants.filter(pk=variant_id).first()
+    if variant is None or variant.product.kind != "physical":
+        raise PermissionDenied(UNAVAILABLE)
+    product = variant.product
+    visible = get_product(product_id=product.id, variant_id=variant.id, context=context)
+    if visible["selected_variant"] is None or visible["selected_variant"]["id"] != str(variant.id):
+        raise PermissionDenied(UNAVAILABLE)
+    sellers = get_public_sellers(seller_ids=(product.seller_id,))
+    if not sellers or variant.price is None or product.seller_id is None or product.owner_id is None:
+        raise PermissionDenied(UNAVAILABLE)
+    quantity = Stock.objects.filter(
+        variant_id=variant.id,
+        quantity__gt=F("reserved_quantity"),
+    ).aggregate(total=Sum(F("quantity") - F("reserved_quantity")))["total"]
+    if quantity is None:
+        raise PermissionDenied(UNAVAILABLE)
+    return {
+        "variant_id": variant.id,
+        "product_id": product.id,
+        "seller_profile_id": product.seller_id,
+        "seller_account_id": product.owner_id,
+        "title": product.published["title"],
+        "variant_label": variant.published["label"],
+        "seller_display_name": sellers[0]["display_name"],
+        "unit": product.unit,
+        "unit_price": variant.price,
+        "initial_quantity": quantity,
+    }
 
 
 def get_photo(*, photo_id, context):

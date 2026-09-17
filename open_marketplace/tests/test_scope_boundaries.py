@@ -328,6 +328,8 @@ class ScopeBoundaryTests(SimpleTestCase):
                 )
                 commerce_fields = {
                     "commerce.commerceorder": {"id", "intent_id", "reservation_id", "buyer_id", "lines", "total", "currency", "state", "created_at", "updated_at"},
+                    "commerce.commercecart": {"id", "buyer_id", "revision", "intent_id", "items", "updated_at"},
+                    "commerce.commercecartcheckoutreceipt": {"id", "cart", "intent_id", "revision", "order_ids", "created_at"},
                     "commerce.commerceorderevent": {"id", "order", "state", "action", "actor_id", "occurred_at"},
                     "commerce.paymentintent": {"id", "order", "provider", "provider_order_id", "deal_id", "payment_id", "amount_kopecks", "currency", "state", "created_at", "updated_at"},
                     "commerce.paymentevent": {"id", "payment", "fingerprint", "provider_status", "amount_kopecks", "payload", "received_at"},

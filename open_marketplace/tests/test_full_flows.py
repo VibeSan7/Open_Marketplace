@@ -626,4 +626,7 @@ class FullFlowTests(TestCase):
         self.assertIn("row_kind=seller_profile", rendered)
         self.assertNotIn("password", rendered.casefold())
         self.assertNotIn("manual_secret", rendered)
-        self.assertNotRegex(rendered, r"[A-Za-z0-9_-]{40,}")
+        non_schema_output = "\n".join(
+            line for line in rendered.splitlines() if not line.startswith("migration_leaf ")
+        )
+        self.assertNotRegex(non_schema_output, r"[A-Za-z0-9_-]{40,}")

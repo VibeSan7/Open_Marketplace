@@ -24,6 +24,7 @@ from open_marketplace.catalog.application import (
 from open_marketplace.catalog.queries import (
     get_own_product,
     get_photo,
+    get_offer_snapshot,
     get_product,
     get_seller_store,
     get_publication_readiness,
@@ -54,6 +55,6 @@ __all__ = (
     "add_variant", "create_category", "create_location", "create_product", "publish_product", "set_public_listing",
     "save_product_draft", "save_variant_draft", "set_offer", "set_participant", "set_product_block",
     "set_variant_block", "update_category", "upload_photo", "withdraw_variant",
-    "get_own_product", "get_photo", "get_product", "get_seller_store", "get_publication_readiness", "list_categories", "list_own_products",
+    "get_offer_snapshot", "get_own_product", "get_photo", "get_product", "get_seller_store", "get_publication_readiness", "list_categories", "list_own_products",
     "list_saved_products", "set_saved_product",
 )
