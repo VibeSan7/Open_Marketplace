@@ -9,7 +9,7 @@ The owner approved T-Bank Multi-calculation, CDEK plus seller-arranged delivery,
 - Physical inventory reservations, immutable purchase snapshots, stock allocation across storage locations, request replay protection, and atomic commit/release.
 - PostgreSQL row locks and database constraints protecting the final available item, stock edits and terminal reservation transitions.
 - Availability views based on on-hand minus reserved quantities. Existing demo inventory remains separate.
-- Durable physical multi-seller order records with immutable reservation snapshots, buyer-scoped replay/cancellation, and atomic order events.
+- A separate buyer commerce cart that stores server-confirmed offer snapshots, revalidates price/stock at checkout, creates one durable multi-seller order, and deduplicates replayed cart intents. It does not call payment or shipping providers.
 - A provider-independent payment intent/event ledger that accepts only normalized verified T-Bank notifications, deduplicates callbacks, commits stock on `CONFIRMED`, and releases pre-payment reservations on rejection/reversal.
 - A provider-independent physical fulfillment plan: one immutable pending shipment snapshot per seller for a paid order, explicit `cdek` or seller-arranged delivery mode, provider-safe client reference, and a local seller-arranged lifecycle through buyer receipt confirmation. It does not call CDEK or claim carrier evidence.
 - An EACQ **Safe Deal** protocol adapter for the documented creation/initiation/status/confirmation/cancellation operations, signed notifications, order/payment/deal/amount binding, and uncertain-outcome handling. This is not a full mixed-recipient Multi-calculation integration.

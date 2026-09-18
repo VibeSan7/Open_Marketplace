@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'demo_orders/cart.css' %}">{% endblock %}
+{% block title %}Рабочая корзина — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Заказы</span>
+    <h1>Рабочая корзина</h1>
+    <p>Цена и остаток каждый раз подтверждаются сервером.</p>
+  </div>
+</section>
+<p class="notice" role="status">Это локальная основа заказа. Реальная оплата, доставка и списание денег пока не подключены.</p>
+{% if cart.errors %}
+  <div class="notice" role="alert">
+    {% for error in cart.errors %}<p>{{ error }}</p>{% endfor %}
+  </div>
+{% endif %}
+{% if cart.items %}
+  <div class="cart-layout">
+    <div class="cart-lines">
+      {% for seller in cart.sellers %}
+        <section class="cart-seller">
+          <h2>{{ seller.seller_name }}</h2>
+          {% for item in seller.items %}
+            <article class="cart-item{% if not item.available %} cart-item--unavailable{% endif %}">
+              <div class="cart-item__content">
+                <a class="cart-item__title" href="{{ item.product_url }}">{{ item.title }}</a>
+                <span class="cart-item__variant">{{ item.variant_label }} · {{ item.unit_label }}</span>
+                {% if item.message %}<p class="cart-item__message">{{ item.message }}</p>{% endif %}
+              </div>
+              <div class="cart-item__price">{{ item.unit_price|floatformat:2 }} ₽{% if item.current_unit_price is not None and item.current_unit_price != item.unit_price %}<br><strong>Новая цена: {{ item.current_unit_price|floatformat:2 }} ₽</strong>{% endif %}</div>
+              <form method="post" action="{% url 'commerce-cart-update' variant_id=item.variant_id %}" class="cart-item__form">
+                {% csrf_token %}
+                <label for="commerce-quantity-{{ item.variant_id }}">Количество</label>
+                <input id="commerce-quantity-{{ item.variant_id }}" name="quantity" value="{{ item.quantity }}" inputmode="decimal" required>
+                <button class="button" type="submit">Обновить</button>
+              </form>
+              <form method="post" action="{% url 'commerce-cart-update' variant_id=item.variant_id %}">
+                {% csrf_token %}<input type="hidden" name="action" value="remove">
+                <button class="button button--quiet" type="submit">Удалить</button>
+              </form>
+              <strong class="cart-item__total">{{ item.total|floatformat:2 }} ₽</strong>
+            </article>
+          {% endfor %}
+        </section>
+      {% endfor %}
+    </div>
+    <aside class="cart-summary">
+      <span class="eyebrow">Итого</span>
+      <p class="cart-summary__count">Позиций: {{ cart.item_count }}</p>
+      <strong class="cart-summary__total">{{ cart.total|floatformat:2 }} ₽</strong>
+      {% if cart.checkout_available %}
+        <a class="button" href="{% url 'commerce-cart-checkout' %}">Продолжить</a>
+      {% else %}
+        <p class="subtle">Сначала исправьте строки с изменившейся ценой или доступностью.</p>
+      {% endif %}
+    </aside>
+  </div>
+{% else %}
+  <section class="cart-empty">
+    <h2>Корзина пока пустая</h2>
+    <p>Добавьте товар из каталога. Здесь появится подтверждённая цена.</p>
+    <a class="button" href="{% url 'catalog-search' %}">Открыть каталог</a>
+  </section>
+{% endif %}
+{% endblock %}

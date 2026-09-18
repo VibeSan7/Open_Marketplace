@@ -190,3 +190,29 @@ class FulfillmentEvent(models.Model):
             ),
         )
         ordering = ("shipment_id", "sequence")
+
+
+class CommerceCart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    buyer_id = models.UUIDField(unique=True, db_index=True)
+    revision = models.PositiveBigIntegerField(default=0)
+    intent_id = models.UUIDField(unique=True)
+    items = models.JSONField(default=list)
+    updated_at = models.DateTimeField()
+
+
+class CommerceCartCheckoutReceipt(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    cart = models.ForeignKey(CommerceCart, on_delete=models.PROTECT, related_name="checkout_receipts")
+    intent_id = models.UUIDField()
+    revision = models.PositiveBigIntegerField()
+    order_ids = models.JSONField(default=list)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=("cart", "intent_id"),
+                name="commerce_cart_intent_unique",
+            ),
+        )

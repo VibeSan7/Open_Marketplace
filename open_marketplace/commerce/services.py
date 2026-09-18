@@ -61,6 +61,7 @@ def _snapshot(order):
         "total": order.total,
         "currency": order.currency,
         "state": order.state,
+        "state_label": order.get_state_display(),
     }
 
 
@@ -119,6 +120,17 @@ def get_order(*, order_id, context):
     if order is None:
         raise PermissionDenied(_UNAVAILABLE)
     return _snapshot(order)
+
+
+def list_orders(*, context):
+    account = buyer(context)
+    return [
+        {
+            **_snapshot(order),
+            "created_at": order.created_at,
+        }
+        for order in CommerceOrder.objects.filter(buyer_id=account.id)
+    ]
 
 
 def cancel_order(*, order_id, context):

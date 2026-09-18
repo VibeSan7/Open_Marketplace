@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Мои заказы — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Покупатель</span>
+    <h1>Мои заказы</h1>
+    <p>История заказов, созданных в рабочей корзине.</p>
+  </div>
+</section>
+{% if orders %}
+  <div class="cart-orders">
+    {% for order in orders %}
+      <article class="cart-confirmation">
+        <p><span class="eyebrow">{{ order.created_at|date:"d.m.Y H:i" }}</span></p>
+        <h2><a href="{% url 'commerce-order-detail' order_id=order.id %}">Заказ {{ order.id }}</a></h2>
+        <p>{{ order.state_label }} · {{ order.total|floatformat:2 }} {{ order.currency }}</p>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="cart-empty">
+    <h2>Заказов пока нет</h2>
+    <p>Добавьте товар в рабочую корзину и оформите локальный заказ.</p>
+    <a class="button" href="{% url 'commerce-cart' %}">Открыть рабочую корзину</a>
+  </section>
+{% endif %}
+{% endblock %}

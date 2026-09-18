@@ -68,6 +68,14 @@
                 <span class="offer-price">{% if offer.price == 0 %}Бесплатно{% else %}{{ offer.price|floatformat:2 }} ₽{% endif %}</span>
                 <span class="offer-delivery">Доставка не включена в демонстрационный расчёт.</span>
                 {% url 'cart-add' variant_id=offer.variant_id as cart_add_url %}
+                {% if request.user.is_authenticated and request.user.kind == "ordinary" %}
+                  <form class="commerce-cart-form" method="post" action="{% url 'commerce-cart-add' variant_id=offer.variant_id %}">
+                    {% csrf_token %}
+                    <label for="commerce-offer-quantity-{{ offer.variant_id }}">Количество, {{ product.unit_label }}</label>
+                    <input id="commerce-offer-quantity-{{ offer.variant_id }}" type="number" name="quantity" value="1" min="{% if product.unit == 'pc' %}1{% else %}0.001{% endif %}" step="{% if product.unit == 'pc' %}1{% else %}0.001{% endif %}" inputmode="decimal" required>
+                    <button type="submit">В рабочую корзину</button>
+                  </form>
+                {% endif %}
                 {% if demo_orders_enabled and cart_add_url and request.user.is_authenticated and request.user.kind != "service" %}
                   <form class="offer-cart-form" method="post" action="{{ cart_add_url }}">
                     {% csrf_token %}
