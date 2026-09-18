@@ -68,3 +68,31 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertContains(response, "не поддерживается", status_code=400)
+
+    def test_buyer_can_view_order_history_and_order_detail(self):
+        commerce_public.add_commerce_cart_item(
+            variant_id=self.variant_id,
+            quantity="1",
+            context=self.buyer_context,
+        )
+        orders = commerce_public.checkout_commerce_cart(
+            intent_id=commerce_public.get_commerce_cart(context=self.buyer_context)["intent_id"],
+            context=self.buyer_context,
+        )
+        order_id = orders[0]["id"]
+
+        history = self.client.get("/commerce-orders/")
+        self.assertEqual(history.status_code, 200)
+        self.assertContains(history, "Мои заказы")
+        self.assertContains(history, order_id)
+
+        detail = self.client.get(f"/commerce-orders/{order_id}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "Заказ")
+        self.assertContains(detail, "120,00")
+        self.assertContains(detail, "Ожидает подтверждения оплаты")
+
+    def test_guest_is_redirected_from_order_history(self):
+        response = Client().get("/commerce-orders/")
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("/login/?next=%2Fcommerce-orders%2F", response["Location"])

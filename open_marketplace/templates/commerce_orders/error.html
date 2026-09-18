@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Заказ недоступен — Open Marketplace{% endblock %}
+{% block content %}
+<section class="cart-empty">
+  <h1>Заказ недоступен</h1>
+  <p>{{ message }}</p>
+  <a class="button" href="{% url 'commerce-orders' %}">Вернуться к заказам</a>
+</section>
+{% endblock %}

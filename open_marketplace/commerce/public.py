@@ -12,6 +12,7 @@ from .services import (
     cancel_order,
     create_order,
     get_order,
+    list_orders,
     prepare_payment,
 )
 
@@ -25,6 +26,7 @@ __all__ = (
     "create_order",
     "get_commerce_cart",
     "get_order",
+    "list_orders",
     "prepare_payment",
     "remove_commerce_cart_item",
     "update_commerce_cart_item",

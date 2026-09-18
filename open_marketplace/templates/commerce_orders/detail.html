@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Заказ {{ order.id }} — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Заказ</span>
+    <h1>{{ order.id }}</h1>
+    <p>{{ order.state_label }}</p>
+  </div>
+  <a class="button button--quiet" href="{% url 'commerce-orders' %}">Все заказы</a>
+</section>
+<section class="cart-confirmation">
+  <p>Заказ создан локально. Реальная оплата и доставка не подключены.</p>
+  <ul class="cart-orders">
+    {% for line in order.lines %}
+      <li><strong>{{ line.title }}</strong> · {{ line.variant_label }} · {{ line.quantity }} · {{ line.unit_price }} {{ order.currency }}</li>
+    {% endfor %}
+  </ul>
+  <strong class="cart-summary__total">{{ order.total|floatformat:2 }} {{ order.currency }}</strong>
+</section>
+{% endblock %}
