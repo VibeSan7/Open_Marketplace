@@ -110,10 +110,12 @@ def _item_view(line, offer=None, message=None):
         "title": line["title"],
         "variant_label": line["variant_label"],
         "unit": line["unit"],
+        "unit_label": catalog_public.UNITS[line["unit"]],
         "quantity": quantity,
         "unit_price": unit_price,
         "current_unit_price": offer["unit_price"] if offer is not None else None,
         "total": _line_total(line),
+        "available": offer is not None,
         "message": message,
     }
 

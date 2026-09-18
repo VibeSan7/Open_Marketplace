@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}<link rel="stylesheet" href="{% static 'demo_orders/cart.css' %}">{% endblock %}
+{% block title %}Локальное оформление — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Заказ</span>
+    <h1>Локальное оформление</h1>
+    <p>Сервер создаст заказ и резерв товара, но оплату не проводит.</p>
+  </div>
+</section>
+{% if orders %}
+  <p class="notice" role="status">Заказ создан локально. Оплата не подключена, реальные деньги не списаны.</p>
+  <ul class="cart-orders">
+    {% for order in orders %}
+      <li>Заказ <code>{{ order.id }}</code> · {{ order.total|floatformat:2 }} ₽ · {{ order.state }}</li>
+    {% endfor %}
+  </ul>
+{% elif cart.checkout_available %}
+  <section class="cart-confirmation">
+    <h2>Итого: {{ cart.total|floatformat:2 }} ₽</h2>
+    <p>Перед созданием заказа сервер ещё раз проверит товар, цену, остаток и владельца предложения.</p>
+    <form method="post">
+      {% csrf_token %}{{ form.intent_id }}
+      <button class="button" type="submit">Создать локальный заказ</button>
+    </form>
+  </section>
+{% else %}
+  <p class="notice" role="alert">Корзина изменилась или содержит недоступные строки.</p>
+  <a class="button" href="{% url 'commerce-cart' %}">Вернуться в корзину</a>
+{% endif %}
+{% endblock %}

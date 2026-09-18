@@ -28,7 +28,8 @@
       <nav class="site-nav" aria-label="Навигация">
         <a href="{% url 'catalog-search' %}" {% if request.resolver_match.url_name == 'catalog-search' %}aria-current="page"{% endif %}>Каталог</a>
         <a href="{% url 'catalog-saved' %}" {% if request.resolver_match.url_name == 'catalog-saved' %}aria-current="page"{% endif %}>Избранное</a>
-        <a href="{% if cart_url %}{{ cart_url }}{% else %}/cart/{% endif %}">Корзина</a>
+        <a href="{% if cart_url %}{{ cart_url }}{% else %}/cart/{% endif %}">Тестовая корзина</a>
+        <a href="{% url 'commerce-cart' %}">Рабочая корзина</a>
         <a href="{% url 'seller-start' %}" {% if request.resolver_match.url_name == 'seller-start' %}aria-current="page"{% endif %}>{% if request.user.is_authenticated and request.user.kind != "service" %}Кабинет продавца{% else %}Продавцам{% endif %}</a>
         {% if request.user.is_authenticated %}
           {% if demo_orders_enabled and request.user.kind != "service" %}<a href="{% url 'demo-orders' %}">Тестовые заказы</a>{% endif %}

@@ -13,6 +13,7 @@ urlpatterns = [
     path("catalog/", include("open_marketplace.web.catalog_urls")),
     path("demo-orders/", include("open_marketplace.demo_orders.urls")),
     path("cart/", include("open_marketplace.demo_orders.cart_urls")),
+    path("commerce-cart/", include("open_marketplace.web.commerce_cart_urls")),
     path("", include("open_marketplace.web.urls")),
 ]
 

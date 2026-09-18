@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Ошибка корзины — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <span class="eyebrow">Корзина</span>
+  <h1>Не удалось выполнить действие</h1>
+</section>
+<p class="notice" role="alert">{{ message }}</p>
+<a class="button" href="{% url 'commerce-cart' %}">Вернуться в рабочую корзину</a>
+{% endblock %}
