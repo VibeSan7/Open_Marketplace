@@ -59,6 +59,17 @@ def _present(shipment):
                 ) or f"Позиция {line_index + 1}",
             })
         packages.append({**package, "items_with_labels": items})
+    lines_with_labels = [
+        {
+            **line,
+            "label": " · ".join(
+                value
+                for value in (line.get("title"), line.get("variant_label"))
+                if value
+            ) or f"Позиция {index + 1}",
+        }
+        for index, line in enumerate(shipment.get("lines", ()))
+    ]
     events = [
         {
             **event,
@@ -72,6 +83,7 @@ def _present(shipment):
         **shipment,
         "packages": packages,
         "package_count": package_count,
+        "lines_with_labels": lines_with_labels,
         "events_with_labels": events,
         "delivery_mode_label": _MODE_LABELS.get(shipment["delivery_mode"], shipment["delivery_mode"]),
         "state_label": _STATE_LABELS.get(shipment["state"], shipment["state"]),

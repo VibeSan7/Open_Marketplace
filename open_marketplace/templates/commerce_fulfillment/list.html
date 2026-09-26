@@ -15,6 +15,13 @@
         <li>
           <a href="{% url 'commerce-fulfillment-detail' shipment_id=shipment.id %}">{{ shipment.id }}</a>
           · заказ {{ shipment.order_id }} · {{ shipment.delivery_mode_label }} · {{ shipment.state_label }}{% if shipment.package_count is not None %} · Упаковок: {{ shipment.package_count }}{% endif %}
+          {% if shipment.lines_with_labels %}
+            <ul>
+              {% for line in shipment.lines_with_labels %}
+                <li>{{ line.label }} · {{ line.quantity }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
         </li>
       {% endfor %}
     </ul>
