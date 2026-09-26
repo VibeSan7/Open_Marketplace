@@ -8,7 +8,7 @@
 
 ## Constraints
 
-- No provider calls, carrier evidence, delivery quotes, package-to-line allocation, payments, or deployment.
+- No provider calls, carrier evidence, delivery quotes, payments, or deployment. Package-to-line allocation is validated by the commerce boundary and exposed as local preparation data only.
 - Web code uses `open_marketplace.commerce.public` and does not import protected commerce models.
 - Empty manifests are allowed; each submitted row uses positive integer grams and centimetres.
 - Seller edits are allowed only while the shipment is `pending`.

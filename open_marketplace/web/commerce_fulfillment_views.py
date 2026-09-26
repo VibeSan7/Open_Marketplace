@@ -8,7 +8,7 @@ from open_marketplace.commerce import public as commerce_public
 from open_marketplace.web.identity_views import _context, _login_required, _redirect_303
 
 from .commerce_cart_views import _post_data_is_exact, _render
-from .commerce_fulfillment_forms import FulfillmentPackageFormSet
+from .commerce_fulfillment_forms import fulfillment_package_formset
 
 
 _MODE_LABELS = {
@@ -29,6 +29,7 @@ _ACTION_LABELS = {
 }
 _PACKAGE_PREFIX = "packages"
 _PACKAGE_FIELDS = {"weight_grams", "length_cm", "width_cm", "height_cm", "DELETE"}
+_PACKAGE_LINE_FIELD = r"line_\d+"
 _PACKAGE_MANAGEMENT_FIELDS = {
     f"{_PACKAGE_PREFIX}-{name}"
     for name in ("TOTAL_FORMS", "INITIAL_FORMS", "MIN_NUM_FORMS", "MAX_NUM_FORMS")
@@ -36,8 +37,25 @@ _PACKAGE_MANAGEMENT_FIELDS = {
 
 
 def _present(shipment):
+    lines = shipment.get("lines", ())
+    packages = []
+    for package in shipment.get("packages", ()):
+        items = []
+        for item in package.get("items", ()):
+            line_index = item["line_index"]
+            line = lines[line_index] if 0 <= line_index < len(lines) else {}
+            items.append({
+                **item,
+                "label": " · ".join(
+                    value
+                    for value in (line.get("title"), line.get("variant_label"))
+                    if value
+                ) or f"Позиция {line_index + 1}",
+            })
+        packages.append({**package, "items_with_labels": items})
     return {
         **shipment,
+        "packages": packages,
         "delivery_mode_label": _MODE_LABELS.get(shipment["delivery_mode"], shipment["delivery_mode"]),
         "state_label": _STATE_LABELS.get(shipment["state"], shipment["state"]),
         "actions_with_labels": [
@@ -47,18 +65,18 @@ def _present(shipment):
     }
 
 
-def _package_formset(*, data=None, packages=()):
-    return FulfillmentPackageFormSet(
+def _package_formset(*, data=None, packages=(), lines=()):
+    return fulfillment_package_formset(
         data=data,
-        initial=tuple(packages),
-        prefix=_PACKAGE_PREFIX,
+        packages=tuple(packages),
+        lines=tuple(lines),
     )
 
 
 def _validate_package_post(request):
     allowed = {"csrfmiddlewaretoken", *_PACKAGE_MANAGEMENT_FIELDS}
     pattern = re.compile(
-        rf"{re.escape(_PACKAGE_PREFIX)}-\d+-({'|'.join(sorted(_PACKAGE_FIELDS))})$"
+        rf"{re.escape(_PACKAGE_PREFIX)}-\d+-({'|'.join(sorted(_PACKAGE_FIELDS))}|{_PACKAGE_LINE_FIELD})$"
     )
     for key in request.POST:
         if key not in allowed and not pattern.fullmatch(key):
@@ -68,14 +86,23 @@ def _validate_package_post(request):
 
 
 def _package_rows(formset):
-    return [
-        {
-            field: form.cleaned_data[field]
-            for field in ("weight_grams", "length_cm", "width_cm", "height_cm")
-        }
-        for form in formset
-        if form.cleaned_data and not form.cleaned_data.get("DELETE")
-    ]
+    rows = []
+    for form in formset:
+        if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+            continue
+        items = [
+            {"line_index": int(field.removeprefix("line_")), "quantity": value}
+            for field, value in form.cleaned_data.items()
+            if field.startswith("line_") and value
+        ]
+        rows.append({
+            **{
+                field: form.cleaned_data[field]
+                for field in ("weight_grams", "length_cm", "width_cm", "height_cm")
+            },
+            "items": items,
+        })
+    return rows
 
 
 def _detail_context(shipment, context, *, package_formset=None):
@@ -85,7 +112,10 @@ def _detail_context(shipment, context, *, package_formset=None):
         and shipment["state"] == "pending"
     )
     if can_edit_packages and package_formset is None:
-        package_formset = _package_formset(packages=shipment.get("packages", ()))
+        package_formset = _package_formset(
+            packages=shipment.get("packages", ()),
+            lines=shipment.get("lines", ()),
+        )
     return {
         "shipment": shipment,
         "can_edit_packages": can_edit_packages,
@@ -167,7 +197,11 @@ def commerce_fulfillment_packages(request, *, shipment_id):
             raise PermissionDenied("Отгрузка недоступна.")
         if shipment["state"] != "pending":
             raise InvalidState("Упаковку можно изменить только для ожидающей отгрузки.")
-        formset = _package_formset(data=request.POST, packages=shipment.get("packages", ()))
+        formset = _package_formset(
+            data=request.POST,
+            packages=shipment.get("packages", ()),
+            lines=shipment.get("lines", ()),
+        )
         if not formset.is_valid():
             return _render(
                 request,

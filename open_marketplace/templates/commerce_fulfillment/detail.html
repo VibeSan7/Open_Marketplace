@@ -29,7 +29,16 @@
     <h2>Упаковка</h2>
     <ul class="cart-orders">
       {% for package in shipment.packages %}
-        <li>{{ package.weight_grams }} г · {{ package.length_cm }} × {{ package.width_cm }} × {{ package.height_cm }} см</li>
+        <li>
+          {{ package.weight_grams }} г · {{ package.length_cm }} × {{ package.width_cm }} × {{ package.height_cm }} см
+          {% if package.items_with_labels %}
+            <ul>
+              {% for item in package.items_with_labels %}
+                <li>{{ item.label }} — {{ item.quantity }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
       {% endfor %}
     </ul>
   {% endif %}

@@ -1,5 +1,7 @@
 import base64
+import re
 from copy import deepcopy
+from decimal import Decimal, InvalidOperation
 from uuid import UUID, uuid5
 
 from django.db import transaction
@@ -69,13 +71,63 @@ def _delivery_modes(value, seller_ids):
     return normalized
 
 
-def _validated_packages(value):
+_QUANTITY_PATTERN = re.compile(r"(?:0|[1-9]\d*)(?:\.\d+)?\Z")
+
+
+def _quantity_precision(line):
+    try:
+        unit = line["unit"]
+    except (KeyError, TypeError):
+        raise InputRejected("Снимок заказа содержит неверную единицу товара.") from None
+    if unit == "pc":
+        return 0
+    if unit in {"kg", "m"}:
+        return 3
+    raise InputRejected("Снимок заказа содержит неподдерживаемую единицу товара.")
+
+
+def _normalized_quantity(value, *, line):
+    if not isinstance(value, str) or _QUANTITY_PATTERN.fullmatch(value) is None:
+        raise InputRejected("Количество товара в упаковке указано неверно.")
+    try:
+        quantity = Decimal(value)
+    except InvalidOperation:
+        raise InputRejected("Количество товара в упаковке указано неверно.") from None
+    if quantity <= 0 or -quantity.as_tuple().exponent > _quantity_precision(line):
+        raise InputRejected("Количество товара в упаковке указано неверно.")
+    return quantity, format(quantity.normalize(), "f")
+
+
+def _validated_package_items(value, *, lines):
+    if type(value) is not list or not value:
+        raise InputRejected("У каждой упаковки должна быть позиция заказа.")
+    totals = [Decimal("0") for _ in lines]
+    seen = set()
+    normalized = []
+    for item in value:
+        if type(item) is not dict or set(item) != {"line_index", "quantity"}:
+            raise InputRejected("Позиция упаковки содержит неподдерживаемые данные.")
+        line_index = item["line_index"]
+        if type(line_index) is not int or line_index < 0 or line_index >= len(lines) or line_index in seen:
+            raise InputRejected("Указана неверная позиция заказа в упаковке.")
+        quantity, normalized_quantity = _normalized_quantity(item["quantity"], line=lines[line_index])
+        seen.add(line_index)
+        totals[line_index] += quantity
+        normalized.append({"line_index": line_index, "quantity": normalized_quantity})
+    normalized.sort(key=lambda item: item["line_index"])
+    return normalized, totals
+
+
+def _validated_packages(value, *, lines):
     if type(value) is not list or len(value) > 32:
         raise InputRejected("Укажите список упаковок отгрузки.")
+    if type(lines) is not list or not lines:
+        raise InputRejected("Снимок отгрузки не содержит позиций заказа.")
     fields = ("weight_grams", "length_cm", "width_cm", "height_cm")
+    totals = [Decimal("0") for _ in lines]
     result = []
     for package in value:
-        if type(package) is not dict or set(package) != set(fields):
+        if type(package) is not dict or set(package) != {*fields, "items"}:
             raise InputRejected("Упаковка содержит неподдерживаемые данные.")
         normalized = {}
         for field in fields:
@@ -83,7 +135,18 @@ def _validated_packages(value):
             if type(amount) is not int or amount <= 0:
                 raise InputRejected("Вес и размеры упаковки должны быть положительными целыми числами.")
             normalized[field] = amount
+        items, package_totals = _validated_package_items(package["items"], lines=lines)
+        normalized["items"] = items
+        totals = [total + package_total for total, package_total in zip(totals, package_totals)]
         result.append(normalized)
+    if result:
+        for line, total in zip(lines, totals):
+            try:
+                expected = Decimal(line["quantity"])
+            except (InvalidOperation, KeyError, TypeError):
+                raise InputRejected("Снимок заказа содержит неверное количество товара.") from None
+            if total != expected:
+                raise InputRejected("Количество товара в упаковках не совпадает с заказом.")
     return result
 
 
@@ -180,7 +243,6 @@ def create_fulfillment_plan(*, order_id, delivery_modes, context=None):
 
 def set_fulfillment_packages(*, shipment_id, packages, context):
     shipment_id = _uuid(shipment_id, "Неверный идентификатор отгрузки.")
-    normalized = _validated_packages(packages)
     if context is None or context.actor_account_id is None:
         raise PermissionDenied(_UNAVAILABLE)
     with transaction.atomic():
@@ -195,12 +257,13 @@ def set_fulfillment_packages(*, shipment_id, packages, context):
             raise PermissionDenied(_UNAVAILABLE)
         if shipment.state != FulfillmentShipment.State.PENDING:
             raise InvalidState("Упаковку можно изменить только для ожидающей отгрузки.")
+        normalized = _validated_packages(packages, lines=shipment.lines)
         if shipment.packages == normalized:
             return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
         shipment.packages = normalized
         shipment.updated_at = context.now
         shipment.save(update_fields=("packages", "updated_at"))
-        return _snapshot(shipment)
+        return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
 
 
 def _authorize_transition(*, shipment, order, target_state, context):

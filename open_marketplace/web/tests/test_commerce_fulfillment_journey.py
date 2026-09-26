@@ -10,7 +10,7 @@ from open_marketplace.commerce import public as commerce_public
 class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
     def setUp(self):
         super().setUp()
-        _, variant_id, _ = self.product(title="Отгрузка продавца")
+        _, variant_id, _ = self.product(title="Отгрузка продавца", stock="3")
         self.address = commerce_public.create_delivery_address(
             data={
                 "label": "Дом",
@@ -31,7 +31,7 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
             lines=[
                 {
                     "variant_id": str(variant_id),
-                    "quantity": "1",
+                    "quantity": "2",
                     "expected_unit_price": "120",
                 },
             ],
@@ -110,8 +110,8 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
 
     def test_seller_can_save_multiple_packages_and_buyer_cannot_see_them(self):
         rows = [
-            {"weight_grams": 1000, "length_cm": 10, "width_cm": 20, "height_cm": 30},
-            {"weight_grams": 2000, "length_cm": 40, "width_cm": 50, "height_cm": 60},
+            {"weight_grams": 1000, "length_cm": 10, "width_cm": 20, "height_cm": 30, "line_0": "1"},
+            {"weight_grams": 2000, "length_cm": 40, "width_cm": 50, "height_cm": 60, "line_0": "1"},
         ]
         response = self.seller_client.post(
             f"/commerce-fulfillment/{self.shipment['id']}/packages/",
@@ -122,6 +122,18 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
         self.assertContains(seller_detail, "1000 г")
         self.assertContains(seller_detail, "2000 г")
         self.assertContains(seller_detail, "Данные упаковки")
+        seller_snapshot = commerce_public.get_fulfillment_shipment(
+            shipment_id=self.shipment["id"],
+            context=self.context(self.seller_registry),
+        )
+        self.assertEqual(
+            seller_snapshot["packages"][0]["items"],
+            [{"line_index": 0, "quantity": "1"}],
+        )
+        self.assertEqual(
+            seller_snapshot["packages"][1]["items"],
+            [{"line_index": 0, "quantity": "1"}],
+        )
         buyer_detail = self.buyer_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
         self.assertNotContains(buyer_detail, "1000 г")
         self.assertNotContains(buyer_detail, "Данные упаковки")
@@ -129,7 +141,7 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
     def test_empty_package_submission_clears_manifest(self):
         commerce_public.set_fulfillment_packages(
             shipment_id=self.shipment["id"],
-            packages=[{"weight_grams": 1000, "length_cm": 10, "width_cm": 10, "height_cm": 10}],
+            packages=[{"weight_grams": 1000, "length_cm": 10, "width_cm": 10, "height_cm": 10, "items": [{"line_index": 0, "quantity": "2"}]}],
             context=self.context(self.seller_registry),
         )
         response = self.seller_client.post(

@@ -125,6 +125,7 @@ class PhysicalFulfillmentTests(CatalogTestCase):
             "length_cm": 10,
             "width_cm": 10,
             "height_cm": 10,
+            "items": [{"line_index": 0, "quantity": "1"}],
         }]
 
         first = self.commerce.set_fulfillment_packages(
@@ -171,6 +172,7 @@ class PhysicalFulfillmentTests(CatalogTestCase):
             "length_cm": 10,
             "width_cm": 10,
             "height_cm": 10,
+            "items": [{"line_index": 0, "quantity": "1"}],
         }]
         foreign_context = self.context(self.create_registry(self.create_account(kind="ordinary")))
 
@@ -197,6 +199,82 @@ class PhysicalFulfillmentTests(CatalogTestCase):
                 context=self.seller_context,
             )
 
+    def test_package_manifest_allocates_every_shipment_line_exactly(self):
+        weighted_product, weighted_variant, _ = self.product(
+            context=self.seller_context,
+            title="Товар на вес",
+            price="60",
+            stock="3",
+            unit="kg",
+        )
+        order = self.commerce.create_order(
+            intent_id=uuid4(),
+            lines=[
+                self.line(self.variant_id, price="120", quantity="1"),
+                self.line(weighted_variant, price="60", quantity="2"),
+            ],
+            context=self.buyer_context,
+        )
+        CommerceOrder.objects.filter(pk=order["id"]).update(state=CommerceOrder.State.PAID)
+        shipment = self.commerce.create_fulfillment_plan(
+            order_id=order["id"],
+            delivery_modes={str(self.seller.id): "seller"},
+            context=self.buyer_context,
+        )[0]
+        line_indexes = {line["variant_id"]: index for index, line in enumerate(shipment["lines"])}
+        first_line = line_indexes[str(self.variant_id)]
+        weighted_line = line_indexes[str(weighted_variant)]
+        packages = [
+            {
+                "weight_grams": 1000,
+                "length_cm": 10,
+                "width_cm": 10,
+                "height_cm": 10,
+                "items": sorted([
+                    {"line_index": first_line, "quantity": "1"},
+                    {"line_index": weighted_line, "quantity": "1"},
+                ], key=lambda item: item["line_index"]),
+            },
+            {
+                "weight_grams": 1000,
+                "length_cm": 10,
+                "width_cm": 10,
+                "height_cm": 10,
+                "items": [{"line_index": weighted_line, "quantity": "1"}],
+            },
+        ]
+
+        saved = self.commerce.set_fulfillment_packages(
+            shipment_id=shipment["id"],
+            packages=packages,
+            context=self.seller_context,
+        )
+        self.assertEqual(saved["packages"], packages)
+
+        invalid_manifests = [
+            [{**packages[0], "items": [{"line_index": 99, "quantity": "1"}]}],
+            [{**packages[0], "items": [{"line_index": first_line, "quantity": "1"}]}],
+            [{**packages[0], "items": [
+                {"line_index": first_line, "quantity": "1"},
+                {"line_index": first_line, "quantity": "1"},
+            ]}, packages[1]],
+            [{**packages[0], "items": [
+                {"line_index": first_line, "quantity": "2"},
+                {"line_index": weighted_line, "quantity": "1"},
+            ]}, packages[1]],
+        ]
+        for invalid in invalid_manifests:
+            with self.assertRaises(InputRejected):
+                self.commerce.set_fulfillment_packages(
+                    shipment_id=shipment["id"],
+                    packages=invalid,
+                    context=self.seller_context,
+                )
+        self.assertEqual(
+            FulfillmentShipment.objects.get(pk=shipment["id"]).packages,
+            packages,
+        )
+
     def test_buyer_and_seller_can_read_only_their_shipments(self):
         result = self.plan(self.modes(first="seller", second="cdek"))
         seller_row = next(row for row in result if row["delivery_mode"] == "seller")
@@ -207,7 +285,13 @@ class PhysicalFulfillmentTests(CatalogTestCase):
         )
         self.commerce.set_fulfillment_packages(
             shipment_id=seller_row["id"],
-            packages=[{"weight_grams": 1000, "length_cm": 10, "width_cm": 10, "height_cm": 10}],
+            packages=[{
+                "weight_grams": 1000,
+                "length_cm": 10,
+                "width_cm": 10,
+                "height_cm": 10,
+                "items": [{"line_index": 0, "quantity": seller_row["lines"][0]["quantity"]}],
+            }],
             context=seller_context,
         )
         self.commerce.transition_fulfillment(

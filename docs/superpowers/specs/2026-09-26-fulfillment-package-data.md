@@ -31,4 +31,4 @@ Add a seller-owned package manifest to each local fulfillment shipment. This is 
 
 ## Deferred
 
-Package-to-line allocation, multi-package browser forms, CDEK payload construction, tariff calculation, shipment creation, pickup/refusal/returns, and verified carrier lifecycle events remain separate slices.
+CDEK payload construction, tariff calculation, shipment creation, pickup/refusal/returns, and verified carrier lifecycle events remain separate slices. Package-to-line allocation and the seller browser form were added in the follow-up allocation slice.
