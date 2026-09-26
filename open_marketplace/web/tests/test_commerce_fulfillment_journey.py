@@ -75,6 +75,25 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
         self.assertContains(detail, "Отгрузка запланирована")
         self.assertNotContains(detail, "Химки")
 
+    def test_fulfillment_list_filters_by_state_and_rejects_invalid_query(self):
+        matching = self.seller_client.get("/commerce-fulfillment/?state=pending")
+        self.assertEqual(matching.status_code, 200)
+        self.assertContains(matching, self.shipment["id"])
+        self.assertContains(matching, "Фильтр: Ожидает планирования")
+
+        not_matching = self.seller_client.get("/commerce-fulfillment/?state=ready")
+        self.assertEqual(not_matching.status_code, 200)
+        self.assertNotContains(not_matching, self.shipment["id"])
+        self.assertContains(not_matching, "По этому фильтру отгрузок нет.")
+
+        for query in (
+            "state=pending&state=ready",
+            "state=unknown",
+            "unexpected=value",
+        ):
+            response = self.seller_client.get(f"/commerce-fulfillment/?{query}")
+            self.assertEqual(response.status_code, 400)
+
     def test_foreign_shipment_is_not_exposed_to_seller(self):
         response = self.other_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
         unknown = self.other_client.get(f"/commerce-fulfillment/{uuid4()}/")

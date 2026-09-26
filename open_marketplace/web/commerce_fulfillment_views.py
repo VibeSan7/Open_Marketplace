@@ -33,6 +33,7 @@ _EVENT_ACTION_LABELS = {
     "in_transit": "Передана в доставку",
     "delivered": "Получение подтверждено",
 }
+_STATE_FILTERS = tuple(_STATE_LABELS.items())
 _PACKAGE_PREFIX = "packages"
 _PACKAGE_FIELDS = {"weight_grams", "length_cm", "width_cm", "height_cm", "DELETE"}
 _PACKAGE_LINE_FIELD = r"line_\d+"
@@ -165,17 +166,46 @@ def _error(request, error):
     return _render(request, "commerce_fulfillment/error.html", {"message": message}, status=status)
 
 
+def _state_filter(request):
+    unknown = set(request.GET) - {"state"}
+    if unknown:
+        raise InputRejected("Параметр фильтра не поддерживается.")
+    values = request.GET.getlist("state")
+    if len(values) > 1:
+        raise InputRejected("Состояние фильтра должно быть указано один раз.")
+    if not values:
+        return None
+    state = values[0]
+    if state not in _STATE_LABELS:
+        raise InputRejected("Указано неподдерживаемое состояние отгрузки.")
+    return state
+
+
 @require_http_methods(["GET"])
 @_login_required
 def commerce_fulfillment_list(request):
     try:
+        state = _state_filter(request)
         shipments = tuple(
             _present(row)
             for row in commerce_public.list_fulfillment_shipments(context=_context(request))
         )
+        if state is not None:
+            shipments = tuple(row for row in shipments if row["state"] == state)
     except (PermissionDenied, InputRejected) as error:
         return _error(request, error)
-    return _render(request, "commerce_fulfillment/list.html", {"shipments": shipments})
+    return _render(
+        request,
+        "commerce_fulfillment/list.html",
+        {
+            "shipments": shipments,
+            "active_state_label": _STATE_LABELS.get(state),
+            "state_filters": tuple(
+                {"value": value, "label": label, "active": value == state}
+                for value, label in _STATE_FILTERS
+            ),
+        },
+    )
 
 
 @require_http_methods(["GET"])

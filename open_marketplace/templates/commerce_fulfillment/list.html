@@ -9,6 +9,19 @@
   </div>
 </section>
 <section class="cart-confirmation">
+  <nav aria-label="Фильтр отгрузок">
+    <a href="{% url 'commerce-fulfillment-list' %}">Все</a>
+    {% for option in state_filters %}
+      {% if option.active %}
+        · <strong>{{ option.label }}</strong>
+      {% else %}
+        · <a href="?state={{ option.value }}">{{ option.label }}</a>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  {% if active_state_label %}<p>Фильтр: {{ active_state_label }}</p>{% endif %}
+</section>
+<section class="cart-confirmation">
   {% if shipments %}
     <ul class="cart-orders">
       {% for shipment in shipments %}
@@ -26,7 +39,11 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p>Отгрузок пока нет.</p>
+    {% if active_state_label %}
+      <p>По этому фильтру отгрузок нет.</p>
+    {% else %}
+      <p>Отгрузок пока нет.</p>
+    {% endif %}
   {% endif %}
 </section>
 {% endblock %}
