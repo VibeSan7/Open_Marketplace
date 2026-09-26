@@ -8,6 +8,58 @@ from open_marketplace.web.identity_views import _context, _login_required, _redi
 from .commerce_cart_views import _post_data_is_exact, _render
 
 
+_FULFILLMENT_MODE_LABELS = {
+    "cdek": "СДЭК",
+    "seller": "Доставка продавцом",
+}
+_FULFILLMENT_STATE_LABELS = {
+    "pending": "Ожидает планирования",
+    "ready": "Готово к передаче",
+    "in_transit": "В пути",
+    "delivered": "Доставлено",
+    "cancelled": "Отменено",
+}
+
+
+def _shipment_summary(shipment):
+    return {
+        "id": shipment["id"],
+        "state_label": _FULFILLMENT_STATE_LABELS.get(
+            shipment["state"], shipment["state"]
+        ),
+        "delivery_mode_label": _FULFILLMENT_MODE_LABELS.get(
+            shipment["delivery_mode"], shipment["delivery_mode"]
+        ),
+        "detail_url": reverse(
+            "commerce-fulfillment-detail",
+            kwargs={"shipment_id": shipment["id"]},
+        ),
+    }
+
+
+def _fulfillment_summaries(*, order, context):
+    return tuple(
+        _shipment_summary(shipment)
+        for shipment in commerce_public.list_fulfillment_shipments(context=context)
+        if shipment["order_id"] == order["id"]
+    )
+
+
+def _orders_with_fulfillment(*, orders, context):
+    shipments_by_order = {}
+    for shipment in commerce_public.list_fulfillment_shipments(context=context):
+        shipments_by_order.setdefault(shipment["order_id"], []).append(
+            _shipment_summary(shipment)
+        )
+    return tuple(
+        {
+            **order,
+            "fulfillment_summaries": tuple(shipments_by_order.get(order["id"], ())),
+        }
+        for order in orders
+    )
+
+
 def _error(request, error):
     if isinstance(error, PermissionDenied):
         status = 403
@@ -25,7 +77,9 @@ def _error(request, error):
 @_login_required
 def commerce_order_list(request):
     try:
-        orders = commerce_public.list_orders(context=_context(request))
+        context = _context(request)
+        orders = commerce_public.list_orders(context=context)
+        orders = _orders_with_fulfillment(orders=orders, context=context)
     except (PermissionDenied, InputRejected) as error:
         return _error(request, error)
     return _render(request, "commerce_orders/list.html", {"orders": orders})
@@ -35,10 +89,16 @@ def commerce_order_list(request):
 @_login_required
 def commerce_order_detail(request, *, order_id):
     try:
-        order = commerce_public.get_order(order_id=order_id, context=_context(request))
+        context = _context(request)
+        order = commerce_public.get_order(order_id=order_id, context=context)
+        fulfillment_shipments = _fulfillment_summaries(order=order, context=context)
     except (PermissionDenied, InputRejected) as error:
         return _error(request, error)
-    return _render(request, "commerce_orders/detail.html", {"order": order})
+    return _render(
+        request,
+        "commerce_orders/detail.html",
+        {"order": order, "fulfillment_shipments": fulfillment_shipments},
+    )
 
 
 @require_POST

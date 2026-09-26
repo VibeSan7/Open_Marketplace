@@ -14,6 +14,8 @@ urlpatterns = [
     path("demo-orders/", include("open_marketplace.demo_orders.urls")),
     path("cart/", include("open_marketplace.demo_orders.cart_urls")),
     path("commerce-cart/", include("open_marketplace.web.commerce_cart_urls")),
+    path("commerce-addresses/", include("open_marketplace.web.commerce_address_urls")),
+    path("commerce-fulfillment/", include("open_marketplace.web.commerce_fulfillment_urls")),
     path("commerce-orders/", include("open_marketplace.web.commerce_order_urls")),
     path("", include("open_marketplace.web.urls")),
 ]

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Отгрузка {{ shipment.id }} — Open Marketplace{% endblock %}
+{% block extrahead %}<script src="{% static 'catalog/catalog.js' %}" defer></script>{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Отгрузка</span>
+    <h1>{{ shipment.id }}</h1>
+    <p>{{ shipment.state_label }} · {{ shipment.delivery_mode_label }}</p>
+  </div>
+  <a class="button button--quiet" href="{% url 'commerce-fulfillment-list' %}">Все отгрузки</a>
+</section>
+<section class="cart-confirmation">
+  <p>Это локальная операция. Запросы к СДЭК и реальные отправления не выполняются.</p>
+  <dl>
+    <dt>Заказ</dt><dd>{{ shipment.order_id }}</dd>
+    <dt>Способ доставки</dt><dd>{{ shipment.delivery_mode_label }}</dd>
+    <dt>Состояние</dt><dd>{{ shipment.state_label }}</dd>
+    <dt>Внутренний reference</dt><dd>{{ shipment.client_reference }}</dd>
+  </dl>
+  {% if shipment.events_with_labels %}
+    <h2>История состояния</h2>
+    <ol class="order-timeline">
+      {% for event in shipment.events_with_labels %}
+        <li>
+          <strong>{{ event.action_label }}</strong> · {{ event.state_label }}
+          <time>{{ event.occurred_at }}</time>
+        </li>
+      {% endfor %}
+    </ol>
+  {% endif %}
+  <h2>Позиции</h2>
+  <ul class="cart-orders">
+    {% for line in shipment.lines %}
+      <li><strong>{{ line.title }}</strong> · {{ line.variant_label }} · {{ line.quantity }}</li>
+    {% endfor %}
+  </ul>
+  {% if shipment.packages %}
+    <h2>Упаковка</h2>
+    <ul class="cart-orders">
+      {% for package in shipment.packages %}
+        <li>
+          {{ package.weight_grams }} г · {{ package.length_cm }} × {{ package.width_cm }} × {{ package.height_cm }} см
+          {% if package.items_with_labels %}
+            <ul>
+              {% for item in package.items_with_labels %}
+                <li>{{ item.label }} — {{ item.quantity }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {% if can_edit_packages %}
+    <h2>Данные упаковки</h2>
+    <p>Это подготовительная информация продавца, не накладная и не подтверждение перевозчика.</p>
+    <form method="post" action="{% url 'commerce-fulfillment-packages' shipment_id=shipment.id %}" class="catalog-form" data-formset>
+      {% csrf_token %}
+      {{ package_formset.management_form }}
+      <div data-formset-rows>
+        {% for form in package_formset %}
+          <fieldset data-formset-row>
+            {% for field in form %}
+              {% if field.name != "DELETE" %}
+                <p>
+                  {{ field.label_tag }}
+                  {{ field }}
+                  {% if field.errors %}<span class="form-error">{{ field.errors|striptags }}</span>{% endif %}
+                </p>
+              {% endif %}
+            {% endfor %}
+            <span hidden>{{ form.DELETE }}</span>
+            <button type="button" data-remove-row>Удалить упаковку</button>
+          </fieldset>
+        {% endfor %}
+      </div>
+      {% if package_formset.non_form_errors %}<p class="form-error">{{ package_formset.non_form_errors|striptags }}</p>{% endif %}
+      <button type="button" data-add-row>Добавить упаковку</button>
+      <button class="button" type="submit">Сохранить упаковку</button>
+    </form>
+  {% endif %}
+  {% if shipment.actions_with_labels %}
+    <h2>Действия</h2>
+    {% for action in shipment.actions_with_labels %}
+      <form method="post" action="{% url 'commerce-fulfillment-transition' shipment_id=shipment.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="target_state" value="{{ action.target_state }}">
+        <button class="button" type="submit">{{ action.label }}</button>
+      </form>
+    {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

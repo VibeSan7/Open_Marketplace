@@ -111,8 +111,263 @@ class PhysicalFulfillmentTests(CatalogTestCase):
 
         self.assertTrue(all(set(row) == {
             "id", "order_id", "seller_account_id", "seller_profile_id", "delivery_mode",
-            "client_reference", "lines", "state", "created_at", "updated_at",
+            "client_reference", "lines", "packages", "events", "state", "created_at", "updated_at",
         } for row in result))
         self.assertFalse(any("address" in row for row in result))
         self.assertFalse(any("waybill" in row for row in result))
         self.assertFalse(any("fee" in row for row in result))
+
+    def test_snapshot_exposes_ordered_sanitized_event_timeline(self):
+        result = self.plan()
+        seller_row = next(row for row in result if row["seller_account_id"] == str(self.seller.id))
+
+        pending = self.commerce.get_fulfillment_shipment(
+            shipment_id=seller_row["id"],
+            context=self.seller_context,
+        )
+        self.assertEqual(len(pending["events"]), 1)
+        self.assertEqual(
+            {key: pending["events"][0][key] for key in ("sequence", "state", "action")},
+            {"sequence": 1, "state": "pending", "action": "planned"},
+        )
+        self.assertNotIn("actor_id", pending["events"][0])
+
+        self.commerce.transition_fulfillment(
+            shipment_id=seller_row["id"],
+            target_state="ready",
+            context=self.seller_context,
+        )
+        ready = self.commerce.get_fulfillment_shipment(
+            shipment_id=seller_row["id"],
+            context=self.seller_context,
+        )
+
+        self.assertEqual(
+            [
+                {key: event[key] for key in ("sequence", "state", "action")}
+                for event in ready["events"]
+            ],
+            [
+                {"sequence": 1, "state": "pending", "action": "planned"},
+                {"sequence": 2, "state": "ready", "action": "ready"},
+            ],
+        )
+        self.assertTrue(all("actor_id" not in event for event in ready["events"]))
+
+    def test_seller_can_replace_pending_package_manifest_idempotently(self):
+        result = self.plan()
+        seller_row = next(row for row in result if row["seller_account_id"] == str(self.seller.id))
+        packages = [{
+            "weight_grams": 1000,
+            "length_cm": 10,
+            "width_cm": 10,
+            "height_cm": 10,
+            "items": [{"line_index": 0, "quantity": "1"}],
+        }]
+
+        first = self.commerce.set_fulfillment_packages(
+            shipment_id=seller_row["id"],
+            packages=packages,
+            context=self.seller_context,
+        )
+        repeated = self.commerce.set_fulfillment_packages(
+            shipment_id=seller_row["id"],
+            packages=packages,
+            context=self.seller_context,
+        )
+
+        self.assertEqual(first, repeated)
+        self.assertEqual(first["packages"], packages)
+        self.assertEqual(
+            FulfillmentShipment.objects.get(pk=seller_row["id"]).packages,
+            packages,
+        )
+
+    def test_package_manifest_rejects_invalid_values_without_mutation(self):
+        result = self.plan()
+        seller_row = next(row for row in result if row["seller_account_id"] == str(self.seller.id))
+
+        with self.assertRaises(InputRejected):
+            self.commerce.set_fulfillment_packages(
+                shipment_id=seller_row["id"],
+                packages=[{"weight_grams": 0, "length_cm": 10, "width_cm": 10, "height_cm": 10}],
+                context=self.seller_context,
+            )
+        with self.assertRaises(InputRejected):
+            self.commerce.set_fulfillment_packages(
+                shipment_id=seller_row["id"],
+                packages=[{"weight_grams": 1000, "length_cm": 10, "width_cm": 10}],
+                context=self.seller_context,
+            )
+        self.assertEqual(FulfillmentShipment.objects.get(pk=seller_row["id"]).packages, [])
+
+    def test_package_manifest_is_seller_owned_and_pending_only(self):
+        result = self.plan(self.modes(first="seller", second="seller"))
+        seller_row = next(row for row in result if row["seller_account_id"] == str(self.seller.id))
+        packages = [{
+            "weight_grams": 1000,
+            "length_cm": 10,
+            "width_cm": 10,
+            "height_cm": 10,
+            "items": [{"line_index": 0, "quantity": "1"}],
+        }]
+        foreign_context = self.context(self.create_registry(self.create_account(kind="ordinary")))
+
+        with self.assertRaises(PermissionDenied):
+            self.commerce.set_fulfillment_packages(
+                shipment_id=seller_row["id"],
+                packages=packages,
+                context=foreign_context,
+            )
+        self.commerce.set_fulfillment_packages(
+            shipment_id=seller_row["id"],
+            packages=packages,
+            context=self.seller_context,
+        )
+        self.commerce.transition_fulfillment(
+            shipment_id=seller_row["id"],
+            target_state=FulfillmentShipment.State.READY,
+            context=self.seller_context,
+        )
+        with self.assertRaises(InvalidState):
+            self.commerce.set_fulfillment_packages(
+                shipment_id=seller_row["id"],
+                packages=packages,
+                context=self.seller_context,
+            )
+
+    def test_package_manifest_allocates_every_shipment_line_exactly(self):
+        weighted_product, weighted_variant, _ = self.product(
+            context=self.seller_context,
+            title="Товар на вес",
+            price="60",
+            stock="3",
+            unit="kg",
+        )
+        order = self.commerce.create_order(
+            intent_id=uuid4(),
+            lines=[
+                self.line(self.variant_id, price="120", quantity="1"),
+                self.line(weighted_variant, price="60", quantity="2"),
+            ],
+            context=self.buyer_context,
+        )
+        CommerceOrder.objects.filter(pk=order["id"]).update(state=CommerceOrder.State.PAID)
+        shipment = self.commerce.create_fulfillment_plan(
+            order_id=order["id"],
+            delivery_modes={str(self.seller.id): "seller"},
+            context=self.buyer_context,
+        )[0]
+        line_indexes = {line["variant_id"]: index for index, line in enumerate(shipment["lines"])}
+        first_line = line_indexes[str(self.variant_id)]
+        weighted_line = line_indexes[str(weighted_variant)]
+        packages = [
+            {
+                "weight_grams": 1000,
+                "length_cm": 10,
+                "width_cm": 10,
+                "height_cm": 10,
+                "items": sorted([
+                    {"line_index": first_line, "quantity": "1"},
+                    {"line_index": weighted_line, "quantity": "1"},
+                ], key=lambda item: item["line_index"]),
+            },
+            {
+                "weight_grams": 1000,
+                "length_cm": 10,
+                "width_cm": 10,
+                "height_cm": 10,
+                "items": [{"line_index": weighted_line, "quantity": "1"}],
+            },
+        ]
+
+        saved = self.commerce.set_fulfillment_packages(
+            shipment_id=shipment["id"],
+            packages=packages,
+            context=self.seller_context,
+        )
+        self.assertEqual(saved["packages"], packages)
+
+        invalid_manifests = [
+            [{**packages[0], "items": [{"line_index": 99, "quantity": "1"}]}],
+            [{**packages[0], "items": [{"line_index": first_line, "quantity": "1"}]}],
+            [{**packages[0], "items": [
+                {"line_index": first_line, "quantity": "1"},
+                {"line_index": first_line, "quantity": "1"},
+            ]}, packages[1]],
+            [{**packages[0], "items": [
+                {"line_index": first_line, "quantity": "2"},
+                {"line_index": weighted_line, "quantity": "1"},
+            ]}, packages[1]],
+        ]
+        for invalid in invalid_manifests:
+            with self.assertRaises(InputRejected):
+                self.commerce.set_fulfillment_packages(
+                    shipment_id=shipment["id"],
+                    packages=invalid,
+                    context=self.seller_context,
+                )
+        self.assertEqual(
+            FulfillmentShipment.objects.get(pk=shipment["id"]).packages,
+            packages,
+        )
+
+    def test_buyer_and_seller_can_read_only_their_shipments(self):
+        result = self.plan(self.modes(first="seller", second="cdek"))
+        seller_row = next(row for row in result if row["delivery_mode"] == "seller")
+        seller_context = (
+            self.seller_context
+            if seller_row["seller_account_id"] == str(self.seller.id)
+            else self.other_context
+        )
+        self.commerce.set_fulfillment_packages(
+            shipment_id=seller_row["id"],
+            packages=[{
+                "weight_grams": 1000,
+                "length_cm": 10,
+                "width_cm": 10,
+                "height_cm": 10,
+                "items": [{"line_index": 0, "quantity": seller_row["lines"][0]["quantity"]}],
+            }],
+            context=seller_context,
+        )
+        self.commerce.transition_fulfillment(
+            shipment_id=seller_row["id"],
+            target_state=FulfillmentShipment.State.READY,
+            context=seller_context,
+        )
+        self.commerce.transition_fulfillment(
+            shipment_id=seller_row["id"],
+            target_state=FulfillmentShipment.State.IN_TRANSIT,
+            context=seller_context,
+        )
+        buyer_transition = self.commerce.transition_fulfillment(
+            shipment_id=seller_row["id"],
+            target_state=FulfillmentShipment.State.DELIVERED,
+            context=self.buyer_context,
+        )
+        self.assertNotIn("packages", buyer_transition)
+        own = self.commerce.list_fulfillment_shipments(context=self.buyer_context)
+        self.assertEqual({row["id"] for row in own}, {row["id"] for row in result})
+        other_row = next(row for row in result if row["id"] != seller_row["id"])
+        seller = self.commerce.get_fulfillment_shipment(
+            shipment_id=seller_row["id"],
+            context=seller_context,
+        )
+        self.assertEqual(seller["id"], seller_row["id"])
+        self.assertEqual(seller["packages"][0]["weight_grams"], 1000)
+        self.assertNotIn("delivery_address", seller)
+        buyer_row = next(row for row in own if row["id"] == seller_row["id"])
+        self.assertNotIn("packages", buyer_row)
+        with self.assertRaises(PermissionDenied):
+            self.commerce.get_fulfillment_shipment(
+                shipment_id=other_row["id"],
+                context=seller_context,
+            )
+
+    def test_unknown_shipment_is_not_exposed(self):
+        with self.assertRaises(PermissionDenied):
+            self.commerce.get_fulfillment_shipment(
+                shipment_id=uuid4(),
+                context=self.buyer_context,
+            )

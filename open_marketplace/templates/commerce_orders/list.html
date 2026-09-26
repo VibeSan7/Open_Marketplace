@@ -15,6 +15,15 @@
         <p><span class="eyebrow">{{ order.created_at|date:"d.m.Y H:i" }}</span></p>
         <h2><a href="{% url 'commerce-order-detail' order_id=order.id %}">Заказ {{ order.id }}</a></h2>
         <p>{{ order.state_label }} · {{ order.total|floatformat:2 }} {{ order.currency }}</p>
+        {% if order.fulfillment_summaries %}
+          <p>
+            {% for shipment in order.fulfillment_summaries %}
+              <a href="{{ shipment.detail_url }}">Отгрузка {{ forloop.counter }}: {{ shipment.state_label }}</a>{% if not forloop.last %} · {% endif %}
+            {% endfor %}
+          </p>
+        {% else %}
+          <p>Отгрузка ещё не запланирована.</p>
+        {% endif %}
       </article>
     {% endfor %}
   </div>

@@ -2,6 +2,7 @@ from copy import deepcopy
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 import hashlib
 import json
+import re
 from uuid import UUID
 
 from django.db import transaction
@@ -15,11 +16,30 @@ from open_marketplace.catalog.public import (
 )
 from open_marketplace.common.errors import ConcurrentConflict, InputRejected, InvalidState, PermissionDenied
 
-from .models import CommerceOrder, CommerceOrderEvent, PaymentEvent, PaymentIntent
+from .models import (
+    CommerceDeliveryAddress,
+    CommerceOrder,
+    CommerceOrderEvent,
+    PaymentEvent,
+    PaymentIntent,
+)
 
 
 _UNAVAILABLE = "Заказ недоступен."
+_ADDRESS_UNAVAILABLE = "Адрес доставки недоступен."
 _MAX_PAYMENT_AMOUNT = 9223372036854775807
+_ADDRESS_FIELDS = (
+    "label",
+    "recipient_name",
+    "phone",
+    "postal_code",
+    "region",
+    "city",
+    "street",
+    "building",
+    "apartment",
+    "comment",
+)
 
 
 def _uuid(value, message):
@@ -34,6 +54,127 @@ def _uuid(value, message):
     if str(parsed) != value:
         raise InputRejected(message)
     return parsed
+
+
+def _address_text(data, key, *, required, max_length):
+    value = data.get(key, "")
+    if not isinstance(value, str):
+        raise InputRejected("Адрес содержит недопустимое значение.")
+    value = value.strip()
+    if required and not value:
+        raise InputRejected("Заполните все обязательные поля адреса.")
+    if len(value) > max_length:
+        raise InputRejected("Поле адреса слишком длинное.")
+    return value
+
+
+def _validated_address(data):
+    if not isinstance(data, dict) or set(data) - set(_ADDRESS_FIELDS):
+        raise InputRejected("Адрес содержит неподдерживаемый параметр.")
+    values = {
+        "label": _address_text(data, "label", required=False, max_length=80),
+        "recipient_name": _address_text(data, "recipient_name", required=True, max_length=120),
+        "phone": _address_text(data, "phone", required=True, max_length=16),
+        "postal_code": _address_text(data, "postal_code", required=True, max_length=6),
+        "region": _address_text(data, "region", required=True, max_length=120),
+        "city": _address_text(data, "city", required=True, max_length=120),
+        "street": _address_text(data, "street", required=True, max_length=160),
+        "building": _address_text(data, "building", required=True, max_length=40),
+        "apartment": _address_text(data, "apartment", required=False, max_length=40),
+        "comment": _address_text(data, "comment", required=False, max_length=500),
+    }
+    if not re.fullmatch(r"\+7\d{10}", values["phone"]):
+        raise InputRejected("Телефон должен быть в формате +7XXXXXXXXXX.")
+    if not re.fullmatch(r"\d{6}", values["postal_code"]):
+        raise InputRejected("Индекс должен содержать 6 цифр.")
+    return values
+
+
+def _address_view(address):
+    return {
+        "id": str(address.id),
+        "label": address.label,
+        "recipient_name": address.recipient_name,
+        "phone": address.phone,
+        "country_code": address.country_code,
+        "postal_code": address.postal_code,
+        "region": address.region,
+        "city": address.city,
+        "street": address.street,
+        "building": address.building,
+        "apartment": address.apartment,
+        "comment": address.comment,
+    }
+
+
+def _address_snapshot(address):
+    view = deepcopy(address) if isinstance(address, dict) else _address_view(address)
+    view.pop("id", None)
+    return view
+
+
+def create_delivery_address(*, data, context):
+    account = buyer(context)
+    values = _validated_address(data)
+    address = CommerceDeliveryAddress.objects.create(
+        buyer_id=account.id,
+        country_code="RU",
+        created_at=context.now,
+        updated_at=context.now,
+        **values,
+    )
+    return _address_view(address)
+
+
+def list_delivery_addresses(*, context):
+    account = buyer(context)
+    return tuple(
+        _address_view(address)
+        for address in CommerceDeliveryAddress.objects.filter(buyer_id=account.id)
+    )
+
+
+def get_delivery_address(*, address_id, context):
+    address_id = _uuid(address_id, "Неверный идентификатор адреса.")
+    account = buyer(context)
+    address = CommerceDeliveryAddress.objects.filter(
+        pk=address_id,
+        buyer_id=account.id,
+    ).first()
+    if address is None:
+        raise PermissionDenied(_ADDRESS_UNAVAILABLE)
+    return _address_view(address)
+
+
+def update_delivery_address(*, address_id, data, context):
+    address_id = _uuid(address_id, "Неверный идентификатор адреса.")
+    values = _validated_address(data)
+    account = buyer(context)
+    with transaction.atomic():
+        address = CommerceDeliveryAddress.objects.select_for_update().filter(
+            pk=address_id,
+            buyer_id=account.id,
+        ).first()
+        if address is None:
+            raise PermissionDenied(_ADDRESS_UNAVAILABLE)
+        for key, value in values.items():
+            setattr(address, key, value)
+        address.updated_at = context.now
+        address.save(update_fields=(*values, "updated_at"))
+        return _address_view(address)
+
+
+def delete_delivery_address(*, address_id, context):
+    address_id = _uuid(address_id, "Неверный идентификатор адреса.")
+    account = buyer(context)
+    with transaction.atomic():
+        address = CommerceDeliveryAddress.objects.filter(
+            pk=address_id,
+            buyer_id=account.id,
+        ).first()
+        if address is None:
+            raise PermissionDenied(_ADDRESS_UNAVAILABLE)
+        address.delete()
 
 
 def _total(lines):
@@ -58,6 +199,7 @@ def _snapshot(order):
         "reservation_id": str(order.reservation_id),
         "buyer_id": str(order.buyer_id),
         "lines": deepcopy(order.lines),
+        "delivery_address": deepcopy(order.delivery_address),
         "total": order.total,
         "currency": order.currency,
         "state": order.state,
@@ -75,10 +217,11 @@ def _record(order, *, action, context=None):
     )
 
 
-def create_order(*, intent_id, lines, context):
+def create_order(*, intent_id, lines, delivery_address=None, context):
     intent_id = _uuid(intent_id, "Неверный идентификатор намерения.")
     if not isinstance(lines, list) or not lines:
         raise InputRejected("Укажите товары для заказа.")
+    delivery_snapshot = _address_snapshot(delivery_address or {})
     account = buyer(context)
     with transaction.atomic():
         reservation = reserve_inventory(
@@ -96,6 +239,7 @@ def create_order(*, intent_id, lines, context):
                 str(existing.buyer_id) != reservation["buyer_id"]
                 or str(existing.reservation_id) != reservation["id"]
                 or existing.lines != reservation["lines"]
+                or existing.delivery_address != delivery_snapshot
             ):
                 raise ConcurrentConflict("Это намерение уже связано с другим заказом.")
             return _snapshot(existing)
@@ -104,6 +248,7 @@ def create_order(*, intent_id, lines, context):
             reservation_id=reservation["id"],
             buyer_id=account.id,
             lines=deepcopy(reservation["lines"]),
+            delivery_address=delivery_snapshot,
             total=_total(reservation["lines"]),
             state=CommerceOrder.State.AWAITING_PAYMENT,
             created_at=context.now,
@@ -390,7 +535,12 @@ __all__ = (
     "apply_verified_tbank_notice",
     "bind_tbank_reference",
     "cancel_order",
+    "create_delivery_address",
     "create_order",
+    "delete_delivery_address",
+    "get_delivery_address",
     "get_order",
+    "list_delivery_addresses",
     "prepare_payment",
+    "update_delivery_address",
 )

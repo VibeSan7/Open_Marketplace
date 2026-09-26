@@ -11,6 +11,21 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         super().setUp()
         self.product_id, self.variant_id, _ = self.product(title="Рабочая корзина")
         self.client = test_web.CatalogWebTests.client_for(self, self.buyer_registry)
+        self.address = commerce_public.create_delivery_address(
+            data={
+                "label": "Дом",
+                "recipient_name": "Иван Петров",
+                "phone": "+79990001122",
+                "postal_code": "123456",
+                "region": "Московская область",
+                "city": "Химки",
+                "street": "Лесная",
+                "building": "10",
+                "apartment": "25",
+                "comment": "",
+            },
+            context=self.buyer_context,
+        )
 
     def test_guest_is_redirected_to_login(self):
         response = Client().get("/commerce-cart/")
@@ -33,6 +48,131 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         self.assertContains(page, "120,00")
         self.assertContains(page, "Реальная оплата")
 
+    def test_buyer_can_create_and_list_saved_address(self):
+        page = self.client.get("/commerce-addresses/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Адреса доставки")
+        self.assertContains(page, "Химки")
+
+        form_page = self.client.get("/commerce-addresses/new/")
+        self.assertEqual(form_page.status_code, 200)
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            "/commerce-addresses/new/",
+            {
+                "label": "Работа",
+                "recipient_name": "Иван Петров",
+                "phone": "+79990001122",
+                "postal_code": "123456",
+                "region": "Москва",
+                "city": "Москва",
+                "street": "Тверская",
+                "building": "1",
+                "apartment": "",
+                "comment": "",
+                "csrfmiddlewaretoken": token,
+            },
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("/commerce-addresses/", response["Location"])
+
+    def test_buyer_can_edit_and_delete_saved_address(self):
+        edit_page = self.client.get(f"/commerce-addresses/{self.address['id']}/edit/")
+        self.assertEqual(edit_page.status_code, 200)
+        self.assertContains(edit_page, "Редактирование адреса")
+
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            f"/commerce-addresses/{self.address['id']}/edit/",
+            {
+                "label": "Работа",
+                "recipient_name": "Иван Петров",
+                "phone": "+79900112233",
+                "postal_code": "123456",
+                "region": "Москва",
+                "city": "Москва",
+                "street": "Тверская",
+                "building": "1",
+                "apartment": "",
+                "comment": "",
+                "csrfmiddlewaretoken": token,
+            },
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertContains(self.client.get("/commerce-addresses/"), "Москва")
+
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            f"/commerce-addresses/{self.address['id']}/delete/",
+            {"csrfmiddlewaretoken": token},
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertNotContains(self.client.get("/commerce-addresses/"), "Москва")
+
+    def test_address_delete_requires_post_and_exact_fields(self):
+        response = self.client.get(f"/commerce-addresses/{self.address['id']}/delete/")
+        self.assertEqual(response.status_code, 405)
+
+        self.client.get("/commerce-addresses/")
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            f"/commerce-addresses/{self.address['id']}/delete/",
+            {"csrfmiddlewaretoken": token, "confirm": "yes"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_checkout_requires_address_selection(self):
+        commerce_public.add_commerce_cart_item(
+            variant_id=self.variant_id,
+            quantity="1",
+            context=self.buyer_context,
+        )
+        page = self.client.get("/commerce-cart/checkout/")
+        intent_id = page.context["form"].initial["intent_id"]
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            "/commerce-cart/checkout/",
+            {"intent_id": intent_id, "csrfmiddlewaretoken": token},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "адрес", status_code=400)
+
+    def test_checkout_rejects_foreign_address(self):
+        foreign = self.create_account(kind="ordinary")
+        foreign_context = self.context(self.create_registry(foreign))
+        foreign_address = commerce_public.create_delivery_address(
+            data={
+                "label": "Чужой адрес",
+                "recipient_name": "Иван Петров",
+                "phone": "+79990001122",
+                "postal_code": "123456",
+                "region": "Москва",
+                "city": "Москва",
+                "street": "Тверская",
+                "building": "1",
+                "apartment": "",
+                "comment": "",
+            },
+            context=foreign_context,
+        )
+        commerce_public.add_commerce_cart_item(
+            variant_id=self.variant_id,
+            quantity="1",
+            context=self.buyer_context,
+        )
+        page = self.client.get("/commerce-cart/checkout/")
+        intent_id = page.context["form"].initial["intent_id"]
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            "/commerce-cart/checkout/",
+            {
+                "intent_id": intent_id,
+                "delivery_address_id": foreign_address["id"],
+                "csrfmiddlewaretoken": token,
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_checkout_creates_local_order_without_payment_claim(self):
         commerce_public.add_commerce_cart_item(
             variant_id=self.variant_id,
@@ -47,7 +187,11 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         token = self.client.cookies["csrftoken"].value
         response = self.client.post(
             "/commerce-cart/checkout/",
-            {"intent_id": intent_id, "csrfmiddlewaretoken": token},
+            {
+                "intent_id": intent_id,
+                "delivery_address_id": self.address["id"],
+                "csrfmiddlewaretoken": token,
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Заказ создан локально")
@@ -78,6 +222,7 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         )
         orders = commerce_public.checkout_commerce_cart(
             intent_id=commerce_public.get_commerce_cart(context=self.buyer_context)["intent_id"],
+            delivery_address_id=self.address["id"],
             context=self.buyer_context,
         )
         order_id = orders[0]["id"]
@@ -86,12 +231,48 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         self.assertEqual(history.status_code, 200)
         self.assertContains(history, "Мои заказы")
         self.assertContains(history, order_id)
+        self.assertContains(history, "Отгрузка ещё не запланирована")
 
         detail = self.client.get(f"/commerce-orders/{order_id}/")
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "Заказ")
         self.assertContains(detail, "120,00")
         self.assertContains(detail, "Ожидает подтверждения оплаты")
+        self.assertContains(detail, "Химки")
+        self.assertContains(detail, "Отгрузка ещё не запланирована")
+
+    def test_buyer_can_see_local_fulfillment_summary_on_paid_order_detail(self):
+        commerce_public.add_commerce_cart_item(
+            variant_id=self.variant_id,
+            quantity="1",
+            context=self.buyer_context,
+        )
+        orders = commerce_public.checkout_commerce_cart(
+            intent_id=commerce_public.get_commerce_cart(context=self.buyer_context)["intent_id"],
+            delivery_address_id=self.address["id"],
+            context=self.buyer_context,
+        )
+        order = orders[0]
+        commerce_order = apps.get_model("commerce", "CommerceOrder")
+        commerce_order.objects.filter(pk=order["id"]).update(state=commerce_order.State.PAID)
+        shipment = commerce_public.create_fulfillment_plan(
+            order_id=order["id"],
+            delivery_modes={order["lines"][0]["seller_account_id"]: "seller"},
+            context=self.buyer_context,
+        )[0]
+
+        detail = self.client.get(f"/commerce-orders/{order['id']}/")
+        history = self.client.get("/commerce-orders/")
+
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(history.status_code, 200)
+        self.assertContains(detail, "Отгрузки")
+        self.assertContains(detail, shipment["id"])
+        self.assertContains(detail, "Ожидает планирования")
+        self.assertContains(detail, f"/commerce-fulfillment/{shipment['id']}/")
+        self.assertContains(history, "Ожидает планирования")
+        self.assertContains(history, f"/commerce-fulfillment/{shipment['id']}/")
+        self.assertNotContains(detail, "Данные упаковки")
 
     def test_buyer_can_cancel_unpaid_order_and_release_reservation(self):
         commerce_public.add_commerce_cart_item(
@@ -101,6 +282,7 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         )
         orders = commerce_public.checkout_commerce_cart(
             intent_id=commerce_public.get_commerce_cart(context=self.buyer_context)["intent_id"],
+            delivery_address_id=self.address["id"],
             context=self.buyer_context,
         )
         order_id = orders[0]["id"]

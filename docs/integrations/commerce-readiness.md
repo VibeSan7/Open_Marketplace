@@ -11,7 +11,8 @@ The owner approved T-Bank Multi-calculation, CDEK plus seller-arranged delivery,
 - Availability views based on on-hand minus reserved quantities. Existing demo inventory remains separate.
 - A separate buyer commerce cart that stores server-confirmed offer snapshots, revalidates price/stock at checkout, creates one durable multi-seller order, and deduplicates replayed cart intents. It does not call payment or shipping providers.
 - A provider-independent payment intent/event ledger that accepts only normalized verified T-Bank notifications, deduplicates callbacks, commits stock on `CONFIRMED`, and releases pre-payment reservations on rejection/reversal.
-- A provider-independent physical fulfillment plan: one immutable pending shipment snapshot per seller for a paid order, explicit `cdek` or seller-arranged delivery mode, provider-safe client reference, and a local seller-arranged lifecycle through buyer receipt confirmation. It does not call CDEK or claim carrier evidence.
+- A provider-independent physical fulfillment plan: one immutable pending shipment snapshot per seller for a paid order, explicit `cdek` or seller-arranged delivery mode, seller-owned package manifest data with exact shipment-line allocation, a seller-only pending-shipment package form, provider-safe client reference, and a local seller-arranged lifecycle through buyer receipt confirmation. Authenticated browser screens expose only the authorized local shipment list, detail, package and lifecycle actions. It does not call CDEK or claim carrier evidence.
+- A buyer-owned saved delivery-address boundary: server-validated address creation, editing, deletion and selection at local checkout, plus an immutable address snapshot on the durable order. It does not calculate delivery or call a carrier.
 - An EACQ **Safe Deal** protocol adapter for the documented creation/initiation/status/confirmation/cancellation operations, signed notifications, order/payment/deal/amount binding, and uncertain-outcome handling. This is not a full mixed-recipient Multi-calculation integration.
 - A [CDEK protocol adapter](cdek-client.md) for OAuth, tariff calculation, shipment creation/read/delete and conservative parsing of async/tracking responses.
 - Both clients fail closed without explicit configuration and separate production enablement. Neither is invoked by web routes, startup hooks or the demo checkout.
@@ -19,7 +20,7 @@ The owner approved T-Bank Multi-calculation, CDEK plus seller-arranged delivery,
 ## Not implemented
 
 - The real multi-seller order/payment coordinator, durable provider intents and reconciliation jobs, payout ledger, refunds by order line, fiscalization, recipient onboarding and permissioned operational controls.
-- Address forms, package data, CDEK courier pickup/refusal/returns, verified CDEK lifecycle events, and browser screens for shipment operations. Seller-arranged lifecycle transitions and buyer receipt confirmation exist only in the internal service boundary; they do not create carrier evidence.
+- CDEK courier pickup/refusal/returns and verified CDEK lifecycle events. Seller-arranged browser actions still do not create carrier evidence.
 - Private digital upload/scanning/version retention, paid-order entitlement creation, protected downloads and entitlement revocation. Existing catalog photos are not a digital-delivery system.
 - End-to-end real-commerce browser flows, authenticated provider sandbox checks, real bank/delivery operations or a production migration/deployment.
 

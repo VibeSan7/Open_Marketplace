@@ -14,6 +14,7 @@ class CommerceOrder(models.Model):
     reservation_id = models.UUIDField(unique=True, editable=False)
     buyer_id = models.UUIDField(db_index=True, editable=False)
     lines = models.JSONField()
+    delivery_address = models.JSONField(default=dict)
     total = models.DecimalField(max_digits=40, decimal_places=2)
     currency = models.CharField(max_length=3, default="RUB")
     state = models.CharField(
@@ -150,6 +151,7 @@ class FulfillmentShipment(models.Model):
     delivery_mode = models.CharField(max_length=6, choices=DeliveryMode.choices)
     client_reference = models.CharField(max_length=30, unique=True)
     lines = models.JSONField()
+    packages = models.JSONField(default=list)
     state = models.CharField(
         max_length=16,
         choices=State.choices,
@@ -192,6 +194,33 @@ class FulfillmentEvent(models.Model):
         ordering = ("shipment_id", "sequence")
 
 
+class CommerceDeliveryAddress(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    buyer_id = models.UUIDField(db_index=True)
+    label = models.CharField(max_length=80, blank=True)
+    recipient_name = models.CharField(max_length=120)
+    phone = models.CharField(max_length=16)
+    country_code = models.CharField(max_length=2, default="RU")
+    postal_code = models.CharField(max_length=6)
+    region = models.CharField(max_length=120)
+    city = models.CharField(max_length=120)
+    street = models.CharField(max_length=160)
+    building = models.CharField(max_length=40)
+    apartment = models.CharField(max_length=40, blank=True)
+    comment = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        constraints = (
+            models.CheckConstraint(
+                condition=models.Q(country_code="RU"),
+                name="commerce_delivery_address_country_ru",
+            ),
+        )
+
+
 class CommerceCart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     buyer_id = models.UUIDField(unique=True, db_index=True)
@@ -205,6 +234,7 @@ class CommerceCartCheckoutReceipt(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     cart = models.ForeignKey(CommerceCart, on_delete=models.PROTECT, related_name="checkout_receipts")
     intent_id = models.UUIDField()
+    delivery_address_id = models.UUIDField(null=True)
     revision = models.PositiveBigIntegerField()
     order_ids = models.JSONField(default=list)
     created_at = models.DateTimeField()

@@ -327,13 +327,14 @@ class ScopeBoundaryTests(SimpleTestCase):
                     and model.__module__ == "open_marketplace.catalog.models"
                 )
                 commerce_fields = {
-                    "commerce.commerceorder": {"id", "intent_id", "reservation_id", "buyer_id", "lines", "total", "currency", "state", "created_at", "updated_at"},
+                    "commerce.commerceorder": {"id", "intent_id", "reservation_id", "buyer_id", "lines", "delivery_address", "total", "currency", "state", "created_at", "updated_at"},
                     "commerce.commercecart": {"id", "buyer_id", "revision", "intent_id", "items", "updated_at"},
-                    "commerce.commercecartcheckoutreceipt": {"id", "cart", "intent_id", "revision", "order_ids", "created_at"},
+                    "commerce.commercecartcheckoutreceipt": {"id", "cart", "intent_id", "delivery_address_id", "revision", "order_ids", "created_at"},
+                    "commerce.commercedeliveryaddress": {"id", "buyer_id", "label", "recipient_name", "phone", "country_code", "postal_code", "region", "city", "street", "building", "apartment", "comment", "created_at", "updated_at"},
                     "commerce.commerceorderevent": {"id", "order", "state", "action", "actor_id", "occurred_at"},
                     "commerce.paymentintent": {"id", "order", "provider", "provider_order_id", "deal_id", "payment_id", "amount_kopecks", "currency", "state", "created_at", "updated_at"},
                     "commerce.paymentevent": {"id", "payment", "fingerprint", "provider_status", "amount_kopecks", "payload", "received_at"},
-                    "commerce.fulfillmentshipment": {"id", "order", "seller_account_id", "seller_profile_id", "delivery_mode", "client_reference", "lines", "state", "created_at", "updated_at"},
+                    "commerce.fulfillmentshipment": {"id", "order", "seller_account_id", "seller_profile_id", "delivery_mode", "client_reference", "lines", "packages", "state", "created_at", "updated_at"},
                     "commerce.fulfillmentevent": {"id", "shipment", "state", "action", "sequence", "actor_id", "occurred_at"},
                 }
                 allowed_commerce = (

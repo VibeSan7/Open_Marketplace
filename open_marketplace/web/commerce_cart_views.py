@@ -7,7 +7,11 @@ from open_marketplace.commerce import public as commerce_public
 from open_marketplace.web.errors import secure_render
 from open_marketplace.web.identity_views import _context, _login_required, _redirect_303
 
-from .commerce_cart_forms import CommerceCartCheckoutForm, CommerceCartQuantityForm
+from .commerce_cart_forms import (
+    CommerceCartCheckoutForm,
+    CommerceCartQuantityForm,
+    CommerceDeliveryAddressForm,
+)
 
 
 def _render(request, template, context=None, *, status=200):
@@ -119,19 +123,24 @@ def commerce_cart_checkout(request):
             request,
             commerce_public.get_commerce_cart(context=_context(request)),
         )
+        addresses = commerce_public.list_delivery_addresses(context=_context(request))
         if request.method == "GET":
-            form = CommerceCartCheckoutForm(initial={"intent_id": cart_view["intent_id"]})
+            form = CommerceCartCheckoutForm(
+                initial={"intent_id": cart_view["intent_id"]},
+                address_choices=addresses,
+            )
             return _render(
                 request,
                 "commerce_cart/checkout.html",
-                {"cart": cart_view, "form": form},
+                {"cart": cart_view, "form": form, "addresses": addresses},
             )
-        _post_data_is_exact(request, {"csrfmiddlewaretoken", "intent_id"})
-        form = CommerceCartCheckoutForm(request.POST)
+        _post_data_is_exact(request, {"csrfmiddlewaretoken", "intent_id", "delivery_address_id"})
+        form = CommerceCartCheckoutForm(request.POST, address_choices=addresses)
         if not form.is_valid():
-            raise InputRejected("Неверный идентификатор корзины.")
+            raise InputRejected("Выберите адрес доставки и укажите корректный идентификатор корзины.")
         orders = commerce_public.checkout_commerce_cart(
             intent_id=form.cleaned_data["intent_id"],
+            delivery_address_id=form.cleaned_data["delivery_address_id"],
             context=_context(request),
         )
     except (PermissionDenied, ConcurrentConflict, InvalidState, InputRejected) as error:
@@ -139,5 +148,5 @@ def commerce_cart_checkout(request):
     return _render(
         request,
         "commerce_cart/checkout.html",
-        {"cart": cart_view, "orders": orders},
+        {"cart": cart_view, "orders": orders, "addresses": addresses},
     )

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Отгрузка недоступна — Open Marketplace{% endblock %}
+{% block content %}
+<section class="cart-confirmation">
+  <h1>Отгрузка недоступна</h1>
+  <p>{{ message }}</p>
+  <a class="button" href="{% url 'commerce-fulfillment-list' %}">К списку отгрузок</a>
+</section>
+{% endblock %}

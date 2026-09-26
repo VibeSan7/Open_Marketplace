@@ -8,6 +8,7 @@ from open_marketplace.commerce.models import CommerceCart, CommerceOrder
 from open_marketplace.commerce.public import (
     add_commerce_cart_item,
     checkout_commerce_cart,
+    create_delivery_address,
     get_commerce_cart,
     remove_commerce_cart_item,
     update_commerce_cart_item,
@@ -25,6 +26,21 @@ class CommerceCartTestCase(CatalogTestCase):
             stock="4",
             color="Синий",
             size="M",
+        )
+        self.delivery_address = create_delivery_address(
+            data={
+                "label": "Дом",
+                "recipient_name": "Иван Петров",
+                "phone": "+79990001122",
+                "postal_code": "123456",
+                "region": "Московская область",
+                "city": "Химки",
+                "street": "Лесная",
+                "building": "10",
+                "apartment": "25",
+                "comment": "",
+            },
+            context=self.buyer_context,
         )
 
     def test_add_and_update_keep_server_snapshot(self):
@@ -62,14 +78,26 @@ class CommerceCartTestCase(CatalogTestCase):
         view = get_commerce_cart(context=self.buyer_context)
         self.assertFalse(view["checkout_available"])
         with self.assertRaises(ConcurrentConflict):
-            checkout_commerce_cart(intent_id=view["intent_id"], context=self.buyer_context)
+            checkout_commerce_cart(
+                intent_id=view["intent_id"],
+                delivery_address_id=self.delivery_address["id"],
+                context=self.buyer_context,
+            )
 
     def test_checkout_creates_one_multiseller_order_and_is_idempotent(self):
         add_commerce_cart_item(variant_id=self.variant_id, quantity="1", context=self.buyer_context)
         add_commerce_cart_item(variant_id=self.other_variant_id, quantity="2", context=self.buyer_context)
         cart = get_commerce_cart(context=self.buyer_context)
-        first = checkout_commerce_cart(intent_id=cart["intent_id"], context=self.buyer_context)
-        second = checkout_commerce_cart(intent_id=cart["intent_id"], context=self.buyer_context)
+        first = checkout_commerce_cart(
+            intent_id=cart["intent_id"],
+            delivery_address_id=self.delivery_address["id"],
+            context=self.buyer_context,
+        )
+        second = checkout_commerce_cart(
+            intent_id=cart["intent_id"],
+            delivery_address_id=self.delivery_address["id"],
+            context=self.buyer_context,
+        )
         self.assertEqual(first, second)
         self.assertEqual(len(first), 1)
         self.assertEqual(first[0]["total"], Decimal("180.00"))
@@ -84,15 +112,27 @@ class CommerceCartTestCase(CatalogTestCase):
         stale = get_commerce_cart(context=self.buyer_context)["intent_id"]
         add_commerce_cart_item(variant_id=self.other_variant_id, quantity="1", context=self.buyer_context)
         with self.assertRaises(ConcurrentConflict):
-            checkout_commerce_cart(intent_id=stale, context=self.buyer_context)
+            checkout_commerce_cart(
+                intent_id=stale,
+                delivery_address_id=self.delivery_address["id"],
+                context=self.buyer_context,
+            )
         foreign = self.create_account(kind="ordinary")
         foreign_context = self.context(self.create_registry(foreign))
         with self.assertRaises(ConcurrentConflict):
-            checkout_commerce_cart(intent_id=stale, context=foreign_context)
+            checkout_commerce_cart(
+                intent_id=stale,
+                delivery_address_id=self.delivery_address["id"],
+                context=foreign_context,
+            )
 
     def test_remove_clears_line_and_empty_checkout_is_rejected(self):
         add_commerce_cart_item(variant_id=self.variant_id, quantity="1", context=self.buyer_context)
         view = remove_commerce_cart_item(variant_id=self.variant_id, context=self.buyer_context)
         self.assertEqual(view["items"], ())
         with self.assertRaises(InputRejected):
-            checkout_commerce_cart(intent_id=view["intent_id"], context=self.buyer_context)
+            checkout_commerce_cart(
+                intent_id=view["intent_id"],
+                delivery_address_id=self.delivery_address["id"],
+                context=self.buyer_context,
+            )

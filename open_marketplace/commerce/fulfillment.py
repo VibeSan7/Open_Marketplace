@@ -1,8 +1,11 @@
 import base64
+import re
 from copy import deepcopy
+from decimal import Decimal, InvalidOperation
 from uuid import UUID, uuid5
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from open_marketplace.common.errors import ConcurrentConflict, InputRejected, InvalidState, PermissionDenied
@@ -68,9 +71,100 @@ def _delivery_modes(value, seller_ids):
     return normalized
 
 
+_QUANTITY_PATTERN = re.compile(r"(?:0|[1-9]\d*)(?:\.\d+)?\Z")
+
+
+def _quantity_precision(line):
+    try:
+        unit = line["unit"]
+    except (KeyError, TypeError):
+        raise InputRejected("Снимок заказа содержит неверную единицу товара.") from None
+    if unit == "pc":
+        return 0
+    if unit in {"kg", "m"}:
+        return 3
+    raise InputRejected("Снимок заказа содержит неподдерживаемую единицу товара.")
+
+
+def _normalized_quantity(value, *, line):
+    if not isinstance(value, str) or _QUANTITY_PATTERN.fullmatch(value) is None:
+        raise InputRejected("Количество товара в упаковке указано неверно.")
+    try:
+        quantity = Decimal(value)
+    except InvalidOperation:
+        raise InputRejected("Количество товара в упаковке указано неверно.") from None
+    if quantity <= 0 or -quantity.as_tuple().exponent > _quantity_precision(line):
+        raise InputRejected("Количество товара в упаковке указано неверно.")
+    return quantity, format(quantity.normalize(), "f")
+
+
+def _validated_package_items(value, *, lines):
+    if type(value) is not list or not value:
+        raise InputRejected("У каждой упаковки должна быть позиция заказа.")
+    totals = [Decimal("0") for _ in lines]
+    seen = set()
+    normalized = []
+    for item in value:
+        if type(item) is not dict or set(item) != {"line_index", "quantity"}:
+            raise InputRejected("Позиция упаковки содержит неподдерживаемые данные.")
+        line_index = item["line_index"]
+        if type(line_index) is not int or line_index < 0 or line_index >= len(lines) or line_index in seen:
+            raise InputRejected("Указана неверная позиция заказа в упаковке.")
+        quantity, normalized_quantity = _normalized_quantity(item["quantity"], line=lines[line_index])
+        seen.add(line_index)
+        totals[line_index] += quantity
+        normalized.append({"line_index": line_index, "quantity": normalized_quantity})
+    normalized.sort(key=lambda item: item["line_index"])
+    return normalized, totals
+
+
+def _validated_packages(value, *, lines):
+    if type(value) is not list or len(value) > 32:
+        raise InputRejected("Укажите список упаковок отгрузки.")
+    if type(lines) is not list or not lines:
+        raise InputRejected("Снимок отгрузки не содержит позиций заказа.")
+    fields = ("weight_grams", "length_cm", "width_cm", "height_cm")
+    totals = [Decimal("0") for _ in lines]
+    result = []
+    for package in value:
+        if type(package) is not dict or set(package) != {*fields, "items"}:
+            raise InputRejected("Упаковка содержит неподдерживаемые данные.")
+        normalized = {}
+        for field in fields:
+            amount = package[field]
+            if type(amount) is not int or amount <= 0:
+                raise InputRejected("Вес и размеры упаковки должны быть положительными целыми числами.")
+            normalized[field] = amount
+        items, package_totals = _validated_package_items(package["items"], lines=lines)
+        normalized["items"] = items
+        totals = [total + package_total for total, package_total in zip(totals, package_totals)]
+        result.append(normalized)
+    if result:
+        for line, total in zip(lines, totals):
+            try:
+                expected = Decimal(line["quantity"])
+            except (InvalidOperation, KeyError, TypeError):
+                raise InputRejected("Снимок заказа содержит неверное количество товара.") from None
+            if total != expected:
+                raise InputRejected("Количество товара в упаковках не совпадает с заказом.")
+    return result
+
+
 def _reference(order_id, seller_account_id):
     value = uuid5(_REFERENCE_NAMESPACE, f"{order_id}:{seller_account_id}")
     return base64.b32encode(value.bytes).decode("ascii").rstrip("=")
+
+
+def _event_snapshot(shipment):
+    return [
+        {
+            "sequence": event.sequence,
+            "state": event.state,
+            "action": event.action,
+            "occurred_at": event.occurred_at.isoformat(),
+        }
+        for event in shipment.events.all().order_by("sequence")
+    ]
 
 
 def _snapshot(shipment):
@@ -82,10 +176,19 @@ def _snapshot(shipment):
         "delivery_mode": shipment.delivery_mode,
         "client_reference": shipment.client_reference,
         "lines": deepcopy(shipment.lines),
+        "packages": deepcopy(shipment.packages),
+        "events": _event_snapshot(shipment),
         "state": shipment.state,
         "created_at": shipment.created_at.isoformat(),
         "updated_at": shipment.updated_at.isoformat(),
     }
+
+
+def _snapshot_for_actor(shipment, *, actor_id):
+    result = _snapshot(shipment)
+    if actor_id != shipment.seller_account_id:
+        result.pop("packages")
+    return result
 
 
 def _record(shipment, *, context):
@@ -141,6 +244,7 @@ def create_fulfillment_plan(*, order_id, delivery_modes, context=None):
                 delivery_mode=modes[group["seller_account_id"]],
                 client_reference=_reference(order.id, group["seller_account_id"]),
                 lines=group["lines"],
+                packages=[],
                 state=FulfillmentShipment.State.PENDING,
                 created_at=now,
                 updated_at=now,
@@ -148,6 +252,31 @@ def create_fulfillment_plan(*, order_id, delivery_modes, context=None):
             _record(shipment, context=context)
             result.append(_snapshot(shipment))
         return tuple(result)
+
+
+def set_fulfillment_packages(*, shipment_id, packages, context):
+    shipment_id = _uuid(shipment_id, "Неверный идентификатор отгрузки.")
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    with transaction.atomic():
+        order = CommerceOrder.objects.select_for_update().filter(shipments__id=shipment_id).first()
+        if order is None:
+            raise PermissionDenied(_UNAVAILABLE)
+        shipment = FulfillmentShipment.objects.select_for_update().filter(
+            pk=shipment_id,
+            order=order,
+        ).first()
+        if shipment is None or shipment.seller_account_id != context.actor_account_id:
+            raise PermissionDenied(_UNAVAILABLE)
+        if shipment.state != FulfillmentShipment.State.PENDING:
+            raise InvalidState("Упаковку можно изменить только для ожидающей отгрузки.")
+        normalized = _validated_packages(packages, lines=shipment.lines)
+        if shipment.packages == normalized:
+            return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
+        shipment.packages = normalized
+        shipment.updated_at = context.now
+        shipment.save(update_fields=("packages", "updated_at"))
+        return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
 
 
 def _authorize_transition(*, shipment, order, target_state, context):
@@ -189,7 +318,7 @@ def transition_fulfillment(*, shipment_id, target_state, context):
         if target_state == shipment.state:
             if target_state == FulfillmentShipment.State.PENDING:
                 raise InvalidState("Отгрузка ещё не готова к переходу.")
-            return _snapshot(shipment)
+            return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
         if target_state == FulfillmentShipment.State.READY:
             if shipment.state != FulfillmentShipment.State.PENDING:
                 raise InvalidState("Отгрузка может стать готовой только из состояния ожидания.")
@@ -217,7 +346,66 @@ def transition_fulfillment(*, shipment_id, target_state, context):
             actor_id=context.actor_account_id,
             occurred_at=context.now,
         )
-        return _snapshot(shipment)
+        return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
 
 
-__all__ = ("create_fulfillment_plan", "transition_fulfillment")
+def _authorize_read(*, shipment, order, context):
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    if context.actor_account_id not in {order.buyer_id, shipment.seller_account_id}:
+        raise PermissionDenied(_UNAVAILABLE)
+
+
+def _available_actions(*, shipment, order, context):
+    if context is None or context.actor_account_id is None:
+        return ()
+    if context.actor_account_id == shipment.seller_account_id:
+        if shipment.state == FulfillmentShipment.State.PENDING:
+            return (FulfillmentShipment.State.READY,)
+        if (
+            shipment.state == FulfillmentShipment.State.READY
+            and shipment.delivery_mode == FulfillmentShipment.DeliveryMode.SELLER
+        ):
+            return (FulfillmentShipment.State.IN_TRANSIT,)
+    if (
+        context.actor_account_id == order.buyer_id
+        and shipment.delivery_mode == FulfillmentShipment.DeliveryMode.SELLER
+        and shipment.state == FulfillmentShipment.State.IN_TRANSIT
+    ):
+        return (FulfillmentShipment.State.DELIVERED,)
+    return ()
+
+
+def _view(shipment, *, context):
+    result = _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
+    result["actions"] = _available_actions(shipment=shipment, order=shipment.order, context=context)
+    return result
+
+
+def list_fulfillment_shipments(*, context):
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    shipments = (
+        FulfillmentShipment.objects.select_related("order")
+        .filter(Q(order__buyer_id=context.actor_account_id) | Q(seller_account_id=context.actor_account_id))
+        .order_by("-created_at", "-id")
+    )
+    return tuple(_view(shipment, context=context) for shipment in shipments)
+
+
+def get_fulfillment_shipment(*, shipment_id, context):
+    shipment_id = _uuid(shipment_id, "Неверный идентификатор отгрузки.")
+    shipment = FulfillmentShipment.objects.select_related("order").filter(pk=shipment_id).first()
+    if shipment is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    _authorize_read(shipment=shipment, order=shipment.order, context=context)
+    return _view(shipment, context=context)
+
+
+__all__ = (
+    "create_fulfillment_plan",
+    "get_fulfillment_shipment",
+    "list_fulfillment_shipments",
+    "set_fulfillment_packages",
+    "transition_fulfillment",
+)
