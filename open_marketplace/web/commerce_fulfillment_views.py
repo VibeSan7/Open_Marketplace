@@ -67,9 +67,11 @@ def _present(shipment):
         }
         for event in shipment.get("events", ())
     ]
+    package_count = len(shipment["packages"]) if "packages" in shipment else None
     return {
         **shipment,
         "packages": packages,
+        "package_count": package_count,
         "events_with_labels": events,
         "delivery_mode_label": _MODE_LABELS.get(shipment["delivery_mode"], shipment["delivery_mode"]),
         "state_label": _STATE_LABELS.get(shipment["state"], shipment["state"]),

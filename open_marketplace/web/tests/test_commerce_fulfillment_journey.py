@@ -58,6 +58,10 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
         response = self.buyer_client.get("/commerce-fulfillment/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.shipment["id"])
+        self.assertNotContains(response, "Упаковок")
+        seller_list = self.seller_client.get("/commerce-fulfillment/")
+        self.assertEqual(seller_list.status_code, 200)
+        self.assertContains(seller_list, "Упаковок: 0")
         detail = self.seller_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "Отгрузка")
@@ -121,9 +125,11 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
         )
         self.assertEqual(response.status_code, 303)
         seller_detail = self.seller_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
+        seller_list = self.seller_client.get("/commerce-fulfillment/")
         self.assertContains(seller_detail, "1000 г")
         self.assertContains(seller_detail, "2000 г")
         self.assertContains(seller_detail, "Данные упаковки")
+        self.assertContains(seller_list, "Упаковок: 2")
         seller_snapshot = commerce_public.get_fulfillment_shipment(
             shipment_id=self.shipment["id"],
             context=self.context(self.seller_registry),
