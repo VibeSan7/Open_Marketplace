@@ -21,23 +21,42 @@ _FULFILLMENT_STATE_LABELS = {
 }
 
 
+def _shipment_summary(shipment):
+    return {
+        "id": shipment["id"],
+        "state_label": _FULFILLMENT_STATE_LABELS.get(
+            shipment["state"], shipment["state"]
+        ),
+        "delivery_mode_label": _FULFILLMENT_MODE_LABELS.get(
+            shipment["delivery_mode"], shipment["delivery_mode"]
+        ),
+        "detail_url": reverse(
+            "commerce-fulfillment-detail",
+            kwargs={"shipment_id": shipment["id"]},
+        ),
+    }
+
+
 def _fulfillment_summaries(*, order, context):
     return tuple(
-        {
-            "id": shipment["id"],
-            "state_label": _FULFILLMENT_STATE_LABELS.get(
-                shipment["state"], shipment["state"]
-            ),
-            "delivery_mode_label": _FULFILLMENT_MODE_LABELS.get(
-                shipment["delivery_mode"], shipment["delivery_mode"]
-            ),
-            "detail_url": reverse(
-                "commerce-fulfillment-detail",
-                kwargs={"shipment_id": shipment["id"]},
-            ),
-        }
+        _shipment_summary(shipment)
         for shipment in commerce_public.list_fulfillment_shipments(context=context)
         if shipment["order_id"] == order["id"]
+    )
+
+
+def _orders_with_fulfillment(*, orders, context):
+    shipments_by_order = {}
+    for shipment in commerce_public.list_fulfillment_shipments(context=context):
+        shipments_by_order.setdefault(shipment["order_id"], []).append(
+            _shipment_summary(shipment)
+        )
+    return tuple(
+        {
+            **order,
+            "fulfillment_summaries": tuple(shipments_by_order.get(order["id"], ())),
+        }
+        for order in orders
     )
 
 
@@ -58,7 +77,9 @@ def _error(request, error):
 @_login_required
 def commerce_order_list(request):
     try:
-        orders = commerce_public.list_orders(context=_context(request))
+        context = _context(request)
+        orders = commerce_public.list_orders(context=context)
+        orders = _orders_with_fulfillment(orders=orders, context=context)
     except (PermissionDenied, InputRejected) as error:
         return _error(request, error)
     return _render(request, "commerce_orders/list.html", {"orders": orders})

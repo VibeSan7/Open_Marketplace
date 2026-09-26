@@ -231,6 +231,7 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         self.assertEqual(history.status_code, 200)
         self.assertContains(history, "Мои заказы")
         self.assertContains(history, order_id)
+        self.assertContains(history, "Отгрузка ещё не запланирована")
 
         detail = self.client.get(f"/commerce-orders/{order_id}/")
         self.assertEqual(detail.status_code, 200)
@@ -261,12 +262,16 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         )[0]
 
         detail = self.client.get(f"/commerce-orders/{order['id']}/")
+        history = self.client.get("/commerce-orders/")
 
         self.assertEqual(detail.status_code, 200)
+        self.assertEqual(history.status_code, 200)
         self.assertContains(detail, "Отгрузки")
         self.assertContains(detail, shipment["id"])
         self.assertContains(detail, "Ожидает планирования")
         self.assertContains(detail, f"/commerce-fulfillment/{shipment['id']}/")
+        self.assertContains(history, "Ожидает планирования")
+        self.assertContains(history, f"/commerce-fulfillment/{shipment['id']}/")
         self.assertNotContains(detail, "Данные упаковки")
 
     def test_buyer_can_cancel_unpaid_order_and_release_reservation(self):
