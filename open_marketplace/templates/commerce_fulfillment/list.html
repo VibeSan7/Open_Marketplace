@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Отгрузки — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Commerce</span>
+    <h1>Отгрузки</h1>
+    <p>Локальный статус заказа без запросов к перевозчику.</p>
+  </div>
+</section>
+<section class="cart-confirmation">
+  {% if shipments %}
+    <ul class="cart-orders">
+      {% for shipment in shipments %}
+        <li>
+          <a href="{% url 'commerce-fulfillment-detail' shipment_id=shipment.id %}">{{ shipment.id }}</a>
+          · заказ {{ shipment.order_id }} · {{ shipment.delivery_mode_label }} · {{ shipment.state_label }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Отгрузок пока нет.</p>
+  {% endif %}
+</section>
+{% endblock %}

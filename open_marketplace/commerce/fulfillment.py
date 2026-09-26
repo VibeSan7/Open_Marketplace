@@ -3,6 +3,7 @@ from copy import deepcopy
 from uuid import UUID, uuid5
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from open_marketplace.common.errors import ConcurrentConflict, InputRejected, InvalidState, PermissionDenied
@@ -220,4 +221,62 @@ def transition_fulfillment(*, shipment_id, target_state, context):
         return _snapshot(shipment)
 
 
-__all__ = ("create_fulfillment_plan", "transition_fulfillment")
+def _authorize_read(*, shipment, order, context):
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    if context.actor_account_id not in {order.buyer_id, shipment.seller_account_id}:
+        raise PermissionDenied(_UNAVAILABLE)
+
+
+def _available_actions(*, shipment, order, context):
+    if context is None or context.actor_account_id is None:
+        return ()
+    if context.actor_account_id == shipment.seller_account_id:
+        if shipment.state == FulfillmentShipment.State.PENDING:
+            return (FulfillmentShipment.State.READY,)
+        if (
+            shipment.state == FulfillmentShipment.State.READY
+            and shipment.delivery_mode == FulfillmentShipment.DeliveryMode.SELLER
+        ):
+            return (FulfillmentShipment.State.IN_TRANSIT,)
+    if (
+        context.actor_account_id == order.buyer_id
+        and shipment.delivery_mode == FulfillmentShipment.DeliveryMode.SELLER
+        and shipment.state == FulfillmentShipment.State.IN_TRANSIT
+    ):
+        return (FulfillmentShipment.State.DELIVERED,)
+    return ()
+
+
+def _view(shipment, *, context):
+    result = _snapshot(shipment)
+    result["actions"] = _available_actions(shipment=shipment, order=shipment.order, context=context)
+    return result
+
+
+def list_fulfillment_shipments(*, context):
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    shipments = (
+        FulfillmentShipment.objects.select_related("order")
+        .filter(Q(order__buyer_id=context.actor_account_id) | Q(seller_account_id=context.actor_account_id))
+        .order_by("-created_at", "-id")
+    )
+    return tuple(_view(shipment, context=context) for shipment in shipments)
+
+
+def get_fulfillment_shipment(*, shipment_id, context):
+    shipment_id = _uuid(shipment_id, "Неверный идентификатор отгрузки.")
+    shipment = FulfillmentShipment.objects.select_related("order").filter(pk=shipment_id).first()
+    if shipment is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    _authorize_read(shipment=shipment, order=shipment.order, context=context)
+    return _view(shipment, context=context)
+
+
+__all__ = (
+    "create_fulfillment_plan",
+    "get_fulfillment_shipment",
+    "list_fulfillment_shipments",
+    "transition_fulfillment",
+)

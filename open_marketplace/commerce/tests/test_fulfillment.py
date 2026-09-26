@@ -116,3 +116,28 @@ class PhysicalFulfillmentTests(CatalogTestCase):
         self.assertFalse(any("address" in row for row in result))
         self.assertFalse(any("waybill" in row for row in result))
         self.assertFalse(any("fee" in row for row in result))
+
+    def test_buyer_and_seller_can_read_only_their_shipments(self):
+        result = self.plan(self.modes(first="seller", second="cdek"))
+        own = self.commerce.list_fulfillment_shipments(context=self.buyer_context)
+        self.assertEqual({row["id"] for row in own}, {row["id"] for row in result})
+        seller_row = next(row for row in result if row["seller_account_id"] == str(self.seller.id))
+        other_row = next(row for row in result if row["seller_account_id"] != str(self.seller.id))
+        seller = self.commerce.get_fulfillment_shipment(
+            shipment_id=seller_row["id"],
+            context=self.seller_context,
+        )
+        self.assertEqual(seller["id"], seller_row["id"])
+        self.assertNotIn("delivery_address", seller)
+        with self.assertRaises(PermissionDenied):
+            self.commerce.get_fulfillment_shipment(
+                shipment_id=other_row["id"],
+                context=self.seller_context,
+            )
+
+    def test_unknown_shipment_is_not_exposed(self):
+        with self.assertRaises(PermissionDenied):
+            self.commerce.get_fulfillment_shipment(
+                shipment_id=uuid4(),
+                context=self.buyer_context,
+            )
