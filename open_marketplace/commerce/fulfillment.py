@@ -155,6 +155,18 @@ def _reference(order_id, seller_account_id):
     return base64.b32encode(value.bytes).decode("ascii").rstrip("=")
 
 
+def _event_snapshot(shipment):
+    return [
+        {
+            "sequence": event.sequence,
+            "state": event.state,
+            "action": event.action,
+            "occurred_at": event.occurred_at.isoformat(),
+        }
+        for event in shipment.events.all().order_by("sequence")
+    ]
+
+
 def _snapshot(shipment):
     return {
         "id": str(shipment.id),
@@ -165,6 +177,7 @@ def _snapshot(shipment):
         "client_reference": shipment.client_reference,
         "lines": deepcopy(shipment.lines),
         "packages": deepcopy(shipment.packages),
+        "events": _event_snapshot(shipment),
         "state": shipment.state,
         "created_at": shipment.created_at.isoformat(),
         "updated_at": shipment.updated_at.isoformat(),

@@ -61,6 +61,8 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
         detail = self.seller_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "Отгрузка")
+        self.assertContains(detail, "История состояния")
+        self.assertContains(detail, "Отгрузка запланирована")
         self.assertNotContains(detail, "Химки")
 
     def test_foreign_shipment_is_not_exposed_to_seller(self):

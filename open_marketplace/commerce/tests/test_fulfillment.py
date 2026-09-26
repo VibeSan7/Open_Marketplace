@@ -111,11 +111,48 @@ class PhysicalFulfillmentTests(CatalogTestCase):
 
         self.assertTrue(all(set(row) == {
             "id", "order_id", "seller_account_id", "seller_profile_id", "delivery_mode",
-            "client_reference", "lines", "packages", "state", "created_at", "updated_at",
+            "client_reference", "lines", "packages", "events", "state", "created_at", "updated_at",
         } for row in result))
         self.assertFalse(any("address" in row for row in result))
         self.assertFalse(any("waybill" in row for row in result))
         self.assertFalse(any("fee" in row for row in result))
+
+    def test_snapshot_exposes_ordered_sanitized_event_timeline(self):
+        result = self.plan()
+        seller_row = next(row for row in result if row["seller_account_id"] == str(self.seller.id))
+
+        pending = self.commerce.get_fulfillment_shipment(
+            shipment_id=seller_row["id"],
+            context=self.seller_context,
+        )
+        self.assertEqual(len(pending["events"]), 1)
+        self.assertEqual(
+            {key: pending["events"][0][key] for key in ("sequence", "state", "action")},
+            {"sequence": 1, "state": "pending", "action": "planned"},
+        )
+        self.assertNotIn("actor_id", pending["events"][0])
+
+        self.commerce.transition_fulfillment(
+            shipment_id=seller_row["id"],
+            target_state="ready",
+            context=self.seller_context,
+        )
+        ready = self.commerce.get_fulfillment_shipment(
+            shipment_id=seller_row["id"],
+            context=self.seller_context,
+        )
+
+        self.assertEqual(
+            [
+                {key: event[key] for key in ("sequence", "state", "action")}
+                for event in ready["events"]
+            ],
+            [
+                {"sequence": 1, "state": "pending", "action": "planned"},
+                {"sequence": 2, "state": "ready", "action": "ready"},
+            ],
+        )
+        self.assertTrue(all("actor_id" not in event for event in ready["events"]))
 
     def test_seller_can_replace_pending_package_manifest_idempotently(self):
         result = self.plan()

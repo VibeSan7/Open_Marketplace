@@ -19,6 +19,17 @@
     <dt>Состояние</dt><dd>{{ shipment.state_label }}</dd>
     <dt>Внутренний reference</dt><dd>{{ shipment.client_reference }}</dd>
   </dl>
+  {% if shipment.events_with_labels %}
+    <h2>История состояния</h2>
+    <ol class="order-timeline">
+      {% for event in shipment.events_with_labels %}
+        <li>
+          <strong>{{ event.action_label }}</strong> · {{ event.state_label }}
+          <time>{{ event.occurred_at }}</time>
+        </li>
+      {% endfor %}
+    </ol>
+  {% endif %}
   <h2>Позиции</h2>
   <ul class="cart-orders">
     {% for line in shipment.lines %}

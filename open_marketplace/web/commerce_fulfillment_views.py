@@ -27,6 +27,12 @@ _ACTION_LABELS = {
     "in_transit": "Передать в доставку",
     "delivered": "Подтвердить получение",
 }
+_EVENT_ACTION_LABELS = {
+    "planned": "Отгрузка запланирована",
+    "ready": "Подготовлена к передаче",
+    "in_transit": "Передана в доставку",
+    "delivered": "Получение подтверждено",
+}
 _PACKAGE_PREFIX = "packages"
 _PACKAGE_FIELDS = {"weight_grams", "length_cm", "width_cm", "height_cm", "DELETE"}
 _PACKAGE_LINE_FIELD = r"line_\d+"
@@ -53,9 +59,18 @@ def _present(shipment):
                 ) or f"Позиция {line_index + 1}",
             })
         packages.append({**package, "items_with_labels": items})
+    events = [
+        {
+            **event,
+            "state_label": _STATE_LABELS.get(event["state"], event["state"]),
+            "action_label": _EVENT_ACTION_LABELS.get(event["action"], event["action"]),
+        }
+        for event in shipment.get("events", ())
+    ]
     return {
         **shipment,
         "packages": packages,
+        "events_with_labels": events,
         "delivery_mode_label": _MODE_LABELS.get(shipment["delivery_mode"], shipment["delivery_mode"]),
         "state_label": _STATE_LABELS.get(shipment["state"], shipment["state"]),
         "actions_with_labels": [
