@@ -22,6 +22,14 @@
   {% if active_state_label %}<p>Фильтр: {{ active_state_label }}</p>{% endif %}
 </section>
 <section class="cart-confirmation">
+  <p>Всего: {{ state_summary.total }}</p>
+  <ul>
+    {% for item in state_summary.states %}
+      <li>{{ item.label }}: {{ item.count }}</li>
+    {% endfor %}
+  </ul>
+</section>
+<section class="cart-confirmation">
   {% if shipments %}
     <ul class="cart-orders">
       {% for shipment in shipments %}

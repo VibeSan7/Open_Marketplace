@@ -80,11 +80,15 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
         self.assertEqual(matching.status_code, 200)
         self.assertContains(matching, self.shipment["id"])
         self.assertContains(matching, "Фильтр: Ожидает планирования")
+        self.assertContains(matching, "Всего: 1")
+        self.assertContains(matching, "Ожидает планирования: 1")
 
         not_matching = self.seller_client.get("/commerce-fulfillment/?state=ready")
         self.assertEqual(not_matching.status_code, 200)
         self.assertNotContains(not_matching, self.shipment["id"])
         self.assertContains(not_matching, "По этому фильтру отгрузок нет.")
+        self.assertContains(not_matching, "Всего: 1")
+        self.assertContains(not_matching, "Ожидает планирования: 1")
 
         for query in (
             "state=pending&state=ready",

@@ -186,10 +186,21 @@ def _state_filter(request):
 def commerce_fulfillment_list(request):
     try:
         state = _state_filter(request)
-        shipments = tuple(
+        authorized_shipments = tuple(
             _present(row)
             for row in commerce_public.list_fulfillment_shipments(context=_context(request))
         )
+        state_summary = {
+            "total": len(authorized_shipments),
+            "states": tuple(
+                {
+                    "label": label,
+                    "count": sum(row["state"] == value for row in authorized_shipments),
+                }
+                for value, label in _STATE_FILTERS
+            ),
+        }
+        shipments = authorized_shipments
         if state is not None:
             shipments = tuple(row for row in shipments if row["state"] == state)
     except (PermissionDenied, InputRejected) as error:
@@ -204,6 +215,7 @@ def commerce_fulfillment_list(request):
                 {"value": value, "label": label, "active": value == state}
                 for value, label in _STATE_FILTERS
             ),
+            "state_summary": state_summary,
         },
     )
 
