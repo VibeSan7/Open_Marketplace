@@ -47,7 +47,12 @@ def commerce_address_new(request):
         return _render(
             request,
             "commerce_addresses/form.html",
-            {"form": CommerceDeliveryAddressForm()},
+            {
+                "form": CommerceDeliveryAddressForm(),
+                "page_title": "Новый адрес доставки",
+                "heading": "Новый адрес доставки",
+                "submit_label": "Сохранить адрес",
+            },
         )
     try:
         _post_data_is_exact(request, _ADDRESS_POST_FIELDS)
@@ -56,6 +61,53 @@ def commerce_address_new(request):
             raise InputRejected("Заполните обязательные поля адреса.")
         commerce_public.create_delivery_address(
             data=form.cleaned_data,
+            context=_context(request),
+        )
+    except (PermissionDenied, InputRejected) as error:
+        return _error(request, error)
+    return _redirect_303(reverse("commerce-address-list"))
+
+
+@require_http_methods(["GET", "POST"])
+@_login_required
+def commerce_address_edit(request, address_id):
+    try:
+        address = commerce_public.get_delivery_address(
+            address_id=address_id,
+            context=_context(request),
+        )
+        if request.method == "GET":
+            return _render(
+                request,
+                "commerce_addresses/form.html",
+                {
+                    "form": CommerceDeliveryAddressForm(initial=address),
+                    "page_title": "Редактирование адреса",
+                    "heading": "Редактирование адреса",
+                    "submit_label": "Сохранить изменения",
+                },
+            )
+        _post_data_is_exact(request, _ADDRESS_POST_FIELDS)
+        form = CommerceDeliveryAddressForm(request.POST)
+        if not form.is_valid():
+            raise InputRejected("Заполните обязательные поля адреса.")
+        commerce_public.update_delivery_address(
+            address_id=address_id,
+            data=form.cleaned_data,
+            context=_context(request),
+        )
+    except (PermissionDenied, InputRejected) as error:
+        return _error(request, error)
+    return _redirect_303(reverse("commerce-address-list"))
+
+
+@require_http_methods(["POST"])
+@_login_required
+def commerce_address_delete(request, address_id):
+    try:
+        _post_data_is_exact(request, {"csrfmiddlewaretoken"})
+        commerce_public.delete_delivery_address(
+            address_id=address_id,
             context=_context(request),
         )
     except (PermissionDenied, InputRejected) as error:

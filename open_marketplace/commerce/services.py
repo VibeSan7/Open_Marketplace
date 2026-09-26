@@ -146,6 +146,37 @@ def get_delivery_address(*, address_id, context):
     return _address_view(address)
 
 
+def update_delivery_address(*, address_id, data, context):
+    address_id = _uuid(address_id, "Неверный идентификатор адреса.")
+    values = _validated_address(data)
+    account = buyer(context)
+    with transaction.atomic():
+        address = CommerceDeliveryAddress.objects.select_for_update().filter(
+            pk=address_id,
+            buyer_id=account.id,
+        ).first()
+        if address is None:
+            raise PermissionDenied(_ADDRESS_UNAVAILABLE)
+        for key, value in values.items():
+            setattr(address, key, value)
+        address.updated_at = context.now
+        address.save(update_fields=(*values, "updated_at"))
+        return _address_view(address)
+
+
+def delete_delivery_address(*, address_id, context):
+    address_id = _uuid(address_id, "Неверный идентификатор адреса.")
+    account = buyer(context)
+    with transaction.atomic():
+        address = CommerceDeliveryAddress.objects.filter(
+            pk=address_id,
+            buyer_id=account.id,
+        ).first()
+        if address is None:
+            raise PermissionDenied(_ADDRESS_UNAVAILABLE)
+        address.delete()
+
+
 def _total(lines):
     try:
         with localcontext() as context:
@@ -504,7 +535,12 @@ __all__ = (
     "apply_verified_tbank_notice",
     "bind_tbank_reference",
     "cancel_order",
+    "create_delivery_address",
     "create_order",
+    "delete_delivery_address",
+    "get_delivery_address",
     "get_order",
+    "list_delivery_addresses",
     "prepare_payment",
+    "update_delivery_address",
 )

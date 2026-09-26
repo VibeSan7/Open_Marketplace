@@ -17,6 +17,12 @@
         {{ address.recipient_name }}, {{ address.phone }}<br>
         {{ address.postal_code }}, {{ address.region }}, {{ address.city }}, {{ address.street }}, {{ address.building }}{% if address.apartment %}, кв. {{ address.apartment }}{% endif %}
         {% if address.comment %}<br>{{ address.comment }}{% endif %}
+        <br>
+        <a href="{% url 'commerce-address-edit' address.id %}">Изменить</a>
+        <form method="post" action="{% url 'commerce-address-delete' address.id %}">
+          {% csrf_token %}
+          <button type="submit">Удалить</button>
+        </form>
       </li>
     {% endfor %}
   </ul>

@@ -9,9 +9,11 @@ from open_marketplace.commerce.public import (
     add_commerce_cart_item,
     checkout_commerce_cart,
     create_delivery_address,
+    delete_delivery_address,
     get_commerce_cart,
     get_delivery_address,
     list_delivery_addresses,
+    update_delivery_address,
 )
 
 
@@ -55,6 +57,35 @@ class DeliveryAddressTests(CatalogTestCase):
             create_delivery_address(data=self.address_data(phone="bad"), context=self.buyer_context)
         with self.assertRaises(InputRejected):
             create_delivery_address(data=self.address_data(city=""), context=self.buyer_context)
+
+    def test_buyer_can_update_and_delete_own_address(self):
+        address = create_delivery_address(data=self.address_data(), context=self.buyer_context)
+
+        updated = update_delivery_address(
+            address_id=address["id"],
+            data=self.address_data(label="Работа", city="Москва"),
+            context=self.buyer_context,
+        )
+        self.assertEqual(updated["label"], "Работа")
+        self.assertEqual(updated["city"], "Москва")
+        self.assertEqual(get_delivery_address(address_id=address["id"], context=self.buyer_context), updated)
+
+        delete_delivery_address(address_id=address["id"], context=self.buyer_context)
+        with self.assertRaises(PermissionDenied):
+            get_delivery_address(address_id=address["id"], context=self.buyer_context)
+
+    def test_buyer_cannot_update_or_delete_foreign_address(self):
+        address = create_delivery_address(data=self.address_data(), context=self.buyer_context)
+        foreign_context = self.context(self.create_registry(self.create_account(kind="ordinary")))
+
+        with self.assertRaises(PermissionDenied):
+            update_delivery_address(
+                address_id=address["id"],
+                data=self.address_data(city="Москва"),
+                context=foreign_context,
+            )
+        with self.assertRaises(PermissionDenied):
+            delete_delivery_address(address_id=address["id"], context=foreign_context)
 
     def test_checkout_persists_immutable_address_and_replay_requires_same_address(self):
         add_commerce_cart_item(

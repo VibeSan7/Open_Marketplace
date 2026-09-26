@@ -76,6 +76,51 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         self.assertEqual(response.status_code, 303)
         self.assertIn("/commerce-addresses/", response["Location"])
 
+    def test_buyer_can_edit_and_delete_saved_address(self):
+        edit_page = self.client.get(f"/commerce-addresses/{self.address['id']}/edit/")
+        self.assertEqual(edit_page.status_code, 200)
+        self.assertContains(edit_page, "Редактирование адреса")
+
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            f"/commerce-addresses/{self.address['id']}/edit/",
+            {
+                "label": "Работа",
+                "recipient_name": "Иван Петров",
+                "phone": "+79900112233",
+                "postal_code": "123456",
+                "region": "Москва",
+                "city": "Москва",
+                "street": "Тверская",
+                "building": "1",
+                "apartment": "",
+                "comment": "",
+                "csrfmiddlewaretoken": token,
+            },
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertContains(self.client.get("/commerce-addresses/"), "Москва")
+
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            f"/commerce-addresses/{self.address['id']}/delete/",
+            {"csrfmiddlewaretoken": token},
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertNotContains(self.client.get("/commerce-addresses/"), "Москва")
+
+    def test_address_delete_requires_post_and_exact_fields(self):
+        response = self.client.get(f"/commerce-addresses/{self.address['id']}/delete/")
+        self.assertEqual(response.status_code, 405)
+
+        self.client.get("/commerce-addresses/")
+        token = self.client.cookies["csrftoken"].value
+        response = self.client.post(
+            f"/commerce-addresses/{self.address['id']}/delete/",
+            {"csrfmiddlewaretoken": token, "confirm": "yes"},
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_checkout_requires_address_selection(self):
         commerce_public.add_commerce_cart_item(
             variant_id=self.variant_id,

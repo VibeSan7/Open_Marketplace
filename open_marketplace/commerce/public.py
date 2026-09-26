@@ -17,11 +17,13 @@ from .services import (
     cancel_order,
     create_order,
     create_delivery_address,
+    delete_delivery_address,
     get_delivery_address,
     get_order,
     list_delivery_addresses,
     list_orders,
     prepare_payment,
+    update_delivery_address,
 )
 
 __all__ = (
@@ -33,6 +35,7 @@ __all__ = (
     "create_fulfillment_plan",
     "create_order",
     "create_delivery_address",
+    "delete_delivery_address",
     "get_commerce_cart",
     "get_delivery_address",
     "get_fulfillment_shipment",
@@ -43,5 +46,6 @@ __all__ = (
     "prepare_payment",
     "remove_commerce_cart_item",
     "update_commerce_cart_item",
+    "update_delivery_address",
     "transition_fulfillment",
 )
