@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Адреса доставки — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Покупатель</span>
+    <h1>Адреса доставки</h1>
+    <p>Адрес будет сохранён в заказе отдельной копией. Изменения адресной книги не изменят старые заказы.</p>
+  </div>
+  <a class="button" href="{% url 'commerce-address-new' %}">Добавить адрес</a>
+</section>
+{% if addresses %}
+  <ul class="cart-orders">
+    {% for address in addresses %}
+      <li>
+        <strong>{{ address.label|default:"Адрес" }}</strong><br>
+        {{ address.recipient_name }}, {{ address.phone }}<br>
+        {{ address.postal_code }}, {{ address.region }}, {{ address.city }}, {{ address.street }}, {{ address.building }}{% if address.apartment %}, кв. {{ address.apartment }}{% endif %}
+        {% if address.comment %}<br>{{ address.comment }}{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="notice">Адресов пока нет.</p>
+{% endif %}
+{% endblock %}

@@ -31,6 +31,7 @@ The preview uses synthetic data. A fresh installation is empty; an [optional com
 - Personal saved products, seller pages, clear listing status and private publication previews.
 - [Optional order demonstration](docs/runbooks/demo-orders-en.md): multi-seller cart, quantities, totals, price reconfirmation, duplicate-safe checkout, simulated payment, handover, receipt and cancellation. Disabled by default; no real money or shipments.
 - The local commerce foundation persists reservations, immutable paid-order snapshots, a payment ledger, pending physical shipment plans per seller, and local seller-arranged delivery state through buyer receipt. It does not call payment or shipping providers.
+- Buyer checkout can save and select an address; the durable order stores an immutable copy. Delivery quotes, carrier requests and real shipments remain disabled.
 - Photos and the database are stored in separate persistent Docker volumes. Private photos are not served as public files.
 
 ## 1. Prerequisites
@@ -203,7 +204,7 @@ The [v0.4.0 final report](docs/releases/v0.4.0-verification.md) records the resu
 - Local HTTP uses non-secure cookies. Settings for secure HTTPS cookies exist, but do not enable them without HTTPS: the browser would be unable to sign in over plain HTTP.
 - Approximate search uses a local multilingual model, but relevance can be wrong. It does not merge products automatically or bypass filters, stock checks, or access rules.
 - A photo uploader's authenticity declaration is not an automated verification of the photo's origin.
-- There is no live purchasing, delivery cost calculation, or digital file delivery. The local commerce foundation persists real PostgreSQL reservations, immutable orders, and a payment ledger, but it makes no provider calls. Demonstration checkout remains separate; no bank cards or payment providers are connected.
+- There is no live purchasing, delivery cost calculation, or digital file delivery. The local commerce foundation persists real PostgreSQL reservations, immutable orders, a payment ledger and buyer address snapshots, but it makes no provider calls. Demonstration checkout remains separate; no bank cards or payment providers are connected.
 
 ## Documents and modules
 

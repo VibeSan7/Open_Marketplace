@@ -20,11 +20,24 @@
 {% elif cart.checkout_available %}
   <section class="cart-confirmation">
     <h2>Итого: {{ cart.total|floatformat:2 }} ₽</h2>
-    <p>Перед созданием заказа сервер ещё раз проверит товар, цену, остаток и владельца предложения.</p>
-    <form method="post">
-      {% csrf_token %}{{ form.intent_id }}
-      <button class="button" type="submit">Создать локальный заказ</button>
-    </form>
+    <p>Перед созданием заказа сервер ещё раз проверит товар, цену, остаток, владельца предложения и адрес покупателя.</p>
+    {% if addresses %}
+      <form method="post">
+        {% csrf_token %}
+        {{ form.intent_id }}
+        <fieldset>
+          <legend>{{ form.delivery_address_id.label }}</legend>
+          {% for radio in form.delivery_address_id %}
+            <p>{{ radio }}</p>
+          {% endfor %}
+          {% if form.delivery_address_id.errors %}<p class="form-error">{{ form.delivery_address_id.errors|striptags }}</p>{% endif %}
+        </fieldset>
+        <button class="button" type="submit">Создать локальный заказ</button>
+      </form>
+    {% else %}
+      <p class="notice" role="alert">Сначала добавьте адрес доставки.</p>
+      <a class="button" href="{% url 'commerce-address-new' %}">Добавить адрес</a>
+    {% endif %}
   </section>
 {% else %}
   <p class="notice" role="alert">Корзина изменилась или содержит недоступные строки.</p>

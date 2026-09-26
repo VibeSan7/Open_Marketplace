@@ -8,7 +8,7 @@ from open_marketplace.catalog import public as catalog_public
 from open_marketplace.common.errors import ConcurrentConflict, InputRejected, PermissionDenied
 
 from .models import CommerceCart, CommerceCartCheckoutReceipt
-from .services import create_order, get_order
+from .services import create_order, get_delivery_address, get_order
 
 
 _UNAVAILABLE = "Корзина недоступна."
@@ -237,18 +237,25 @@ def _receipt_orders(receipt, context):
     return tuple(get_order(order_id=order_id, context=context) for order_id in receipt.order_ids)
 
 
-def checkout_commerce_cart(*, intent_id, context):
+def checkout_commerce_cart(*, intent_id, delivery_address_id, context):
     intent_id = _uuid(intent_id, "Неверный идентификатор намерения.")
+    delivery_address_id = _uuid(delivery_address_id, "Неверный идентификатор адреса.")
     account = _buyer(context)
     with transaction.atomic():
         cart = _locked_cart(account, context)
         receipt = CommerceCartCheckoutReceipt.objects.filter(cart=cart, intent_id=intent_id).first()
         if receipt is not None:
+            if str(receipt.delivery_address_id) != str(delivery_address_id):
+                raise ConcurrentConflict("Это намерение уже связано с другим адресом доставки.")
             return _receipt_orders(receipt, context)
         if cart.intent_id != intent_id:
             raise ConcurrentConflict("Содержимое корзины уже изменилось. Обновите корзину и подтвердите её снова.")
         if not cart.items:
             raise InputRejected("Корзина пуста.")
+        delivery_address = get_delivery_address(
+            address_id=delivery_address_id,
+            context=context,
+        )
         lines = []
         for line in sorted(cart.items, key=lambda row: row["variant_id"]):
             offer = catalog_public.get_offer_snapshot(variant_id=line["variant_id"], context=context, lock=True)
@@ -266,10 +273,16 @@ def checkout_commerce_cart(*, intent_id, context):
                 "quantity": line["quantity"],
                 "expected_unit_price": line["unit_price"],
             })
-        order = create_order(intent_id=intent_id, lines=lines, context=context)
+        order = create_order(
+            intent_id=intent_id,
+            lines=lines,
+            delivery_address=delivery_address,
+            context=context,
+        )
         CommerceCartCheckoutReceipt.objects.create(
             cart=cart,
             intent_id=intent_id,
+            delivery_address_id=delivery_address_id,
             revision=cart.revision,
             order_ids=[order["id"]],
             created_at=context.now,

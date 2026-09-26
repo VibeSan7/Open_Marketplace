@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Ошибка адреса — Open Marketplace{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <span class="eyebrow">Адрес доставки</span>
+  <h1>Не удалось сохранить адрес</h1>
+</section>
+<p class="notice" role="alert">{{ message }}</p>
+<a class="button" href="{% url 'commerce-address-list' %}">Вернуться к адресам</a>
+{% endblock %}
