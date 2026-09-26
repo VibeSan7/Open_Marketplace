@@ -238,6 +238,36 @@ class CommerceCartJourneyWebTests(CatalogTestCase):
         self.assertContains(detail, "120,00")
         self.assertContains(detail, "Ожидает подтверждения оплаты")
         self.assertContains(detail, "Химки")
+        self.assertContains(detail, "Отгрузка ещё не запланирована")
+
+    def test_buyer_can_see_local_fulfillment_summary_on_paid_order_detail(self):
+        commerce_public.add_commerce_cart_item(
+            variant_id=self.variant_id,
+            quantity="1",
+            context=self.buyer_context,
+        )
+        orders = commerce_public.checkout_commerce_cart(
+            intent_id=commerce_public.get_commerce_cart(context=self.buyer_context)["intent_id"],
+            delivery_address_id=self.address["id"],
+            context=self.buyer_context,
+        )
+        order = orders[0]
+        commerce_order = apps.get_model("commerce", "CommerceOrder")
+        commerce_order.objects.filter(pk=order["id"]).update(state=commerce_order.State.PAID)
+        shipment = commerce_public.create_fulfillment_plan(
+            order_id=order["id"],
+            delivery_modes={order["lines"][0]["seller_account_id"]: "seller"},
+            context=self.buyer_context,
+        )[0]
+
+        detail = self.client.get(f"/commerce-orders/{order['id']}/")
+
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "Отгрузки")
+        self.assertContains(detail, shipment["id"])
+        self.assertContains(detail, "Ожидает планирования")
+        self.assertContains(detail, f"/commerce-fulfillment/{shipment['id']}/")
+        self.assertNotContains(detail, "Данные упаковки")
 
     def test_buyer_can_cancel_unpaid_order_and_release_reservation(self):
         commerce_public.add_commerce_cart_item(

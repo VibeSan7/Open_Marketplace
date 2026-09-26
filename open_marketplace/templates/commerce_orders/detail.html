@@ -23,6 +23,21 @@
     <p>{{ order.delivery_address.postal_code }}, {{ order.delivery_address.region }}, {{ order.delivery_address.city }}, {{ order.delivery_address.street }}, {{ order.delivery_address.building }}{% if order.delivery_address.apartment %}, кв. {{ order.delivery_address.apartment }}{% endif %}</p>
     {% if order.delivery_address.comment %}<p>{{ order.delivery_address.comment }}</p>{% endif %}
   </section>
+  <section>
+    <h2>Отгрузки</h2>
+    {% if fulfillment_shipments %}
+      <ul class="cart-orders">
+        {% for shipment in fulfillment_shipments %}
+          <li>
+            <a href="{{ shipment.detail_url }}">{{ shipment.id }}</a>
+            · {{ shipment.delivery_mode_label }} · {{ shipment.state_label }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Отгрузка ещё не запланирована.</p>
+    {% endif %}
+  </section>
   {% if order.state == "awaiting_payment" %}
     <form method="post" action="{% url 'commerce-order-cancel' order_id=order.id %}">
       {% csrf_token %}
