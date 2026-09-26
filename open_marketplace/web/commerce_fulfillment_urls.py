@@ -11,4 +11,9 @@ urlpatterns = [
         commerce_fulfillment_views.commerce_fulfillment_transition,
         name="commerce-fulfillment-transition",
     ),
+    path(
+        "<uuid:shipment_id>/packages/",
+        commerce_fulfillment_views.commerce_fulfillment_packages,
+        name="commerce-fulfillment-packages",
+    ),
 ]

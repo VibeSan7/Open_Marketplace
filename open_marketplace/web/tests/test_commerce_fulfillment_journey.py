@@ -90,7 +90,100 @@ class CommerceFulfillmentJourneyWebTests(CatalogTestCase):
             "В пути",
         )
 
-    def test_buyer_can_confirm_receipt_after_seller_dispatch(self):
+    def _package_payload(self, client, rows):
+        detail_url = f"/commerce-fulfillment/{self.shipment['id']}/"
+        client.get(detail_url)
+        if "csrftoken" not in client.cookies:
+            client.get("/login/")
+        token = client.cookies["csrftoken"].value
+        data = {
+            "csrfmiddlewaretoken": token,
+            "packages-TOTAL_FORMS": str(len(rows)),
+            "packages-INITIAL_FORMS": "0",
+            "packages-MIN_NUM_FORMS": "0",
+            "packages-MAX_NUM_FORMS": "32",
+        }
+        for index, row in enumerate(rows):
+            for field, value in row.items():
+                data[f"packages-{index}-{field}"] = str(value)
+        return data
+
+    def test_seller_can_save_multiple_packages_and_buyer_cannot_see_them(self):
+        rows = [
+            {"weight_grams": 1000, "length_cm": 10, "width_cm": 20, "height_cm": 30},
+            {"weight_grams": 2000, "length_cm": 40, "width_cm": 50, "height_cm": 60},
+        ]
+        response = self.seller_client.post(
+            f"/commerce-fulfillment/{self.shipment['id']}/packages/",
+            self._package_payload(self.seller_client, rows),
+        )
+        self.assertEqual(response.status_code, 303)
+        seller_detail = self.seller_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
+        self.assertContains(seller_detail, "1000 г")
+        self.assertContains(seller_detail, "2000 г")
+        self.assertContains(seller_detail, "Данные упаковки")
+        buyer_detail = self.buyer_client.get(f"/commerce-fulfillment/{self.shipment['id']}/")
+        self.assertNotContains(buyer_detail, "1000 г")
+        self.assertNotContains(buyer_detail, "Данные упаковки")
+
+    def test_empty_package_submission_clears_manifest(self):
+        commerce_public.set_fulfillment_packages(
+            shipment_id=self.shipment["id"],
+            packages=[{"weight_grams": 1000, "length_cm": 10, "width_cm": 10, "height_cm": 10}],
+            context=self.context(self.seller_registry),
+        )
+        response = self.seller_client.post(
+            f"/commerce-fulfillment/{self.shipment['id']}/packages/",
+            self._package_payload(self.seller_client, []),
+        )
+        self.assertEqual(response.status_code, 303)
+        seller = commerce_public.get_fulfillment_shipment(
+            shipment_id=self.shipment["id"],
+            context=self.context(self.seller_registry),
+        )
+        self.assertEqual(seller["packages"], [])
+
+    def test_invalid_or_foreign_package_submission_does_not_mutate(self):
+        invalid = self._package_payload(
+            self.seller_client,
+            [{"weight_grams": 0, "length_cm": 10, "width_cm": 10}],
+        )
+        response = self.seller_client.post(
+            f"/commerce-fulfillment/{self.shipment['id']}/packages/",
+            invalid,
+        )
+        self.assertEqual(response.status_code, 400)
+        seller = commerce_public.get_fulfillment_shipment(
+            shipment_id=self.shipment["id"],
+            context=self.context(self.seller_registry),
+        )
+        self.assertEqual(seller["packages"], [])
+
+        foreign_data = self._package_payload(
+            self.other_client,
+            [{"weight_grams": 1000, "length_cm": 10, "width_cm": 10, "height_cm": 10}],
+        )
+        response = self.other_client.post(
+            f"/commerce-fulfillment/{self.shipment['id']}/packages/",
+            foreign_data,
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_package_submission_is_locked_after_dispatch(self):
+        commerce_public.transition_fulfillment(
+            shipment_id=self.shipment["id"],
+            target_state="ready",
+            context=self.context(self.seller_registry),
+        )
+        response = self.seller_client.post(
+            f"/commerce-fulfillment/{self.shipment['id']}/packages/",
+            self._package_payload(
+                self.seller_client,
+                [{"weight_grams": 1000, "length_cm": 10, "width_cm": 10, "height_cm": 10}],
+            ),
+        )
+        self.assertEqual(response.status_code, 409)
+
         commerce_public.transition_fulfillment(
             shipment_id=self.shipment["id"],
             target_state="ready",

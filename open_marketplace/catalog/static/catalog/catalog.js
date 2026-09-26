@@ -24,7 +24,14 @@
       const source = rows.querySelector("[data-formset-row]");
       const row = source.cloneNode(true);
       row.hidden = false;
-      row.innerHTML = row.innerHTML.replaceAll(/attributes-\d+/g, "attributes-" + index);
+      const prefix = total.name.replace(/-TOTAL_FORMS$/, "");
+      const indexPattern = new RegExp(prefix + "-\\d+");
+      row.querySelectorAll("[name], [id], [for]").forEach((element) => {
+        ["name", "id", "for"].forEach((attribute) => {
+          const value = element.getAttribute(attribute);
+          if (value) element.setAttribute(attribute, value.replace(indexPattern, prefix + "-" + index));
+        });
+      });
       row.querySelectorAll("input, textarea").forEach((input) => {
         if (input.type === "checkbox") input.checked = false;
         else input.value = "";

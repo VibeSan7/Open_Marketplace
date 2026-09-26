@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Отгрузка {{ shipment.id }} — Open Marketplace{% endblock %}
+{% block extrahead %}<script src="{% static 'catalog/catalog.js' %}" defer></script>{% endblock %}
 {% block content %}
 <section class="page-heading">
   <div>
@@ -23,6 +25,42 @@
       <li><strong>{{ line.title }}</strong> · {{ line.variant_label }} · {{ line.quantity }}</li>
     {% endfor %}
   </ul>
+  {% if shipment.packages %}
+    <h2>Упаковка</h2>
+    <ul class="cart-orders">
+      {% for package in shipment.packages %}
+        <li>{{ package.weight_grams }} г · {{ package.length_cm }} × {{ package.width_cm }} × {{ package.height_cm }} см</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {% if can_edit_packages %}
+    <h2>Данные упаковки</h2>
+    <p>Это подготовительная информация продавца, не накладная и не подтверждение перевозчика.</p>
+    <form method="post" action="{% url 'commerce-fulfillment-packages' shipment_id=shipment.id %}" class="catalog-form" data-formset>
+      {% csrf_token %}
+      {{ package_formset.management_form }}
+      <div data-formset-rows>
+        {% for form in package_formset %}
+          <fieldset data-formset-row>
+            {% for field in form %}
+              {% if field.name != "DELETE" %}
+                <p>
+                  {{ field.label_tag }}
+                  {{ field }}
+                  {% if field.errors %}<span class="form-error">{{ field.errors|striptags }}</span>{% endif %}
+                </p>
+              {% endif %}
+            {% endfor %}
+            <span hidden>{{ form.DELETE }}</span>
+            <button type="button" data-remove-row>Удалить упаковку</button>
+          </fieldset>
+        {% endfor %}
+      </div>
+      {% if package_formset.non_form_errors %}<p class="form-error">{{ package_formset.non_form_errors|striptags }}</p>{% endif %}
+      <button type="button" data-add-row>Добавить упаковку</button>
+      <button class="button" type="submit">Сохранить упаковку</button>
+    </form>
+  {% endif %}
   {% if shipment.actions_with_labels %}
     <h2>Действия</h2>
     {% for action in shipment.actions_with_labels %}
