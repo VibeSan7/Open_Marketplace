@@ -9,6 +9,7 @@ from .fulfillment import (
     create_fulfillment_plan,
     get_fulfillment_shipment,
     list_fulfillment_shipments,
+    set_fulfillment_packages,
     transition_fulfillment,
 )
 from .services import (
@@ -45,6 +46,7 @@ __all__ = (
     "list_orders",
     "prepare_payment",
     "remove_commerce_cart_item",
+    "set_fulfillment_packages",
     "update_commerce_cart_item",
     "update_delivery_address",
     "transition_fulfillment",

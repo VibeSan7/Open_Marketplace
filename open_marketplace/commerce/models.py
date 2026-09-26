@@ -151,6 +151,7 @@ class FulfillmentShipment(models.Model):
     delivery_mode = models.CharField(max_length=6, choices=DeliveryMode.choices)
     client_reference = models.CharField(max_length=30, unique=True)
     lines = models.JSONField()
+    packages = models.JSONField(default=list)
     state = models.CharField(
         max_length=16,
         choices=State.choices,

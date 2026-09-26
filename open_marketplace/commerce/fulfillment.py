@@ -69,6 +69,24 @@ def _delivery_modes(value, seller_ids):
     return normalized
 
 
+def _validated_packages(value):
+    if type(value) is not list or len(value) > 32:
+        raise InputRejected("Укажите список упаковок отгрузки.")
+    fields = ("weight_grams", "length_cm", "width_cm", "height_cm")
+    result = []
+    for package in value:
+        if type(package) is not dict or set(package) != set(fields):
+            raise InputRejected("Упаковка содержит неподдерживаемые данные.")
+        normalized = {}
+        for field in fields:
+            amount = package[field]
+            if type(amount) is not int or amount <= 0:
+                raise InputRejected("Вес и размеры упаковки должны быть положительными целыми числами.")
+            normalized[field] = amount
+        result.append(normalized)
+    return result
+
+
 def _reference(order_id, seller_account_id):
     value = uuid5(_REFERENCE_NAMESPACE, f"{order_id}:{seller_account_id}")
     return base64.b32encode(value.bytes).decode("ascii").rstrip("=")
@@ -83,10 +101,18 @@ def _snapshot(shipment):
         "delivery_mode": shipment.delivery_mode,
         "client_reference": shipment.client_reference,
         "lines": deepcopy(shipment.lines),
+        "packages": deepcopy(shipment.packages),
         "state": shipment.state,
         "created_at": shipment.created_at.isoformat(),
         "updated_at": shipment.updated_at.isoformat(),
     }
+
+
+def _snapshot_for_actor(shipment, *, actor_id):
+    result = _snapshot(shipment)
+    if actor_id != shipment.seller_account_id:
+        result.pop("packages")
+    return result
 
 
 def _record(shipment, *, context):
@@ -142,6 +168,7 @@ def create_fulfillment_plan(*, order_id, delivery_modes, context=None):
                 delivery_mode=modes[group["seller_account_id"]],
                 client_reference=_reference(order.id, group["seller_account_id"]),
                 lines=group["lines"],
+                packages=[],
                 state=FulfillmentShipment.State.PENDING,
                 created_at=now,
                 updated_at=now,
@@ -149,6 +176,31 @@ def create_fulfillment_plan(*, order_id, delivery_modes, context=None):
             _record(shipment, context=context)
             result.append(_snapshot(shipment))
         return tuple(result)
+
+
+def set_fulfillment_packages(*, shipment_id, packages, context):
+    shipment_id = _uuid(shipment_id, "Неверный идентификатор отгрузки.")
+    normalized = _validated_packages(packages)
+    if context is None or context.actor_account_id is None:
+        raise PermissionDenied(_UNAVAILABLE)
+    with transaction.atomic():
+        order = CommerceOrder.objects.select_for_update().filter(shipments__id=shipment_id).first()
+        if order is None:
+            raise PermissionDenied(_UNAVAILABLE)
+        shipment = FulfillmentShipment.objects.select_for_update().filter(
+            pk=shipment_id,
+            order=order,
+        ).first()
+        if shipment is None or shipment.seller_account_id != context.actor_account_id:
+            raise PermissionDenied(_UNAVAILABLE)
+        if shipment.state != FulfillmentShipment.State.PENDING:
+            raise InvalidState("Упаковку можно изменить только для ожидающей отгрузки.")
+        if shipment.packages == normalized:
+            return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
+        shipment.packages = normalized
+        shipment.updated_at = context.now
+        shipment.save(update_fields=("packages", "updated_at"))
+        return _snapshot(shipment)
 
 
 def _authorize_transition(*, shipment, order, target_state, context):
@@ -190,7 +242,7 @@ def transition_fulfillment(*, shipment_id, target_state, context):
         if target_state == shipment.state:
             if target_state == FulfillmentShipment.State.PENDING:
                 raise InvalidState("Отгрузка ещё не готова к переходу.")
-            return _snapshot(shipment)
+            return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
         if target_state == FulfillmentShipment.State.READY:
             if shipment.state != FulfillmentShipment.State.PENDING:
                 raise InvalidState("Отгрузка может стать готовой только из состояния ожидания.")
@@ -218,7 +270,7 @@ def transition_fulfillment(*, shipment_id, target_state, context):
             actor_id=context.actor_account_id,
             occurred_at=context.now,
         )
-        return _snapshot(shipment)
+        return _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
 
 
 def _authorize_read(*, shipment, order, context):
@@ -249,7 +301,7 @@ def _available_actions(*, shipment, order, context):
 
 
 def _view(shipment, *, context):
-    result = _snapshot(shipment)
+    result = _snapshot_for_actor(shipment, actor_id=context.actor_account_id)
     result["actions"] = _available_actions(shipment=shipment, order=shipment.order, context=context)
     return result
 
@@ -278,5 +330,6 @@ __all__ = (
     "create_fulfillment_plan",
     "get_fulfillment_shipment",
     "list_fulfillment_shipments",
+    "set_fulfillment_packages",
     "transition_fulfillment",
 )
